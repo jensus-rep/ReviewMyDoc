@@ -1,20 +1,20 @@
-// Checks the named rate limiters and, above all, what a refusal looks like. The
-// assurance of docs/Konventionen.md is not "a refused request gets 429"; it is
-// that the visitor gets their page back, with their input and with a sentence,
-// and that the server still says 429 with Retry-After. An empty 429 would pass a
-// careless test and would be exactly the behaviour these limiters were built to
-// avoid.
+// Checks the named rate limiters and what a refusal looks like. The assurance
+// of docs/Konventionen.md is not "a refused request gets 429"; it is that the
+// visitor gets their page back, with a sentence, and that the server still says
+// 429 with Retry-After. An empty 429 would pass a careless test and would be
+// exactly the behaviour these limiters were built to avoid.
+//
+// The page that asks the limiter here is the sign-in. Until it existed, a check
+// page under Pages/Pruefung/ stood in for it; it was removed with the sign-in,
+// because a stand-in that is no longer needed is only surface. That the whole
+// shape of a refusal is right is shown by AnmeldungTests, on the real limit of
+// the application; what is left here is what belongs to the limiters themselves.
 
 using System.Globalization;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using ReviewMyDoc.Web.Pages.Pruefung;
 using ReviewMyDoc.Web.Security;
 
 namespace ReviewMyDoc.Tests.Web;
@@ -28,8 +28,8 @@ namespace ReviewMyDoc.Tests.Web;
 /// </remarks>
 public sealed class RateLimitTests
 {
-    /// <summary>The address of the check page that asks the limiter of the sign-in.</summary>
-    private const string ProbePath = "/pruefung/ratenbegrenzung";
+    /// <summary>The address of the page that asks the limiter of the sign-in.</summary>
+    private const string LoginPath = OwnerAuthentication.LoginPath;
 
     /// <summary>
     /// How many attempts the application under test allows, set low so that a
@@ -45,14 +45,14 @@ public sealed class RateLimitTests
     [InlineData(AiRateLimit.Name)]
     public void Every_limiter_is_registered_under_its_name(string name)
     {
-        using var application = new Application();
+        using var application = new OwnerApplication();
 
         var limiter = application.Services.GetKeyedService<PartitionedRateLimiter<HttpContext>>(name);
 
         Assert.NotNull(limiter);
     }
 
-    // The three names are the contract between this task and the pages that will
+    // The three names are the contract between the limiters and the pages that
     // ask for them, and they are documented in docs/Betrieb.md under exactly
     // these names.
     [Fact]
@@ -63,52 +63,13 @@ public sealed class RateLimitTests
         Assert.Equal("ai", AiRateLimit.Name);
     }
 
-    // The whole point, in one test: the attempt after the limit is refused with
-    // 429 and Retry-After, and the answer is the page, in its frame, with what
-    // was typed.
-    [Fact]
-    public async Task A_refused_attempt_answers_429_with_retry_after_and_the_page_in_its_frame()
-    {
-        using var application = new Application();
-        using var client = application.CreateClient();
-        var token = await TokenAsync(client);
-
-        for (var attempt = 1; attempt <= PermitLimit; attempt++)
-        {
-            var allowed = await PostAsync(client, token, $"Versuch {attempt}");
-
-            Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
-        }
-
-        var refused = await PostAsync(client, token, "der Satz, den niemand verlieren will");
-        var html = await refused.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-
-        // The status and the header.
-        Assert.Equal(HttpStatusCode.TooManyRequests, refused.StatusCode);
-        Assert.NotNull(refused.Headers.RetryAfter);
-
-        // Not an empty response, but the page.
-        Assert.Equal("text/html", refused.Content.Headers.ContentType?.MediaType);
-        Assert.NotEmpty(html);
-
-        // The frame of the application, not a bare error body.
-        Assert.Contains("<html lang=\"de\">", html, StringComparison.Ordinal);
-        Assert.Contains("class=\"app__main\" id=\"inhalt\"", html, StringComparison.Ordinal);
-        Assert.Contains("Hauptnavigation", html, StringComparison.Ordinal);
-        Assert.Contains("/components/tokens/tokens.css", html, StringComparison.Ordinal);
-
-        // The sentence and the input of the visitor.
-        Assert.Contains(RatenbegrenzungModel.RefusedMessage, html, StringComparison.Ordinal);
-        Assert.Contains("der Satz, den niemand verlieren will", html, StringComparison.Ordinal);
-    }
-
     // Retry-After in whole seconds and at least one. A zero would invite the
     // next attempt immediately and make the header worthless.
     [Fact]
     public async Task Retry_after_names_at_least_one_whole_second()
     {
-        using var application = new Application();
-        using var client = application.CreateClient();
+        using var application = new OwnerApplication { LoginPermitLimit = PermitLimit };
+        using var client = application.CreateAnonymousClient();
 
         var refused = await RefusedAsync(client);
         var seconds = Assert.Single(refused.Headers.GetValues("Retry-After"));
@@ -124,18 +85,18 @@ public sealed class RateLimitTests
     [Fact]
     public async Task Reading_the_page_does_not_spend_the_budget()
     {
-        using var application = new Application();
-        using var client = application.CreateClient();
+        using var application = new OwnerApplication { LoginPermitLimit = PermitLimit };
+        using var client = application.CreateAnonymousClient();
 
         for (var read = 0; read < PermitLimit * 3; read++)
         {
-            var page = await client.GetAsync(ProbePath, TestContext.Current.CancellationToken);
+            var page = await client.GetAsync(LoginPath, TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, page.StatusCode);
         }
 
-        var token = await TokenAsync(client);
-        var response = await PostAsync(client, token, "nach vielen Aufrufen");
+        var token = await OwnerApplication.AntiforgeryTokenAsync(client, LoginPath);
+        var response = await OwnerApplication.SignInAsync(client, token, OwnerApplication.WrongPassword);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -145,8 +106,8 @@ public sealed class RateLimitTests
     [Fact]
     public async Task A_refused_response_carries_the_security_headers()
     {
-        using var application = new Application();
-        using var client = application.CreateClient();
+        using var application = new OwnerApplication { LoginPermitLimit = PermitLimit };
+        using var client = application.CreateAnonymousClient();
 
         var refused = await RefusedAsync(client);
 
@@ -157,73 +118,25 @@ public sealed class RateLimitTests
     }
 
     /// <summary>Spends the whole budget and returns the refused response.</summary>
+    /// <remarks>
+    /// The token is read the way a browser reads it, out of the form. That
+    /// matters beyond convenience: a request antiforgery has already rejected
+    /// never reaches the handler, so this also shows that the limiter is asked
+    /// inside a request that got that far, and not instead of the check.
+    /// </remarks>
     private static async Task<HttpResponseMessage> RefusedAsync(HttpClient client)
     {
-        var token = await TokenAsync(client);
+        var token = await OwnerApplication.AntiforgeryTokenAsync(client, LoginPath);
         HttpResponseMessage? response = null;
 
         for (var attempt = 1; attempt <= PermitLimit + 1; attempt++)
         {
-            response = await PostAsync(client, token, "x");
+            response = await OwnerApplication.SignInAsync(client, token, OwnerApplication.WrongPassword);
         }
 
         Assert.NotNull(response);
         Assert.Equal(HttpStatusCode.TooManyRequests, response!.StatusCode);
 
         return response;
-    }
-
-    /// <summary>Reads the antiforgery token out of the form of the check page.</summary>
-    /// <remarks>
-    /// Fetched the way a browser does. That matters beyond convenience: a
-    /// request antiforgery has already rejected never reaches the handler, so
-    /// this also shows that the limiter is asked inside a request that got that
-    /// far, and not instead of the check.
-    /// </remarks>
-    private static async Task<string> TokenAsync(HttpClient client)
-    {
-        var html = await client.GetStringAsync(ProbePath, TestContext.Current.CancellationToken);
-        var match = Regex.Match(
-            html,
-            "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"",
-            RegexOptions.None,
-            TimeSpan.FromSeconds(5));
-
-        Assert.True(match.Success, "The form of the check page carries no antiforgery token.");
-
-        return match.Groups[1].Value;
-    }
-
-    private static Task<HttpResponseMessage> PostAsync(HttpClient client, string token, string note)
-    {
-        var form = new FormUrlEncodedContent(
-        [
-            new KeyValuePair<string, string>(nameof(RatenbegrenzungModel.Note), note),
-            new KeyValuePair<string, string>("__RequestVerificationToken", token),
-        ]);
-
-        return client.PostAsync(ProbePath, form, TestContext.Current.CancellationToken);
-    }
-
-    /// <summary>
-    /// The application under test: in development, so the check page has a
-    /// route, and with a limit small enough to reach in a handful of requests.
-    /// </summary>
-    public sealed class Application : WebApplicationFactory<Program>
-    {
-        /// <inheritdoc />
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            ArgumentNullException.ThrowIfNull(builder);
-
-            builder.UseEnvironment(Environments.Development);
-
-            // UseSetting and not ConfigureAppConfiguration: the latter reaches
-            // the configuration only after Program.cs has run, which is too late
-            // for anything a registration reads while the application starts.
-            builder.UseSetting(
-                "RateLimits:Login:PermitLimit",
-                PermitLimit.ToString(CultureInfo.InvariantCulture));
-        }
     }
 }

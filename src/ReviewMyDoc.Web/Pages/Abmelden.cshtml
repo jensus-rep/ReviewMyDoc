@@ -1,0 +1,8 @@
+@page "/abmelden"
+@*
+    The address of the sign-out. The page has no markup of its own: the handler
+    in Abmelden.cshtml.cs drops the cookie and redirects, and without this file
+    Razor Pages would not route /abmelden at all. Only a post is answered, a GET
+    ends with 405.
+*@
+@model AbmeldenModel

@@ -4,18 +4,17 @@
 // no page writes itself, so a mistake in it is a mistake on every page at once.
 
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ReviewMyDoc.Tests.Web;
 
 /// <summary>Integration tests of _Layout.cshtml.</summary>
-public sealed class PageFrameTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class PageFrameTests : IClassFixture<OwnerApplication>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly OwnerApplication _factory;
 
     /// <summary>Takes the application the test class shares.</summary>
     /// <param name="factory">The application under test.</param>
-    public PageFrameTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    public PageFrameTests(OwnerApplication factory) => _factory = factory;
 
     // An empty page in the frame loads the tokens and the building blocks it
     // uses, all of them from /components/ and none of them from wwwroot.
@@ -85,7 +84,7 @@ public sealed class PageFrameTests : IClassFixture<WebApplicationFactory<Program
 
     private async Task<string> GetHtmlAsync(string path)
     {
-        using var client = _factory.CreateClient();
+        var client = await _factory.OwnerClientAsync();
 
         var response = await client.GetAsync(path);
 

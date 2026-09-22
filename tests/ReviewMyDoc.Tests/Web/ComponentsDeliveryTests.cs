@@ -5,18 +5,17 @@
 // Program.cs and would break without a sound.
 
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ReviewMyDoc.Tests.Web;
 
 /// <summary>Integration tests of the delivery of the building blocks.</summary>
-public sealed class ComponentsDeliveryTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class ComponentsDeliveryTests : IClassFixture<OwnerApplication>
 {
     private readonly HttpClient _client;
 
     /// <summary>Takes the application the test class shares.</summary>
     /// <param name="factory">The application under test.</param>
-    public ComponentsDeliveryTests(WebApplicationFactory<Program> factory) => _client = factory.CreateClient();
+    public ComponentsDeliveryTests(OwnerApplication factory) => _client = factory.CreateAnonymousClient();
 
     // The one file every page depends on. Without it not a single value of the
     // design language reaches the browser.

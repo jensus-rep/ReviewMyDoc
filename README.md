@@ -21,8 +21,11 @@ Code, Struktur, Tests und Zusammenarbeit ist [docs/Konventionen.md](docs/Konvent
 3. **Frontend-Werkzeuge holen.** `npm install`
 4. **Starten.** `dotnet run --project src/ReviewMyDoc.Web` und die Adresse
    <http://localhost:5061> öffnen. Wichtig: Es gibt nur das Startprofil `http`, die Anwendung läuft
-   lokal ausschließlich unter dieser einen Adresse, ein https-Profil ist nicht eingerichtet. Die
-   Startseite trägt die Überschrift ReviewMyDoc.
+   lokal ausschließlich unter dieser einen Adresse, ein https-Profil ist nicht eingerichtet. Es
+   erscheint die Anmeldung; das Passwort der Entwicklung ist `entwicklung`. Danach trägt die
+   Startseite die Überschrift ReviewMyDoc. Ein eigenes Passwort erzeugt man mit
+   `dotnet run --project src/ReviewMyDoc.Web -- passwort-hash`, siehe
+   [docs/Betrieb.md](docs/Betrieb.md).
 5. **Prüfen.** `dotnet test`, `npm run typecheck`, `npm test`
 
 ## Prüfbefehle

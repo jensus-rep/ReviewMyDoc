@@ -10,8 +10,11 @@
     fight. The files are delivered from the repository folder components/ under
     /components/ and exist exactly once; nothing of them lies in wwwroot.
 *@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@using ReviewMyDoc.Web.Security
 @{
     var currentPage = ViewContext.RouteData.Values["page"] as string;
+    var signOut = new ButtonModel("Abmelden") { Variant = ButtonVariant.Secondary };
 }
 <!DOCTYPE html>
 <html lang="de">
@@ -33,6 +36,17 @@
             <nav class="app__nav" aria-label="Hauptnavigation">
                 <a class="app__nav-link" href="/" aria-current="@(currentPage == "/Index" ? "page" : null)">Übersicht</a>
             </nav>
+            @* The way out stands in the frame and not on a page, because it
+               belongs to every page. It is a form and not a link: a sign-out
+               changes something, so it is a post and carries the antiforgery
+               token the form tag helper writes. Only somebody who is signed in
+               sees it; for everybody else there is nothing to end. *@
+            @if (User.IsInRole(OwnerAuthentication.Role))
+            {
+                <form class="app__session" method="post" asp-page="/Abmelden">
+                    <partial name="Ui/_Button" model="signOut" />
+                </form>
+            }
         </div>
     </header>
     <main class="app__main" id="inhalt">

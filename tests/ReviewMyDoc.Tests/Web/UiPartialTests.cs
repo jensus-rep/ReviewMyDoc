@@ -5,24 +5,23 @@
 // here would look right and be styled by nothing.
 
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using ReviewMyDoc.Web.Pages.Shared.Ui;
 
 namespace ReviewMyDoc.Tests.Web;
 
 /// <summary>Tests of the partials under Pages/Shared/Ui.</summary>
-public sealed class UiPartialTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class UiPartialTests : IClassFixture<OwnerApplication>
 {
     private const string ButtonView = "/Pages/Shared/Ui/_Button.cshtml";
     private const string FieldView = "/Pages/Shared/Ui/_Field.cshtml";
     private const string RowsView = "/Pages/Shared/Ui/_Rows.cshtml";
 
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly OwnerApplication _factory;
 
     /// <summary>Takes the application the test class shares.</summary>
     /// <param name="factory">The application under test.</param>
-    public UiPartialTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    public UiPartialTests(OwnerApplication factory) => _factory = factory;
 
     [Fact]
     public async Task A_button_carries_the_classes_of_the_building_block()

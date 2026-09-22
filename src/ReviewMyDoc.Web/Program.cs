@@ -8,17 +8,19 @@ using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
 using ReviewMyDoc.Web.Security;
 
+// Before anything else: the application can be called to print a password hash
+// instead of serving. It stands at the top because that command needs no
+// service, no store and no key ring, and starting them for it would be wrong in
+// the one case that matters, an operator running it on a machine that has no
+// configuration yet. See src/ReviewMyDoc.Web/Security/PasswordHashCommand.cs.
+if (PasswordHashCommand.TryRun(args, out var commandExitCode))
+{
+    return commandExitCode;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages(options =>
-{
-    // The check pages exist for development and for the integration tests. In a
-    // deployed application they have no address; see ProbePagesConvention.
-    if (!builder.Environment.IsDevelopment())
-    {
-        options.Conventions.Add(new ProbePagesConvention());
-    }
-});
+builder.Services.AddRazorPages();
 
 // Which of the two object stores this is, Azure or a local directory, the
 // section "Storage" of the configuration decides; see docs/Betrieb.md. The
@@ -39,6 +41,13 @@ builder.Services.AddDataProtectionKeys(builder.Configuration);
 // is why these are services and not policies of the RateLimiter middleware; see
 // src/ReviewMyDoc.Web/Security/RateLimitServiceCollectionExtensions.cs.
 builder.Services.AddRateLimits(builder.Configuration);
+
+// The sign-in of the owner: the cookie, the check of the password against the
+// configured hash and the rule that every endpoint demands the role owner
+// unless it says otherwise. The rule is a fallback policy and not a list, so a
+// page added later is protected without anybody remembering to protect it; see
+// src/ReviewMyDoc.Web/Security/OwnerAuthenticationServiceCollectionExtensions.cs.
+builder.Services.AddOwnerAuthentication(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
@@ -86,10 +95,47 @@ app.UseStaticFiles(new StaticFileOptions
     ServeUnknownFileTypes = false,
 });
 
+// The two stylesheet folders above are served before this line and are
+// therefore the only thing of this application an anonymous request ever gets.
+// That is deliberate: the sign-in page has to be styled, and a stylesheet is
+// the same for everybody. Everything that is routed lies behind the
+// authorization below.
 app.UseRouting();
+
+// A request that matched no endpoint ends here, with 404 and nothing else.
+//
+// Without this, the fallback policy below would take it as well, because
+// authorization applies its fallback to a request without an endpoint too, and
+// an address that does not exist would answer with a redirect to the sign-in
+// form. That would be wrong twice: the delivery of /components/ promises that a
+// path with .. and a file that is not served end in 404, and a 404 that is
+// dressed up as a sign-in tells the visitor that the address might exist. It
+// hides nothing either, because which pages this application has is written in
+// its repository, which is public.
+app.Use(async (context, next) =>
+{
+    if (context.GetEndpoint() is null)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+
+        return;
+    }
+
+    await next(context);
+});
+
+// Authentication before authorization: the cookie has to become a user before
+// the fallback policy can be checked against that user.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapRazorPages();
 
 app.Run();
+
+// The exit code of the server, told apart from the codes of the command above:
+// a server that was stopped ended well.
+return 0;
 
 // Finds the folder components/, walking up from the content root. Published, it
 // lies next to the application, during development it stays in the repository

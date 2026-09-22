@@ -1,0 +1,38 @@
+@page "/anmeldung"
+@*
+    The sign-in of the owner. It brings nothing of its own: the field and the
+    button are the building blocks, the frame is the layout of the application,
+    and the distance between the two is one rule in site.css, because the
+    Content Security Policy of this application allows no inline style.
+
+    method="post" alone makes the form tag helper write the antiforgery token,
+    and Razor Pages checks it before this page ever runs.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model AnmeldungModel
+@{
+    ViewData["Title"] = "Anmeldung";
+
+    var password = new FieldModel(nameof(Model.Password), "Passwort")
+    {
+        Control = FieldControl.Password,
+        Autocomplete = "current-password",
+        Required = true,
+    };
+
+    var submit = new ButtonModel("Anmelden");
+}
+
+<h1>Anmeldung</h1>
+
+@if (Model.Message is not null)
+{
+    @* role="alert" so a screen reader reads the sentence when the page comes
+       back, without taking the focus away from the field. *@
+    <p class="anmeldung__message" role="alert">@Model.Message</p>
+}
+
+<form class="anmeldung" method="post" asp-page="/Anmeldung" asp-route-ReturnUrl="@Model.ReturnUrl">
+    <partial name="Ui/_Field" model="password" />
+    <partial name="Ui/_Button" model="submit" />
+</form>

@@ -15,6 +15,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
+using ReviewMyDoc.Web.Pages;
+using ReviewMyDoc.Web.Security;
 
 namespace ReviewMyDoc.Tests.Security;
 
@@ -28,10 +30,10 @@ public sealed class DataProtectionTests : IDisposable
     private const string Purpose = "ReviewMyDoc.Tests";
 
     /// <summary>
-    /// The check page, used here because it is the only form in the application
-    /// so far and an antiforgery token needs a form to be issued into.
+    /// The sign-in page, used here because an antiforgery token needs a form to
+    /// be issued into and this is the form anybody can reach without a session.
     /// </summary>
-    private const string ProbePath = "/pruefung/ratenbegrenzung";
+    private const string FormPath = OwnerAuthentication.LoginPath;
 
     private readonly string _keysPath;
 
@@ -187,7 +189,7 @@ public sealed class DataProtectionTests : IDisposable
         using (var before = HostIn(Environments.Development))
         using (var client = before.CreateClient())
         {
-            var page = await client.GetAsync(ProbePath, TestContext.Current.CancellationToken);
+            var page = await client.GetAsync(FormPath, TestContext.Current.CancellationToken);
             var html = await page.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
             token = Match(html);
@@ -199,18 +201,21 @@ public sealed class DataProtectionTests : IDisposable
 
         var form = new FormUrlEncodedContent(
         [
-            new KeyValuePair<string, string>("Note", "vor dem Neustart getippt"),
+            new KeyValuePair<string, string>("Password", "vor dem Neustart getippt"),
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
         ]);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, ProbePath) { Content = form };
+        using var request = new HttpRequestMessage(HttpMethod.Post, FormPath) { Content = form };
         request.Headers.Add("Cookie", cookie);
 
         var response = await restarted.SendAsync(request, TestContext.Current.CancellationToken);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
+        // The password of this post is wrong on purpose, so the answer is the
+        // form with its one sentence. What matters is that it is that and not
+        // 400: a token from before the restart was still readable afterwards.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("vor dem Neustart getippt", body, StringComparison.Ordinal);
+        Assert.Contains(AnmeldungModel.FailureMessage, body, StringComparison.Ordinal);
     }
 
     /// <summary>Removes the key directory of this test class.</summary>
@@ -224,7 +229,7 @@ public sealed class DataProtectionTests : IDisposable
             RegexOptions.None,
             TimeSpan.FromSeconds(5));
 
-        Assert.True(match.Success, "The form of the check page carries no antiforgery token.");
+        Assert.True(match.Success, "The sign-in form carries no antiforgery token.");
 
         return match.Groups[1].Value;
     }

@@ -5,8 +5,9 @@ Daten liegen. Sie ist für jemanden geschrieben, der dieses Projekt nicht kennt.
 nur lokal starten will, braucht aus dieser Datei gar nichts zu tun: ohne jede Konfiguration
 speichert ReviewMyDoc in ein Verzeichnis auf der eigenen Festplatte und läuft.
 
-Zur Zeit beschreibt diese Datei die Ablage, die Security-Header, die Data Protection und die
-Ratenbegrenzung. Weitere Abschnitte kommen dazu, sobald Anmeldung, AI und Mail gebaut sind.
+Zur Zeit beschreibt diese Datei die Ablage, die Security-Header, die Data Protection, die
+Ratenbegrenzung und die Anmeldung des Eigentümers. Weitere Abschnitte kommen dazu, sobald AI und
+Mail gebaut sind.
 
 ## Wo die Daten liegen
 
@@ -326,10 +327,112 @@ offene Tür.
 
 In Azure heißen dieselben Schlüssel `RateLimits__Login__PermitLimit` und so weiter.
 
-### Die Prüfseite
+### Wie eine Ablehnung aussieht
 
-Unter `/pruefung/ratenbegrenzung` liegt eine Seite, die den Limiter `login` fragt und zeigt, wie
-eine Ablehnung aussieht: im Rahmen der Seite, mit dem eingegebenen Text, mit 429 und `Retry-After`.
-**Sie ist nur in der Entwicklung erreichbar.** In jeder anderen Umgebung wird ihr die Route
-genommen, sie antwortet also mit 404 wie eine Adresse, die es nie gab. Weil sie denselben Limiter
-fragt, den später die Anmeldung fragt, verbraucht ein Versuch auf ihr auch das Budget der Anmeldung.
+Den Limiter `login` fragt die Anmeldeseite unter `/anmeldung`. Wer es elfmal in einer Minute
+versucht, bekommt beim elften Mal die Anmeldeseite zurück, im Rahmen der Anwendung, mit dem Satz
+„Zu viele Anmeldeversuche“, mit dem Statuscode 429 und mit `Retry-After`. Nie eine leere Antwort.
+Bis zur Anmeldung stand dafür eine eigene Prüfseite unter `/pruefung/ratenbegrenzung`; sie ist mit
+der Anmeldung entfallen, weil die Anmeldung dasselbe an der Stelle zeigt, an der es zählt.
+
+## Die Anmeldung des Eigentümers
+
+ReviewMyDoc hat genau ein Konto. Es gibt keine Benutzerverwaltung, keine Registrierung, kein
+ASP.NET Core Identity und keine Datenbank, in der ein Benutzer stünde; die Begründung steht in
+[Konventionen.md](Konventionen.md), Abschnitt Stack. Die ganze Anmeldung ist deshalb: ein Passwort,
+geprüft gegen einen Hash aus der Konfiguration, und danach ein Cookie mit der Rolle `owner`.
+
+- Angemeldet wird unter `/anmeldung`, abgemeldet über die Schaltfläche im Kopf jeder Seite, die auf
+  `/abmelden` schickt.
+- Die Sitzung gilt acht Stunden und verlängert sich nicht von selbst. Das Cookie ist ein
+  Sitzungscookie: wer den Browser schließt, ist abgemeldet.
+- **Jede Seite verlangt die Rolle `owner`, und zwar als Vorgabe, nicht als Liste.** Wer später eine
+  Seite hinzufügt, findet sie geschützt vor. Offen ist nur, was ausdrücklich `[AllowAnonymous]`
+  trägt: heute die Anmeldeseite und die Fehlerseite, später die Reviewansicht unter
+  `/review/{token}`, die sich mit ihrem Token ausweist statt mit einer Anmeldung. Der Test
+  `AuthorizationDefaultTests` führt diese Ausnahmen namentlich und schlägt fehl, sobald eine
+  hinzukommt, die dort nicht steht.
+- Stimmt das Passwort nicht, antwortet die Seite mit einem einzigen Satz, der nicht verrät, was
+  falsch war, und der Versuch zählt auf den Limiter `login`, also zehn Versuche pro Minute und
+  Clientadresse.
+- Weder das Passwort noch sein Hash wird jemals in ein Log geschrieben.
+
+### Der Konfigurationsschlüssel
+
+| Schlüssel | Bedeutung | Entwicklungswert |
+| --- | --- | --- |
+| `Owner:PasswordHash` | Der Hash des Passworts des Eigentümers, erzeugt mit dem Befehl aus dem nächsten Abschnitt. Niemals das Passwort selbst. | leer in `appsettings.json` |
+
+In Azure heißt derselbe Schlüssel als App Setting `Owner__PasswordHash`.
+
+**Ohne diesen Wert kommt niemand hinein.** Außerhalb der Entwicklung startet die Anwendung erst gar
+nicht, wenn er fehlt, und nennt beim Start den fehlenden Schlüssel. Das ist dieselbe Wahl wie bei
+den Data-Protection-Schlüsseln und aus demselben Grund: eine Anwendung, die läuft und in die sich
+niemand anmelden kann, meldet ihren Fehler erst dem, der ihn ohnehin schon hat.
+
+**In der Entwicklung** steht in `src/ReviewMyDoc.Web/appsettings.Development.json` der Hash des
+Passworts `entwicklung`. Damit lässt sich ein frisch geklontes Repository ohne jede Einrichtung
+starten und benutzen. Diese Datei wird nur gelesen, wenn `ASPNETCORE_ENVIRONMENT` auf `Development`
+steht, also niemals in Azure. Wer trotzdem lokal ein eigenes Passwort will, setzt es wie unten
+beschrieben in den Benutzergeheimnissen; die gewinnen gegen die Datei.
+
+### Den Hash erzeugen
+
+Die Anwendung bringt den Befehl dafür selbst mit. Er fragt nach dem Passwort, zeigt es beim Tippen
+nicht an, fragt es zur Sicherheit ein zweites Mal ab und gibt den Hash aus. Er speichert das
+Passwort nirgends, schreibt es in keine Datei und nimmt es **nicht als Argument** entgegen, denn ein
+Argument stünde in der Verlaufsdatei der Kommandozeile, unter Windows in `ConsoleHost_history.txt`,
+und wäre während des Laufs in der Prozessliste lesbar.
+
+```
+dotnet run --project src/ReviewMyDoc.Web -- passwort-hash
+```
+
+Der Lauf sieht so aus:
+
+```
+Passwort:
+Passwort wiederholen:
+
+Der Hash für Owner:PasswordHash, siehe docs/Betrieb.md:
+AQAAAAIAAYagAAAAEL... (eine lange Zeichenfolge)
+```
+
+Die Eingabeaufforderungen gehen auf die Fehlerausgabe, der Hash allein auf die Standardausgabe. Wer
+den Hash direkt weiterverarbeiten will, kann ihn deshalb umleiten. Für ein Skript nimmt der Befehl
+das Passwort auch als eine Zeile auf der Standardeingabe entgegen; dann entfällt die zweite Abfrage.
+
+Jeder Lauf erzeugt einen anderen Hash, auch für dasselbe Passwort. Das ist richtig so: zu jedem Hash
+gehört ein eigener Zufallswert. Es genügt ein Lauf, und sein Ergebnis ist der Wert, der gesetzt
+wird.
+
+### Den Hash setzen
+
+**Lokal**, in den Benutzergeheimnissen des eigenen Rechners, nicht in einer Datei des Repositorys:
+
+```
+dotnet user-secrets --project src/ReviewMyDoc.Web set "Owner:PasswordHash" "<der ausgegebene Hash>"
+```
+
+Der Hash ist kein Geheimnis in dem Sinne, dass er ein Passwort wäre, aber er gehört trotzdem nicht
+ins Repository: aus ihm lässt sich ein schwaches Passwort erraten, und das Repository ist öffentlich.
+
+**In Azure**, als App Setting der Web App:
+
+```
+Owner__PasswordHash = <der ausgegebene Hash>
+```
+
+Oder mit der Azure-Befehlszeile:
+
+```
+az webapp config appsettings set --name <web-app> --resource-group <gruppe> \
+  --settings "Owner__PasswordHash=<der ausgegebene Hash>"
+```
+
+Nach dem Setzen startet die Web App neu, und das neue Passwort gilt. Bestehende Anmeldungen bleiben
+dabei gültig, denn sie hängen am Cookie und nicht am Hash. Wer sie beenden will, tauscht zusätzlich
+die Data-Protection-Schlüssel aus; dann ist jede Sitzung und jedes offene Formular ungültig.
+
+**Passwort ändern:** denselben Befehl noch einmal laufen lassen und den neuen Hash setzen. Es gibt
+nichts weiter zu tun, weil es nichts gibt, wo ein altes Passwort noch stünde.

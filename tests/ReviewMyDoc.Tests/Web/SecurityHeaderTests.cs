@@ -5,19 +5,18 @@
 // breaks nothing visible and would be noticed by nobody.
 
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 using ReviewMyDoc.Web.Security;
 
 namespace ReviewMyDoc.Tests.Web;
 
 /// <summary>Integration tests of <see cref="SecurityHeaders"/>.</summary>
-public sealed class SecurityHeaderTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class SecurityHeaderTests : IClassFixture<OwnerApplication>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly OwnerApplication _factory;
 
     /// <summary>Takes the application the test class shares.</summary>
     /// <param name="factory">The application under test.</param>
-    public SecurityHeaderTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    public SecurityHeaderTests(OwnerApplication factory) => _factory = factory;
 
     // A file is what its Content-Type says it is. Without this header a browser
     // may sniff an uploaded document into something it runs.
@@ -130,9 +129,29 @@ public sealed class SecurityHeaderTests : IClassFixture<WebApplicationFactory<Pr
     [InlineData("/Error")]
     public async Task The_rendered_page_carries_no_inline_style_and_no_inline_script(string path)
     {
-        using var client = _factory.CreateClient();
+        var client = await _factory.OwnerClientAsync();
 
         var html = await client.GetStringAsync(path, TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain("<style", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<script", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" style=", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" onclick=", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The sign-in page is the one page an anonymous visitor sees, and it is the
+    // page most likely to want a style of its own, for the distance between its
+    // two elements. It gets it out of site.css, which is why it is checked here
+    // separately: an owner client would be redirected away from it and this test
+    // would quietly check the start page instead.
+    [Fact]
+    public async Task The_sign_in_page_carries_no_inline_style_and_no_inline_script()
+    {
+        var client = _factory.CreateAnonymousClient();
+
+        var html = await client.GetStringAsync(
+            OwnerAuthentication.LoginPath,
+            TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain("<style", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<script", html, StringComparison.OrdinalIgnoreCase);
@@ -151,7 +170,7 @@ public sealed class SecurityHeaderTests : IClassFixture<WebApplicationFactory<Pr
     [InlineData("/gibt-es-nicht")]
     public async Task Every_kind_of_response_carries_the_headers(string path)
     {
-        using var client = _factory.CreateClient();
+        var client = await _factory.OwnerClientAsync();
 
         var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
 
@@ -166,7 +185,7 @@ public sealed class SecurityHeaderTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task No_header_is_sent_twice()
     {
-        using var client = _factory.CreateClient();
+        var client = await _factory.OwnerClientAsync();
 
         var response = await client.GetAsync("/", TestContext.Current.CancellationToken);
 
@@ -183,7 +202,7 @@ public sealed class SecurityHeaderTests : IClassFixture<WebApplicationFactory<Pr
 
     private async Task<string> HeaderAsync(string path, string name)
     {
-        using var client = _factory.CreateClient();
+        var client = await _factory.OwnerClientAsync();
 
         var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
 
