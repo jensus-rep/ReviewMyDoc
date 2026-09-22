@@ -50,6 +50,23 @@ public sealed class DokumentlisteTests
         Assert.DoesNotContain("Es gibt noch keine Dokumente.", html, StringComparison.Ordinal);
     }
 
+    // Every row is a way into the outline of that document, not only a line
+    // of text about it.
+    [Fact]
+    public async Task A_document_row_leads_to_its_outline()
+    {
+        using var application = new OwnerApplication();
+        using var client = await application.CreateOwnerClientAsync();
+        var documents = application.Services.GetRequiredService<DocumentService>();
+        var created = Assert.IsType<DocumentResult.Success>(
+            await documents.CreateDocumentAsync("owner", "Gutachten Musterstraße", TestContext.Current.CancellationToken));
+
+        var response = await client.GetAsync("/dokumente", TestContext.Current.CancellationToken);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains($"href=\"/dokumente/{created.Document.Id.Value}\"", html, StringComparison.Ordinal);
+    }
+
     // The link into the frame's own navigation, so the list is reachable from
     // every page and not only by typing the address.
     [Fact]

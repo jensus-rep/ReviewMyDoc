@@ -1,0 +1,132 @@
+@page "/dokumente/{documentId}"
+@*
+    The outline of one document: its sections, with a form to append one, and
+    for each section a form to rename it, a pair of buttons to move it and a
+    link that asks before it is deleted. No section is ever removed straight
+    from this list - the deleting form only appears after the visitor followed
+    that link and saw what is about to happen, because a browser confirm()
+    cannot run under the Content Security Policy of this application.
+
+    Every mutating form carries the ETag the page was rendered with as a
+    hidden field, so GliederungModel can tell a change made here from one made
+    by another tab in between and never overwrite it silently. The loop
+    variable below is named entry and not "section" - the obvious word - since
+    @@section is a reserved Razor directive and the parser refuses it even as
+    a plain identifier.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model GliederungModel
+@{
+    ViewData["Title"] = Model.Title;
+
+    var newHeadingField = new FieldModel(nameof(Model.NewHeading), "Neue Überschrift")
+    {
+        Value = Model.NewHeading,
+        Error = Model.NewHeadingError,
+        Required = true,
+    };
+    var addButton = new ButtonModel("Abschnitt hinzufügen");
+}
+
+<h1>@Model.Title</h1>
+<p>@Model.StateLabel</p>
+
+@if (Model.Message is not null)
+{
+    @* role="alert" so a screen reader reads the sentence as soon as the page
+       comes back, exactly as Anmeldung.cshtml does for its own message. *@
+    <p class="gliederung__meldung" role="alert">@Model.Message</p>
+}
+
+<div class="surface karte">
+    @if (Model.Sections.Count == 0)
+    {
+        <p>Dieses Dokument hat noch keine Abschnitte.</p>
+    }
+    else
+    {
+        <ol class="gliederung__abschnitte">
+            @for (var index = 0; index < Model.Sections.Count; index++)
+            {
+                var entry = Model.Sections[index];
+                var confirmingDelete = Model.PendingDeleteSectionId == entry.Id.Value;
+                var renaming = Model.RenameSectionId == entry.Id.Value;
+                var headingField = new FieldModel(nameof(Model.RenameHeading), $"Überschrift (Abschnitt {entry.Order})")
+                {
+                    Id = $"ueberschrift-{entry.Id.Value}",
+                    Value = renaming && Model.RenameHeading is not null ? Model.RenameHeading : entry.Heading,
+                    Error = renaming ? Model.RenameError : null,
+                    Required = true,
+                };
+                var saveButton = new ButtonModel("Speichern") { Variant = ButtonVariant.Secondary };
+                var upButton = new ButtonModel("Nach oben") { Variant = ButtonVariant.Secondary, Disabled = index == 0 };
+                var downButton = new ButtonModel("Nach unten") { Variant = ButtonVariant.Secondary, Disabled = index == Model.Sections.Count - 1 };
+                var deleteLink = new ButtonModel("Löschen")
+                {
+                    Variant = ButtonVariant.Secondary,
+                    Href = $"/dokumente/{Model.DocumentId}?confirmDelete={entry.Id.Value}",
+                };
+                var cancelLink = new ButtonModel("Abbrechen") { Variant = ButtonVariant.Secondary, Href = $"/dokumente/{Model.DocumentId}" };
+                var confirmButton = new ButtonModel("Endgültig löschen");
+
+                <li class="gliederung__abschnitt">
+                    <span class="gliederung__nummer">@entry.Order</span>
+
+                    @if (confirmingDelete)
+                    {
+                        <div class="gliederung__bestaetigung">
+                            <p role="alert">Den Abschnitt „@entry.Heading“ wirklich löschen? Der Text des Abschnitts geht dabei verloren.</p>
+                            <div class="gliederung__bestaetigung-formular">
+                                <form method="post" asp-page-handler="ConfirmDelete">
+                                    <input type="hidden" name="SectionId" value="@entry.Id.Value" />
+                                    <input type="hidden" name="ETagValue" value="@Model.ETag" />
+                                    <partial name="Ui/_Button" model="confirmButton" />
+                                </form>
+                                <partial name="Ui/_Button" model="cancelLink" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="RenameSection" class="gliederung__umbenennen">
+                            <input type="hidden" name="RenameSectionId" value="@entry.Id.Value" />
+                            <input type="hidden" name="ETagValue" value="@Model.ETag" />
+                            <partial name="Ui/_Field" model="headingField" />
+                            <partial name="Ui/_Button" model="saveButton" />
+                        </form>
+
+                        <div class="gliederung__aktionen">
+                            <form method="post" asp-page-handler="MoveUp">
+                                <input type="hidden" name="SectionId" value="@entry.Id.Value" />
+                                <input type="hidden" name="ETagValue" value="@Model.ETag" />
+                                @foreach (var other in Model.Sections)
+                                {
+                                    <input type="hidden" name="SectionOrder" value="@other.Id.Value" />
+                                }
+                                <partial name="Ui/_Button" model="upButton" />
+                            </form>
+                            <form method="post" asp-page-handler="MoveDown">
+                                <input type="hidden" name="SectionId" value="@entry.Id.Value" />
+                                <input type="hidden" name="ETagValue" value="@Model.ETag" />
+                                @foreach (var other in Model.Sections)
+                                {
+                                    <input type="hidden" name="SectionOrder" value="@other.Id.Value" />
+                                }
+                                <partial name="Ui/_Button" model="downButton" />
+                            </form>
+                            <partial name="Ui/_Button" model="deleteLink" />
+                        </div>
+                    }
+                </li>
+            }
+        </ol>
+    }
+</div>
+
+<div class="surface karte karte--schmal gliederung__neu">
+    <form method="post" asp-page-handler="AddSection">
+        <input type="hidden" name="ETagValue" value="@Model.ETag" />
+        <partial name="Ui/_Field" model="newHeadingField" />
+        <partial name="Ui/_Button" model="addButton" />
+    </form>
+</div>

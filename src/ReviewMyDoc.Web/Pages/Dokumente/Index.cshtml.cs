@@ -38,14 +38,14 @@ public sealed class IndexModel : PageModel
 
     /// <summary>Turns one document into the row that shows it.</summary>
     /// <remarks>
-    /// No action: the outline page a row would lead to,
-    /// <c>/dokumente/{documentId}</c>, is the next task and does not exist yet.
-    /// A row without one is still a complete entry of the list, as
-    /// components/rows/README.md allows.
+    /// The action leads to the outline of the document at
+    /// <c>/dokumente/{documentId}</c>, so every row of the list is a way in,
+    /// not only a line of text about it.
     /// </remarks>
     private static RowModel RowOf(Document document) => new(document.Title)
     {
         Text = $"{DocumentStateLabel.Of(document.State)} · zuletzt geändert am "
             + document.UpdatedAt.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+        Action = new RowActionModel("Öffnen", $"/dokumente/{document.Id.Value}"),
     };
 }
