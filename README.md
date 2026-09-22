@@ -58,7 +58,7 @@ src/ReviewMyDoc.Infrastructure/    Implementierungen der Schnittstellen aus Core
 tests/ReviewMyDoc.Tests/           xUnit: Unit-Tests und Integrationstests über WebApplicationFactory
 components/                        framework-freie Bausteine, ausgeliefert unter /components/, Regeln in components/README.md
 scripts/build-components.mjs       Frontend-Build (esbuild)
-docs/                              Konzept, Konventionen, Datenmodell
+docs/                              Konzept, Konventionen, Datenmodell, Betrieb
 ```
 
 Der vollständige Zielaufbau mit allen künftigen Ordnern und ihrer Begründung steht in
@@ -74,3 +74,6 @@ Der vollständige Zielaufbau mit allen künftigen Ordnern und ihrer Begründung 
 - [docs/Datenmodell.md](docs/Datenmodell.md): hier steht, wie die Daten als Blobs abgelegt sind,
   unter welchen Pfaden und mit welchen Zusicherungen. Zum Lesen, bevor man einen Pfad oder ein
   JSON-Feld ändert.
+- [docs/Betrieb.md](docs/Betrieb.md): hier steht jeder Konfigurationsschlüssel mit seiner Bedeutung,
+  wo die Daten liegen und was in Azure eingerichtet sein muss. Zum Nachschlagen beim Einrichten und
+  beim Veröffentlichen. Für den rein lokalen Start braucht man daraus nichts.
