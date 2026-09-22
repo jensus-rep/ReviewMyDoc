@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Busy Region Demo</title>
+<!--
+  Demo of the component busy-region: a panel that loads slowly enough for the
+  placeholder to appear, and one that loads so fast it never does. The
+  placeholder here is made of plain bars on purpose, so the demo does not depend
+  on the component skeleton. The only script besides the simulated requests is
+  the mode switch, as in components/tokens/demo.html.
+-->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="busy-region.css">
+<style>
+  /* This page uses tokens only, no raw values, so it also checks them. */
+  body {
+    margin: 0;
+    padding: var(--space-10) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+  }
+  .wrap { max-width: 56em; margin-inline: auto; display: grid; gap: var(--space-6); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  p { margin: 0; max-width: var(--measure-text); }
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+  .lead { color: var(--ink-2); }
+  .panel {
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-m);
+    padding: var(--space-6);
+    min-height: 9em;
+  }
+  .row { display: flex; gap: var(--space-6); flex-wrap: wrap; }
+  .row button {
+    font: inherit;
+    border: 0;
+    background: none;
+    color: var(--blue);
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+  .row button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+  .list > div { display: flex; justify-content: space-between; gap: var(--space-4); padding: var(--space-2) 0; border-top: var(--hairline-width) solid var(--hairline); }
+  .list > div:first-child { border-top: 0; }
+  .list span:last-child { color: var(--ink-2); }
+  /* Demo placeholder, deliberately without the skeleton component. */
+  .bar { height: var(--space-2); border-radius: var(--radius-s); background: var(--hairline); margin: var(--space-4) 0; }
+  .bar.s { width: 40%; } .bar.m { width: 70%; }
+
+  /* The switch is part of the demo, not of the component, and stays quiet. */
+  .switch { display: flex; gap: var(--space-1); }
+  .switch button {
+    font: inherit;
+    font-size: var(--font-size-label-web);
+    color: var(--ink-2);
+    background: none;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-button);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); }
+  .switch button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Busy Region</h1>
+      <p class="lead">Platzhalter und Inhalt im selben Bereich, ohne Aufblitzen.</p>
+    </div>
+    <div class="switch" role="group" aria-label="Darstellung">
+      <button type="button" data-set="system" aria-pressed="true">System</button>
+      <button type="button" data-set="light" aria-pressed="false">Hell</button>
+      <button type="button" data-set="dark" aria-pressed="false">Dunkel</button>
+    </div>
+  </div>
+
+  <div class="panel busy-region" id="region" aria-busy="true">
+    <div class="busy-region__placeholder" aria-hidden="true"><div class="bar s"></div><div class="bar"></div><div class="bar m"></div><div class="bar"></div></div>
+    <div class="busy-region__content">
+      <div class="list">
+        <div><span>Mustermann ./. Muster GmbH</span><span>29.09.</span></div>
+        <div><span>Beispiel ./. Nordlicht Logistik</span><span>25.09.</span></div>
+        <div><span>Schulz ./. Beispiel AG</span><span>07.10.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <button type="button" data-ms="1500">Laden, 1,5 Sekunden</button>
+    <button type="button" data-ms="150">Laden, 150 ms (kein Platzhalter)</button>
+  </div>
+
+</div>
+<script>
+  // Demo only: simulated requests.
+  var region = document.getElementById('region');
+  function load(ms) {
+    region.setAttribute('aria-busy', 'true');
+    setTimeout(function () { region.removeAttribute('aria-busy'); }, ms);
+  }
+  document.querySelectorAll('[data-ms]').forEach(function (b) { b.onclick = function () { load(+b.dataset.ms); }; });
+  load(1500);
+
+  // Mode switch from components/tokens/demo.html. Without data-theme the system
+  // decides, with it the page forces the mode.
+  var root = document.documentElement;
+  document.querySelectorAll('.switch button').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var mode = button.dataset.set;
+      if (mode === 'system') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', mode);
+      document.querySelectorAll('.switch button').forEach(function (other) {
+        other.setAttribute('aria-pressed', String(other === button));
+      });
+    });
+  });
+</script>
+</body>
+</html>

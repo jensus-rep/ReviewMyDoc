@@ -1,0 +1,125 @@
+/*!
+ * Button 0.1.0 · Atelier (Process 51)
+ * The one interactive surface of a page: primary in the accent colour, secondary
+ * as a text link with a hairline frame, both also as a disabled state. It owns no
+ * value of its own; colour, geometry and motion come from the design tokens.
+ * Works on <button> and on <a>, and can share its element with the component
+ * busy-button without either knowing the other.
+ */
+
+/* Defaults in :where(), so any page can override them without a specificity
+   fight. Every value is a token or derived from one. */
+:where(.button) {
+  --button-foreground: var(--ink);
+  --button-background: transparent;
+  --button-border-color: transparent;
+  --button-radius: var(--radius-button);
+  --button-padding-block: var(--space-3);
+  --button-padding-inline: var(--space-5);
+  --button-font-size: var(--font-size-text-web);
+  --button-font-weight: var(--font-weight-title);
+  --button-gap: var(--space-2);
+
+  /* The focus ring is twice the hairline, so it stays visible next to the frame
+     of the secondary variant. */
+  --button-focus-color: var(--blue);
+  --button-focus-width: calc(var(--hairline-width) * 2);
+  --button-focus-offset: var(--space-1);
+
+  /* Hover and active mix the surface towards the text colour. That darkens it in
+     light mode and lightens it in dark mode, without a second set of values. */
+  --button-hover-mix: 12%;
+  --button-active-mix: 22%;
+
+  /* A disabled control is exempt from the contrast rule and has to read as off. */
+  --button-disabled-opacity: 0.4;
+
+  --button-duration: var(--motion-duration);
+  --button-ease: var(--motion-ease);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--button-gap);
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--button-padding-block) var(--button-padding-inline);
+  border: var(--hairline-width) solid var(--button-border-color);
+  border-radius: var(--button-radius);
+  background: var(--button-background);
+  color: var(--button-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--button-font-size);
+  font-weight: var(--button-font-weight);
+  line-height: var(--line-height-title);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+
+  /* A <button> brings the system look, an <a> brings neither padding nor this
+     box model; appearance:none lets both start from the same place. */
+  -webkit-appearance: none;
+  appearance: none;
+
+  /* The duration is the token, so "reduce motion" switches the transition off
+     without a rule of our own. */
+  transition:
+    background-color var(--button-duration) var(--button-ease),
+    border-color var(--button-duration) var(--button-ease),
+    color var(--button-duration) var(--button-ease);
+}
+
+/* Primary: the one filled surface of an area, in the accent colour. */
+.button--primary {
+  --button-foreground: var(--bg);
+  --button-background: var(--blue);
+  --button-border-color: var(--blue);
+}
+
+/* Secondary: a text link that carries a frame, so it can be found and hit
+   without a coloured surface. The frame is the second characteristic besides the
+   colour, so colour alone does not carry the meaning. */
+.button--secondary {
+  --button-foreground: var(--blue);
+  --button-background: transparent;
+  --button-border-color: var(--hairline);
+}
+
+/* Pointer states. Only the surface changes, never the size, so nothing shifts. */
+@media (hover: hover) {
+  .button--primary:hover:not(:disabled, [aria-disabled="true"]) {
+    --button-background: color-mix(in srgb, var(--ink) var(--button-hover-mix), var(--blue));
+    --button-border-color: color-mix(in srgb, var(--ink) var(--button-hover-mix), var(--blue));
+  }
+
+  .button--secondary:hover:not(:disabled, [aria-disabled="true"]) {
+    --button-border-color: var(--blue);
+  }
+}
+
+.button--primary:active:not(:disabled, [aria-disabled="true"]) {
+  --button-background: color-mix(in srgb, var(--ink) var(--button-active-mix), var(--blue));
+  --button-border-color: color-mix(in srgb, var(--ink) var(--button-active-mix), var(--blue));
+}
+
+.button--secondary:active:not(:disabled, [aria-disabled="true"]) {
+  --button-background: var(--bg-2);
+  --button-border-color: var(--blue);
+}
+
+/* Keyboard focus. An outline, not a box-shadow: busy-button owns the ::after of
+   this element and a shadow would be clipped by a surrounding overflow. */
+.button:focus-visible {
+  outline: var(--button-focus-width) solid var(--button-focus-color);
+  outline-offset: var(--button-focus-offset);
+}
+
+/* Disabled, for the real attribute on a <button> and for aria-disabled on an
+   <a>, which has no such attribute. */
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: var(--button-disabled-opacity);
+  cursor: default;
+}

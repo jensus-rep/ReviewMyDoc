@@ -1,0 +1,120 @@
+/*!
+ * Skeleton 0.1.1 · Atelier (Process 51)
+ * Grey blocks in the shape of the coming content. A slow sheen by default,
+ * a staggered pulse as modifier, and a page variant for document panes.
+ * Colour, radius and the distances that sit on the 4 px grid come from the
+ * design tokens; the block heights are the component's own geometry and stay
+ * behind its own variables, as the README explains.
+ */
+
+/* Defaults in :where(), so a page can override them without a specificity
+   fight. Every value is a token, derived from one, or named as an exception in
+   the README. */
+:where(.skeleton) {
+  /* A hairline is the quiet grey of the design language: visible against both
+     grounds, never mistaken for content. It follows the mode. */
+  --skeleton-fill: var(--hairline);
+
+  /* The sheen is the page ground sweeping across the placeholder. Mixed from
+     the ground token, so it is a light sweep in light mode and a dark one in
+     dark mode instead of a white flash on black. */
+  --skeleton-shine: color-mix(in srgb, var(--bg) 65%, transparent);
+
+  /* Half the card radius, because a block is far smaller than a card. */
+  --skeleton-radius: calc(var(--radius-s) / 2);
+
+  --skeleton-gap: 10px;
+  --skeleton-block-height: 10px;
+  --skeleton-title-height: 18px;
+  --skeleton-figure-height: 30px;
+  --skeleton-figure-width: 36px;
+  --skeleton-circle-size: var(--space-6);
+  --skeleton-row-gap: var(--space-4);
+  --skeleton-row-padding-block: var(--space-2);
+  --skeleton-row-value-width: var(--space-9);
+  --skeleton-space-height: var(--space-2);
+
+  /* One pass of the sheen and one beat of the pulse. No token: the tokens carry
+     the duration of state changes, not the speed of a loop that runs on. */
+  --skeleton-sheen-speed: 1.8s;
+  --skeleton-pulse-speed: 1.6s;
+  --skeleton-pulse-step: 90ms;
+  --skeleton-pulse-opacity: 0.45;
+
+  /* The page variant is a scale model of a document; its measures are named in
+     the README and sit below the 4 px grid on purpose. */
+  --skeleton-page: var(--bg);
+  --skeleton-page-gap: 9px;
+  --skeleton-page-padding-block: 36px;
+  --skeleton-page-padding-inline: 38px;
+  --skeleton-page-block-height: 6px;
+  --skeleton-page-title-height: 9px;
+
+  /* A sheet lies a little above the ground. Mixed towards the text colour, so
+     it is a soft shadow in light mode and a soft halo in dark mode. */
+  --skeleton-page-shadow:
+    0 var(--hairline-width) calc(var(--hairline-width) * 3)
+    color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.skeleton { display: grid; gap: var(--skeleton-gap); align-content: start; }
+.skeleton[hidden], .skeleton__block[hidden] { display: none; }
+
+.skeleton__block {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: var(--skeleton-block-height);
+  border-radius: var(--skeleton-radius);
+  background: var(--skeleton-fill);
+}
+.skeleton__block::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  transform: translateX(-100%);
+  animation: skeleton-sheen var(--skeleton-sheen-speed) ease-in-out infinite;
+}
+
+.skeleton__block--title { height: var(--skeleton-title-height); width: 45%; }
+.skeleton__block--figure { height: var(--skeleton-figure-height); width: var(--skeleton-figure-width); }
+.skeleton__block--short { width: 40%; }
+.skeleton__block--mid { width: 70%; }
+.skeleton__block--circle { width: var(--skeleton-circle-size); height: var(--skeleton-circle-size); border-radius: 50%; }
+
+/* A list row: label left, short value right. */
+.skeleton__row { display: flex; justify-content: space-between; align-items: center; gap: var(--skeleton-row-gap); padding-block: var(--skeleton-row-padding-block); }
+.skeleton__row > .skeleton__block:first-child { flex: 1; max-width: 60%; }
+.skeleton__row > .skeleton__block:last-child { width: var(--skeleton-row-value-width); }
+
+.skeleton__space { height: var(--skeleton-space-height); }
+
+/* Pulse instead of sheen. Stagger blocks with style="--i: 2". */
+.skeleton--pulse .skeleton__block::after { display: none; }
+.skeleton--pulse .skeleton__block {
+  animation: skeleton-pulse var(--skeleton-pulse-speed) ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * var(--skeleton-pulse-step));
+}
+
+/* A document page with text lines. */
+.skeleton--page {
+  gap: var(--skeleton-page-gap);
+  padding: var(--skeleton-page-padding-block) var(--skeleton-page-padding-inline);
+  background: var(--skeleton-page);
+  border: var(--hairline-width) solid var(--skeleton-fill);
+  box-shadow: var(--skeleton-page-shadow);
+}
+/* The lines of the model are so low that half their height is their radius. */
+.skeleton--page .skeleton__block {
+  height: var(--skeleton-page-block-height);
+  border-radius: calc(var(--skeleton-page-block-height) / 2);
+}
+.skeleton--page .skeleton__block--title { height: var(--skeleton-page-title-height); width: 50%; }
+
+@keyframes skeleton-sheen { to { transform: translateX(100%); } }
+@keyframes skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--skeleton-pulse-opacity); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton__block::after { display: none; }
+  .skeleton--pulse .skeleton__block { animation: none; }
+}

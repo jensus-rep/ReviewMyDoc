@@ -1,0 +1,135 @@
+/*!
+ * Tokens 1.0.0 · Atelier (Process 51)
+ * The single source for colour, type, spacing, geometry and motion values of the
+ * design language (docs/Design/designsprache.md, version 1.1). Every component and
+ * every page reads these variables instead of raw values. Light mode is the default;
+ * dark mode follows the system and can be forced with data-theme on <html>.
+ */
+
+:root {
+  /* Follows the mode, so native controls and scrollbars match the page. */
+  color-scheme: light dark;
+
+  /* Colour, light mode. Roles from the "Farbwerte" table. */
+  --color-bg: #ffffff;        /* Grund */
+  --color-bg-2: #f5f5f7;      /* Sekundärgrund */
+  --color-hairline: #e5e5ea;  /* Haarlinie */
+  --color-ink: #1d1d1f;       /* Text */
+  --color-ink-2: #6e6e73;     /* Sekundärtext */
+  --color-blue: #0a7aff;      /* Akzent, interaktiv */
+  --color-red: #ff3b30;       /* Kritisch */
+
+  /* Short aliases. Same values under the names components use in markup. */
+  --bg: var(--color-bg);
+  --bg-2: var(--color-bg-2);
+  --hairline: var(--color-hairline);
+  --ink: var(--color-ink);
+  --ink-2: var(--color-ink-2);
+  --blue: var(--color-blue);
+  --red: var(--color-red);
+
+  /* Type. System font only, no webfonts for our own brand. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+
+  /* Size scale, one value per role for the application and one for the website. */
+  --font-size-page-title-app: 22px;
+  --font-size-page-title-web: 44px;
+  --font-size-section-title-app: 15px;
+  --font-size-section-title-web: 24px;
+  --font-size-text-app: 14px;
+  --font-size-text-web: 18px;
+  --font-size-label-app: 12px;
+  --font-size-label-web: 14px;
+
+  /* Weights: normal for text, medium for titles and the one emphasis per area. */
+  --font-weight-text: 400;
+  --font-weight-title: 500;
+
+  /* Line height and tracking. 1.55 is the value from the type table. */
+  --line-height-text: 1.55;
+  --line-height-title: 1.15;
+  --letter-spacing-page-title-web: -0.02em;
+
+  /* Text columns on the website stay below 62 characters. */
+  --measure-text: 62ch;
+
+  /* Spacing, 4 px grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  /* Geometry. Corners 8 to 12 px, buttons 7 px, hairlines 1 px. */
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-button: 7px;
+  --hairline-width: 1px;
+
+  /* Elevation. Only for layers that float: dialog, menu, front card of a stack.
+     Never for cards in the flow. */
+  --shadow-float: 0 24px 60px rgba(0, 0, 0, 0.10);
+
+  /* Motion. Both durations stay below half a second. */
+  --motion-duration: 200ms;
+  --motion-duration-story: 460ms;
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Dark mode by system preference, unless the page forces light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg: #000000;
+    --color-bg-2: #1c1c1e;
+    --color-hairline: #2c2c2e;
+    --color-ink: #f5f5f7;
+    --color-ink-2: #98989d;
+    --color-blue: #0a84ff;
+    --color-red: #ff453a;
+
+    /* A floating layer needs a deeper shadow on a black ground. */
+    --shadow-float: 0 24px 60px rgba(0, 0, 0, 0.60);
+  }
+}
+
+/* Dark mode forced by the page. Same values as the block above. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #000000;
+  --color-bg-2: #1c1c1e;
+  --color-hairline: #2c2c2e;
+  --color-ink: #f5f5f7;
+  --color-ink-2: #98989d;
+  --color-blue: #0a84ff;
+  --color-red: #ff453a;
+
+  --shadow-float: 0 24px 60px rgba(0, 0, 0, 0.60);
+}
+
+/* Light mode forced by the page. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Numbers in lists and tables line up. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Reduce motion" switches every transition driven by these variables off. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration: 0ms;
+    --motion-duration-story: 0ms;
+  }
+}

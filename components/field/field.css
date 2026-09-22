@@ -1,0 +1,182 @@
+/*!
+ * Field 0.2.0 · Atelier (Process 51)
+ * One form field with label, optional hint and optional error message, for text,
+ * e-mail, password, a textarea, a file and a closed choice (select). The hint
+ * and the error belong to the control through aria-describedby, which the
+ * markup has to set; this file only gives them their place and their look, out
+ * of the design tokens.
+ */
+
+/* Defaults in :where(), so a page can override them without a specificity
+   fight. Every value is a token or derived from one. */
+:where(.field) {
+  --field-gap: var(--space-2);
+  --field-max-width: var(--measure-text);
+
+  --field-label-color: var(--ink-2);
+  --field-label-size: var(--font-size-label-web);
+
+  --field-input-color: var(--ink);
+  --field-input-background: var(--bg);
+  --field-input-border-color: var(--hairline);
+  --field-input-radius: var(--radius-s);
+  --field-input-padding-block: var(--space-3);
+  --field-input-padding-inline: var(--space-3);
+  --field-input-size: var(--font-size-text-web);
+
+  --field-hint-color: var(--ink-2);
+  --field-hint-size: var(--font-size-label-web);
+
+  /* The error text is ink, not red: red stays the small dot in front of it, as
+     the design language asks, and the sentence keeps the contrast of text. */
+  --field-error-color: var(--ink);
+  --field-error-size: var(--font-size-label-web);
+  --field-error-dot-color: var(--red);
+  --field-error-dot-size: var(--space-2);
+
+  --field-focus-color: var(--blue);
+  --field-focus-width: calc(var(--hairline-width) * 2);
+  --field-focus-offset: var(--space-1);
+
+  --field-duration: var(--motion-duration);
+  --field-ease: var(--motion-ease);
+}
+
+.field {
+  display: grid;
+  gap: var(--field-gap);
+  max-width: var(--field-max-width);
+  font-family: var(--font-sans);
+}
+
+.field__label {
+  color: var(--field-label-color);
+  font-size: var(--field-label-size);
+  font-weight: var(--font-weight-text);
+  line-height: var(--line-height-text);
+}
+
+.field__input {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--field-input-padding-block) var(--field-input-padding-inline);
+  border: var(--hairline-width) solid var(--field-input-border-color);
+  border-radius: var(--field-input-radius);
+  background: var(--field-input-background);
+  color: var(--field-input-color);
+  font-family: inherit;
+  font-size: var(--field-input-size);
+  font-weight: var(--font-weight-text);
+  line-height: var(--line-height-text);
+
+  /* Without this the system look of the control would come back on iOS and the
+     radius and the border would be ignored. */
+  -webkit-appearance: none;
+  appearance: none;
+
+  /* The duration is the token, so "reduce motion" switches the transition off
+     without a rule of our own. */
+  transition: border-color var(--field-duration) var(--field-ease);
+}
+
+/* A textarea grows downwards only, so it cannot break the text column. Its
+   height comes from the rows attribute, not from CSS. */
+textarea.field__input {
+  resize: vertical;
+}
+
+/* The file control has no text of its own; its button gets the quiet look of a
+   secondary button without depending on that component. */
+.field__input[type="file"] {
+  padding: var(--space-2) var(--space-3);
+  color: var(--field-label-color);
+  font-size: var(--field-hint-size);
+  cursor: pointer;
+}
+
+.field__input[type="file"]::file-selector-button {
+  margin-inline-end: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline-width) solid var(--field-input-border-color);
+  border-radius: var(--radius-button);
+  background: var(--bg);
+  color: var(--field-focus-color);
+  font-family: inherit;
+  font-size: var(--field-hint-size);
+  font-weight: var(--font-weight-title);
+  cursor: pointer;
+}
+
+/* A closed choice between a few named values. The chevron is drawn from two
+   gradients in the current text colour, so it needs no image file and follows
+   dark mode on its own. */
+select.field__input {
+  padding-inline-end: calc(var(--field-input-padding-inline) + var(--space-5));
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentcolor 50%),
+    linear-gradient(135deg, currentcolor 50%, transparent 50%);
+  background-position:
+    calc(100% - var(--space-4) - 5px) center,
+    calc(100% - var(--space-4)) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--field-input-color);
+  cursor: pointer;
+}
+
+.field__input::placeholder {
+  color: var(--field-label-color);
+  opacity: 1;
+}
+
+/* Keyboard and pointer focus. Text controls match :focus-visible on a click as
+   well, which is what we want: a field being edited is always marked. */
+.field__input:focus-visible {
+  outline: var(--field-focus-width) solid var(--field-focus-color);
+  outline-offset: var(--field-focus-offset);
+  border-color: var(--field-focus-color);
+}
+
+.field__input:disabled {
+  background: var(--bg-2);
+  color: var(--field-label-color);
+  cursor: default;
+}
+
+.field__hint {
+  margin: 0;
+  color: var(--field-hint-color);
+  font-size: var(--field-hint-size);
+  line-height: var(--line-height-text);
+}
+
+/* Error message: a small red dot in the first column, the sentence in the
+   second, so the colour is never the only carrier of the meaning. */
+.field__error {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2);
+  align-items: start;
+  margin: 0;
+  color: var(--field-error-color);
+  font-size: var(--field-error-size);
+  line-height: var(--line-height-text);
+}
+
+.field__error::before {
+  content: "";
+  width: var(--field-error-dot-size);
+  height: var(--field-error-dot-size);
+  border-radius: 50%;
+  background: var(--field-error-dot-color);
+
+  /* Puts the dot on the middle of the first line instead of its top edge. */
+  margin-block-start: calc((1em * var(--line-height-text) - var(--field-error-dot-size)) / 2);
+}
+
+/* Invalid: the frame turns red. The red frame is a non text element and only has
+   to reach a contrast of 3:1, which it does in both modes. */
+.field--invalid {
+  --field-input-border-color: var(--red);
+}

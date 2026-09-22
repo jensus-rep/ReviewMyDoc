@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rows Demo</title>
+<!--
+  Demo of the component rows: items of the same kind separated by hairlines, with
+  and without number, text and action, on both grounds. The only script is the
+  mode switch, as in components/tokens/demo.html.
+-->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="rows.css">
+<style>
+  /* This page uses tokens only, no raw values, so it also checks them. */
+  body {
+    margin: 0;
+    padding: var(--space-10) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+  }
+  .wrap { max-width: 56em; margin-inline: auto; display: grid; gap: var(--space-10); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-section-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+  }
+  p { margin: 0 0 var(--space-4); max-width: var(--measure-text); }
+  p:last-child { margin-bottom: 0; }
+  .lead, .note { color: var(--ink-2); }
+  .note { font-size: var(--font-size-label-web); }
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+  .ground { padding: var(--space-6); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); }
+  .ground--2 { background: var(--bg-2); }
+
+  /* A column of 22.5em is 360 pixels at the default text size: the narrowest
+     the site supports, shown here next to the wide layout. */
+  .narrow { max-width: 22.5em; }
+
+  /* The switch is part of the demo, not of the component, and stays quiet. */
+  .switch { display: flex; gap: var(--space-1); }
+  .switch button {
+    font: inherit;
+    font-size: var(--font-size-label-web);
+    color: var(--ink-2);
+    background: none;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-button);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); }
+  .switch button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Rows</h1>
+      <p class="lead">Gleichartige Einträge, getrennt durch Haarlinien. Hell und dunkel.</p>
+    </div>
+    <div class="switch" role="group" aria-label="Darstellung">
+      <button type="button" data-set="system" aria-pressed="true">System</button>
+      <button type="button" data-set="light" aria-pressed="false">Hell</button>
+      <button type="button" data-set="dark" aria-pressed="false">Dunkel</button>
+    </div>
+  </div>
+
+  <section>
+    <h2>Mit Nummer, Text und Aktion</h2>
+    <ol class="rows">
+      <li class="rows__item">
+        <span class="rows__number">01</span>
+        <h3 class="rows__title">Prozess- und Systemanalyse</h3>
+        <p class="rows__text">Sichtbar machen, wie die Arbeit heute wirklich läuft, und zeigen, wo
+          der Engpass sitzt.</p>
+        <a class="rows__action" href="#alle">Ansehen</a>
+      </li>
+      <li class="rows__item">
+        <span class="rows__number">02</span>
+        <h3 class="rows__title">Softwareentwicklung</h3>
+        <p class="rows__text">Anwendungen, die einen konkreten Ablauf abbilden, mit Datenmodell,
+          Berechtigungen und Freigaben.</p>
+        <a class="rows__action" href="#alle">Ansehen</a>
+      </li>
+      <li class="rows__item">
+        <span class="rows__number">03</span>
+        <h3 class="rows__title">AI-Integration mit deterministischem Rahmen</h3>
+        <p class="rows__text">Sprachmodelle dort, wo unstrukturierte Informationen der Engpass sind,
+          umgeben von Regeln und Protokollen.</p>
+        <a class="rows__action" href="#alle">Ansehen</a>
+      </li>
+    </ol>
+  </section>
+
+  <section id="alle">
+    <h2>Ohne Nummer, ohne Text, ohne Aktion</h2>
+    <p class="note">Jeder Teil kann fehlen, ohne eine Lücke zu hinterlassen.</p>
+    <ul class="rows">
+      <li class="rows__item">
+        <h3 class="rows__title">Nur ein Titel</h3>
+      </li>
+      <li class="rows__item">
+        <h3 class="rows__title">Titel und Aktion</h3>
+        <button class="rows__action" type="button">Öffnen</button>
+      </li>
+      <li class="rows__item">
+        <span class="rows__number">9</span>
+        <h3 class="rows__title">Nummer und Text</h3>
+        <p class="rows__text">Die Nummer steht rechtsbündig, damit ein- und zweistellige Zahlen
+          untereinander stehen.</p>
+      </li>
+      <li class="rows__item">
+        <span class="rows__number">10</span>
+        <h3 class="rows__title">Zweistellige Nummer</h3>
+        <p class="rows__text">Zahlen laufen als <code>tabular-nums</code>, wie die Designsprache es
+          für Listen vorsieht.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Schmal und auf Sekundärgrund</h2>
+    <p class="note">Ist die Liste selbst schmaler als 26 em, steht die Aktion unter dem Text statt rechts daneben. Gemessen wird die Liste, nicht das Fenster.</p>
+    <div class="ground ground--2 narrow">
+      <ul class="rows">
+        <li class="rows__item">
+          <span class="rows__number">01</span>
+          <h3 class="rows__title">Erstgespräch</h3>
+          <p class="rows__text">Eine halbe Stunde, unverbindlich.</p>
+          <a class="rows__action" href="#alle">Termin</a>
+        </li>
+        <li class="rows__item">
+          <span class="rows__number">02</span>
+          <h3 class="rows__title">Analyse</h3>
+          <p class="rows__text">Der Ablauf, wie er heute läuft.</p>
+          <a class="rows__action" href="#alle">Termin</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tastatur</h2>
+    <p class="note">Mit der Tabulatortaste durch die Liste gehen: jede Aktion zeigt einen blauen
+      Fokusrahmen. Aktionen sind Links oder Schaltflächen, nicht anklickbare Zeilen, damit die
+      Reihenfolge der Tastatur der des Textes folgt.</p>
+  </section>
+
+</div>
+
+<script>
+// Only script of this page: the mode switch from components/tokens/demo.html.
+// Without data-theme the system decides, with it the page forces the mode.
+const root = document.documentElement;
+for (const button of document.querySelectorAll('.switch button')) {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.set;
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    for (const other of document.querySelectorAll('.switch button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+  });
+}
+</script>
+</body>
+</html>

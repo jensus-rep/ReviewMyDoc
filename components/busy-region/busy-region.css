@@ -1,0 +1,52 @@
+/*!
+ * Busy Region 0.1.1 · Atelier (Process 51)
+ * An area with a placeholder and content. While aria-busy="true" the
+ * placeholder shows, otherwise the content. The placeholder only fades in
+ * after --busy-region-delay, so fast loads do not flash; the content settles
+ * in softly when it appears. The component brings no colour of its own; the
+ * distance it moves and the duration of the fade come from the design tokens.
+ */
+
+/* Defaults in :where(), so a page can override them without a specificity
+   fight. Every value is a token, derived from one, or named as an exception in
+   the README. */
+:where(.busy-region) {
+  /* Below this a load counts as fast and the placeholder never appears. No
+     token: this is a threshold for the eye, not the duration of a motion. */
+  --busy-region-delay: 300ms;
+
+  /* Fading the placeholder in is a state change, so it is the motion token and
+     stands at 0ms under "reduce motion" without a rule of our own. */
+  --busy-region-fade-duration: var(--motion-duration);
+
+  /* The content settles a touch more slowly than a plain state change. */
+  --busy-region-settle-duration: 320ms;
+
+  /* How far the content rises while it appears. */
+  --busy-region-rise: var(--space-1);
+}
+
+.busy-region[aria-busy="true"] > .busy-region__content,
+.busy-region:not([aria-busy="true"]) > .busy-region__placeholder { display: none; }
+
+.busy-region[aria-busy="true"] > .busy-region__placeholder {
+  animation: busy-region-fade var(--busy-region-fade-duration) ease-out var(--busy-region-delay) both;
+}
+
+/* Animations restart when an element leaves display: none, so this runs on every reveal. */
+.busy-region > .busy-region__content {
+  animation: busy-region-settle var(--busy-region-settle-duration) ease-out both;
+}
+
+@keyframes busy-region-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes busy-region-settle {
+  from { opacity: 0; transform: translateY(var(--busy-region-rise)); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .busy-region > .busy-region__content { animation-name: busy-region-fade; }
+}

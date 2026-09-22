@@ -1,0 +1,88 @@
+/*!
+ * Progress Line 0.1.1 · Atelier (Process 51)
+ * A line two hairlines high at the top edge of a window or area. Indeterminate
+ * by default, determinate with --progress-line-value between 0 and 1. Colour
+ * and height come from the design tokens, so the line reads in both modes.
+ */
+
+/* Defaults in :where(), so a page can override them without a specificity
+   fight. Every value is a token, derived from one, or named as an exception in
+   the README. */
+:where(.progress-line) {
+  /* Two hairlines: visible as a line, still too thin to cover content. */
+  --progress-line-height: calc(var(--hairline-width) * 2);
+  --progress-line-radius: var(--hairline-width);
+
+  /* The running part is the interaction colour, the track behind it a hairline.
+     Both follow the mode. */
+  --progress-line-color: var(--blue);
+  --progress-line-track: var(--hairline);
+
+  /* Fill level of the determinate variant, from 0 to 1. The page sets it. */
+  --progress-line-value: 0;
+
+  /* How much of the width the indeterminate section covers. */
+  --progress-line-section: 40%;
+
+  /* One pass of the running section, and one beat of the pulse that replaces it
+     under "reduce motion". No token: the tokens carry the duration of state
+     changes, not the speed of a loop that runs on. */
+  --progress-line-speed: 1.4s;
+  --progress-line-pulse-speed: 1.6s;
+  --progress-line-pulse-opacity: 0.35;
+
+  /* A curve that runs in and out evenly, because the section crosses the whole
+     width and should not stop at either end. */
+  --progress-line-slide-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* How long the fill level takes to follow a new value. */
+  --progress-line-value-duration: 300ms;
+
+  /* Above the content of the page, for the variant fixed to the window. */
+  --progress-line-layer: 1000;
+}
+
+.progress-line {
+  position: relative;
+  display: block;
+  height: var(--progress-line-height);
+  overflow: hidden;
+}
+
+.progress-line::before {
+  content: "";
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: var(--progress-line-section);
+  border-radius: var(--progress-line-radius);
+  background: var(--progress-line-color);
+  animation: progress-line-slide var(--progress-line-speed) var(--progress-line-slide-ease) infinite;
+}
+
+.progress-line[hidden] { display: none; }
+
+.progress-line--determinate { background: var(--progress-line-track); }
+.progress-line--determinate::before {
+  width: calc(var(--progress-line-value) * 100%);
+  animation: none;
+  transition: width var(--progress-line-value-duration) var(--motion-ease);
+}
+
+/* Fixed to the top of the window, e.g. during a page change. */
+.progress-line--window { position: fixed; top: 0; left: 0; right: 0; z-index: var(--progress-line-layer); }
+
+@keyframes progress-line-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+@keyframes progress-line-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: var(--progress-line-pulse-opacity); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-line:not(.progress-line--determinate)::before {
+    width: 100%;
+    animation: progress-line-pulse var(--progress-line-pulse-speed) ease-in-out infinite;
+  }
+  .progress-line--determinate::before { transition: none; }
+}

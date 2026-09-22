@@ -1,0 +1,194 @@
+/*!
+ * Website tokens 2.2.0 · Atelier (Process 51)
+ * Values of the public website after the approved hero "Richtung B, Raum und Licht",
+ * version 2 (docs/Design/mockups/hero/richtung-b/). They stand beside tokens.css
+ * instead of inside it, so the admin and the customer applications keep design
+ * language 1.1 untouched and never load the website font. Every name starts with
+ * --website-. Light is the default; dark follows the system and can be forced with
+ * data-theme on <html>, with the same selectors as tokens.css.
+ */
+
+/* D-DIN by Datto, SIL Open Font License 1.1 (fonts/OFL.txt), as the renamed subset
+   "P51 Plan": the license reserves the name "D-DIN" for the original, and a subset
+   counts as a modified version. Files instead of data URIs, so the browser caches
+   them once for every page. Only 400 and 700 exist; no other weight is declared. */
+@font-face {
+  font-family: "P51 Plan";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/p51-plan-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "P51 Plan";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/p51-plan-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "P51 Plan Condensed";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/p51-plan-condensed-400.woff2") format("woff2");
+}
+
+:root {
+  /* Follows the mode, so native controls and scrollbars match the page. */
+  color-scheme: light dark;
+
+  /* Colour, light mode. Room, sheet and ink; yellow light is the only accent. */
+  --website-color-room: #eeebe4;        /* Raum: page ground, the stage follows it */
+  --website-color-sheet: #fcfbf8;       /* Blatt: a sheet of the process map */
+  --website-color-surface: #f1efe8;     /* Fläche: the application frame on a sheet */
+  --website-color-ink: #171613;         /* Tusche: text and drawn lines */
+  --website-color-ink-2: #5a5750;       /* Tusche 2: secondary text */
+  --website-color-line: #d2cec4;        /* Linie: hairline, graphics only */
+  --website-color-light-line: #171613;  /* Licht, Linie: in light mode the ink itself */
+  --website-color-light-band: #f1c94f;  /* Licht, Band: yellow marker under the ink line */
+  --website-color-light-dot: #171613;   /* Licht, Punkt: the running case on its path */
+  --website-color-button: #171613;      /* Knopf: ground of the one button */
+  --website-color-button-ink: #fcfbf8;  /* Knopf: its text */
+
+  /* Hard offset shadow: a flat shape without blur. A point at height h throws its
+     shadow h times these factors to the right and down, light from behind left. */
+  --website-shadow-color: rgba(70, 56, 30, 0.085);
+  --website-shadow-offset-x: 0.16;
+  --website-shadow-offset-y: 0.52;
+
+  /* Type. One family; system fonts only as a fallback while the files load. */
+  --website-font-family: "P51 Plan", Bahnschrift, "DIN Alternate", "Arial Narrow", sans-serif;
+  --website-font-family-map: "P51 Plan Condensed", "P51 Plan", Bahnschrift, "Arial Narrow", sans-serif;
+  --website-font-weight-regular: 400;
+  --website-font-weight-bold: 700;
+
+  /* Size scale, desktop values. The block for narrow windows below replaces them.
+     Fluid sizes keep their bounds; the vw value between them is only the slope. */
+  --website-font-size-title: clamp(36px, 3.7vw, 56px);
+  --website-line-height-title: 1.02;
+  --website-letter-spacing-title: -0.018em;
+
+  --website-font-size-statement: clamp(27px, 2.6vw, 42px);
+  --website-line-height-statement: 1.08;
+  --website-letter-spacing-statement: -0.012em;
+
+  --website-font-size-lead: 17.5px;
+  --website-font-size-text: 17px;
+  --website-line-height-text: 1.55;
+  --website-font-size-call: 17px;
+  --website-font-size-addition: 16px;
+  --website-font-size-item: 17px;
+  --website-font-size-button: 17px;
+  --website-font-size-small: 14.5px;
+  --website-font-size-brand: 21px;
+
+  /* Labels in capitals with tracking, bold. */
+  --website-font-size-label: 11.5px;
+  --website-letter-spacing-label: 0.14em;
+
+  /* Title block of the drawing: value and field name. */
+  --website-font-size-title-block-value: 14px;
+  --website-font-size-title-block-field: 9.5px;
+
+  /* Words inside the process map. Steps never get smaller; the box grows. */
+  --website-font-size-map-step: 16px;
+  --website-font-size-map-tool: 16px;
+  --website-font-size-map-role: 12.5px;
+  --website-font-size-map-note: 11.5px;
+  --website-letter-spacing-map-caps: 0.12em;
+
+  /* Page frame after rule 6 of design language 2.1: side edge, height of the
+     pinned header, the text column beside the map (and beside the form of the
+     contact page), and the one corner radius of button, field and notice. */
+  --website-frame-edge: 56px;
+  --website-frame-header-height: 64px;
+  --website-frame-text-column: clamp(300px, 29vw, 430px);
+  --website-radius: 3px;
+
+  /* Camera move. It has no duration: every frame is a function of the scroll
+     position, so these are distances in viewport heights from the top of the
+     stage, read by the hero sequence with getComputedStyle. */
+  --website-camera-stage-length: 7.3;
+  --website-camera-pinned-length: 6.3;
+  --website-camera-sheet-1-end: 1.8;
+  --website-camera-sheet-2-start: 2.5;
+  --website-camera-sheet-2-end: 3.35;
+  --website-camera-application-start: 4;
+  --website-camera-application-end: 4.35;
+  --website-camera-sheet-3-start: 5;
+}
+
+/* Narrow windows below 760px. A custom property cannot stand in a media query
+   condition, so the break point is written out here and in every page rule. */
+@media (max-width: 759px) {
+  :root {
+    --website-font-size-title: clamp(32px, 9.4vw, 40px);
+    --website-font-size-statement: clamp(23px, 6.6vw, 28px);
+    --website-line-height-statement: 1.1;
+    --website-font-size-lead: 16px;
+    --website-font-size-call: 15.5px;
+    --website-font-size-addition: 15px;
+    --website-font-size-item: 15.5px;
+    --website-font-size-small: 14px;
+    --website-font-size-brand: 19px;
+    --website-font-size-label: 10.5px;
+    --website-font-size-title-block-value: 12.5px;
+    --website-font-size-title-block-field: 8.5px;
+    --website-font-size-map-step: 12px;
+    --website-font-size-map-tool: 12px;
+    --website-font-size-map-role: 10px;
+    --website-font-size-map-note: 9px;
+    --website-frame-edge: 18px;
+    --website-frame-header-height: 56px;
+    --website-frame-text-column: calc(100vw - 36px);
+  }
+}
+
+/* Dark mode by system preference, unless the page forces light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --website-color-room: #0c0c0b;
+    --website-color-sheet: #191917;
+    --website-color-surface: #21211e;
+    --website-color-ink: #ecebe4;
+    --website-color-ink-2: #a19e95;
+    --website-color-line: #35342f;
+    --website-color-light-line: #f3cd5a;
+    --website-color-light-band: #3a3219;
+    --website-color-light-dot: #f3cd5a;
+    --website-color-button: #ecebe4;
+    --website-color-button-ink: #0c0c0b;
+
+    /* On a near black room the shadow needs far more cover to stay visible. */
+    --website-shadow-color: rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* Dark mode forced by the page. Same values as the block above. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --website-color-room: #0c0c0b;
+  --website-color-sheet: #191917;
+  --website-color-surface: #21211e;
+  --website-color-ink: #ecebe4;
+  --website-color-ink-2: #a19e95;
+  --website-color-line: #35342f;
+  --website-color-light-line: #f3cd5a;
+  --website-color-light-band: #3a3219;
+  --website-color-light-dot: #f3cd5a;
+  --website-color-button: #ecebe4;
+  --website-color-button-ink: #0c0c0b;
+
+  --website-shadow-color: rgba(0, 0, 0, 0.55);
+}
+
+/* Light mode forced by the page. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}

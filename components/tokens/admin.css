@@ -1,0 +1,74 @@
+/*!
+ * Admin tokens 1.4.0. Silver and graphite with matte surfaces and a spacious document view.
+ * Load after tokens.css and site.css; shared by the admin and the artifact story renderer.
+ */
+:root {
+  --admin-gloss: linear-gradient(145deg, color-mix(in srgb, var(--admin-surface) 97%, var(--admin-ink)) 0%, var(--admin-surface) 38%, var(--admin-muted) 100%);
+  --admin-shadow: 0 18px 48px -28px color-mix(in srgb, var(--admin-ink) 28%, transparent), inset 0 1px 0 color-mix(in srgb, var(--admin-surface) 75%, transparent);
+  --admin-ground: #f0f0f2;
+  --admin-surface: #ffffff;
+  --admin-muted: #e8e8eb;
+  --admin-line: #d9d9df;
+  --admin-ink: #202024;
+  --admin-secondary: #65656e;
+  --admin-accent: #41414b;
+  --admin-accent-soft: #e8e8ee;
+  --admin-positive: #41414b;
+  --admin-inverse: #ffffff;
+  --admin-sidebar: 212px;
+  --admin-editor: 340px;
+  --admin-preview-height: 730px;
+  --admin-mobile-width: 390px;
+  --admin-page-width: 1720px;
+  --admin-title-size: clamp(26px, 2.6vw, 38px);
+  --admin-metric-size: clamp(32px, 3vw, 48px);
+  --admin-radius: 18px;
+  --admin-tracking: -0.035em;
+  --bg: var(--admin-surface);
+  --bg-2: var(--admin-ground);
+  --ink: var(--admin-ink);
+  --ink-2: var(--admin-secondary);
+  --hairline: var(--admin-line);
+  --blue: var(--admin-accent);
+  --site-paper: var(--admin-ground);
+  --site-hairline-soft: var(--admin-line);
+}
+/* Keep the delivered artifact palette intact; these sizes belong to the admin shell. */
+.admin-frame {
+  --admin-editor: 304px;
+  --admin-preview-height: max(960px, calc(100dvh - 160px));
+  --admin-title-size: clamp(26px, 2.2vw, 30px);
+  --admin-metric-size: 28px;
+  --admin-radius: 12px;
+  --admin-tracking: -0.025em;
+  --admin-control-radius: 8px;
+}
+@media (max-width: 760px) {
+  .admin-frame { --admin-preview-height: 800px; }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --admin-ground: #121215;
+    --admin-surface: #1c1c21;
+    --admin-muted: #29292f;
+    --admin-line: #3c3c45;
+    --admin-ink: #f2f2f5;
+    --admin-secondary: #b5b5bf;
+    --admin-accent: #d3d3df;
+    --admin-accent-soft: #303039;
+    --admin-positive: #d3d3df;
+    --admin-inverse: #1c1c21;
+  }
+}
+:root[data-theme="dark"] {
+  --admin-ground: #121215;
+  --admin-surface: #1c1c21;
+  --admin-muted: #29292f;
+  --admin-line: #3c3c45;
+  --admin-ink: #f2f2f5;
+  --admin-secondary: #b5b5bf;
+  --admin-accent: #d3d3df;
+  --admin-accent-soft: #303039;
+  --admin-positive: #d3d3df;
+  --admin-inverse: #1c1c21;
+}

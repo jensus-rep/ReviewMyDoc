@@ -1,0 +1,148 @@
+/*!
+ * Rows 0.1.0 · Atelier (Process 51)
+ * A list of items of the same kind, separated by hairlines instead of cards, as
+ * rule 6 of the design language asks. Each item carries an optional number, a
+ * title, an optional text and an optional action on the right; every part may be
+ * left out without leaving a gap behind, because the parts hold their own
+ * distances instead of the grid holding them.
+ */
+
+/* Defaults in :where(), so a page can override them without a specificity
+   fight. Every value is a token or derived from one. */
+:where(.rows) {
+  --rows-hairline-color: var(--hairline);
+  --rows-padding-block: var(--space-4);
+
+  --rows-number-color: var(--ink-2);
+  --rows-number-size: var(--font-size-label-web);
+  --rows-number-gap: var(--space-4);
+
+  --rows-title-color: var(--ink);
+  --rows-title-size: var(--font-size-text-web);
+
+  --rows-text-color: var(--ink-2);
+  --rows-text-size: var(--font-size-text-web);
+  --rows-text-gap: var(--space-1);
+
+  --rows-action-color: var(--blue);
+  --rows-action-size: var(--font-size-label-web);
+  --rows-action-gap: var(--space-5);
+
+  --rows-focus-color: var(--blue);
+  --rows-focus-width: calc(var(--hairline-width) * 2);
+  --rows-focus-offset: var(--space-1);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-sans);
+
+  /* Every item draws the line above itself, the list closes the last one. */
+  border-block-end: var(--hairline-width) solid var(--rows-hairline-color);
+
+  /* The list is the container its items measure themselves against. A window
+     width would be the wrong measure: the same list stands once in the full text
+     column and once in a narrow column beside it. */
+  container-type: inline-size;
+}
+
+/* One column for the number, one for the content. The action sits under the text
+   here and moves into a column of its own in the wider layout below. */
+.rows__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "number title"
+    "number text"
+    "number action";
+  align-items: start;
+  padding-block: var(--rows-padding-block);
+  border-block-start: var(--hairline-width) solid var(--rows-hairline-color);
+}
+
+.rows__number {
+  grid-area: number;
+  margin-inline-end: var(--rows-number-gap);
+  min-width: 2ch;
+  color: var(--rows-number-color);
+  font-size: var(--rows-number-size);
+  font-weight: var(--font-weight-text);
+  line-height: var(--line-height-text);
+  text-align: end;
+
+  /* Numbers of one and two digits line up under each other. */
+  font-variant-numeric: tabular-nums;
+}
+
+.rows__title {
+  grid-area: title;
+  margin: 0;
+  color: var(--rows-title-color);
+  font-size: var(--rows-title-size);
+  font-weight: var(--font-weight-title);
+  line-height: var(--line-height-text);
+}
+
+.rows__text {
+  grid-area: text;
+  margin: 0;
+  margin-block-start: var(--rows-text-gap);
+  max-width: var(--measure-text);
+  color: var(--rows-text-color);
+  font-size: var(--rows-text-size);
+  font-weight: var(--font-weight-text);
+  line-height: var(--line-height-text);
+}
+
+/* The class sits on the interactive element itself, a link or a button, so the
+   component can give it its focus ring without styling foreign children. */
+.rows__action {
+  grid-area: action;
+  justify-self: start;
+  margin: 0;
+  margin-block-start: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rows-action-color);
+  font-family: inherit;
+  font-size: var(--rows-action-size);
+  font-weight: var(--font-weight-text);
+  line-height: var(--line-height-text);
+  cursor: pointer;
+
+  /* The underline is the second characteristic besides the colour: blue in light
+     mode reaches AA for large text only, so it may not carry the meaning alone. */
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.rows__action:focus-visible {
+  outline: var(--rows-focus-width) solid var(--rows-focus-color);
+  outline-offset: var(--rows-focus-offset);
+}
+
+/* From this width of the list the action stands on the right of the item instead
+   of under the text. 26em is around 416 pixels at the default text size, so a
+   window of 360 pixels keeps the stacked layout. A browser without container
+   queries stays with the stacked layout everywhere, which is the harmless half
+   of the two. */
+@container (min-width: 26em) {
+  .rows__item {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "number title  action"
+      "number text   action";
+  }
+
+  /* The named area spans both rows already, so the action only has to stop
+     stacking and move to the end of the item. */
+  .rows__action {
+    align-self: center;
+    justify-self: end;
+    margin: 0;
+    margin-inline-start: var(--rows-action-gap);
+  }
+}

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Demo</title>
+<!--
+  Demo of the component field: the six kinds text, e-mail, password, textarea,
+  file and select, each with label, hint, error and the aria-describedby that
+  ties them to the control. The only script is the mode switch, as in
+  components/tokens/demo.html.
+-->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="field.css">
+<style>
+  /* This page uses tokens only, no raw values, so it also checks them. */
+  body {
+    margin: 0;
+    padding: var(--space-10) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+  }
+  .wrap { max-width: 56em; margin-inline: auto; display: grid; gap: var(--space-10); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-section-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+  }
+  p { margin: 0 0 var(--space-4); max-width: var(--measure-text); }
+  p:last-child { margin-bottom: 0; }
+  .lead, .note { color: var(--ink-2); }
+  .note { font-size: var(--font-size-label-web); }
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+  .stack { display: grid; gap: var(--space-6); }
+  .grounds { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(18em, 100%), 1fr)); }
+  .ground { padding: var(--space-6); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); }
+  .ground--2 { background: var(--bg-2); }
+
+  /* The switch is part of the demo, not of the component, and stays quiet. */
+  .switch { display: flex; gap: var(--space-1); }
+  .switch button {
+    font: inherit;
+    font-size: var(--font-size-label-web);
+    color: var(--ink-2);
+    background: none;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-button);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); }
+  .switch button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Field</h1>
+      <p class="lead">Ein Feld mit Beschriftung, Hilfetext und Fehlertext. Hell und dunkel.</p>
+    </div>
+    <div class="switch" role="group" aria-label="Darstellung">
+      <button type="button" data-set="system" aria-pressed="true">System</button>
+      <button type="button" data-set="light" aria-pressed="false">Hell</button>
+      <button type="button" data-set="dark" aria-pressed="false">Dunkel</button>
+    </div>
+  </div>
+
+  <section>
+    <h2>Die sechs Arten</h2>
+    <div class="stack">
+
+      <div class="field">
+        <label class="field__label" for="name">Name</label>
+        <input class="field__input" id="name" name="name" type="text" autocomplete="name"
+               aria-describedby="name-hint">
+        <p class="field__hint" id="name-hint">Vor- und Nachname, wie Sie angesprochen werden möchten.</p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="mail">E-Mail</label>
+        <input class="field__input" id="mail" name="mail" type="email" autocomplete="email"
+               inputmode="email" aria-describedby="mail-hint">
+        <p class="field__hint" id="mail-hint">Nur für die Antwort auf Ihre Anfrage.</p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="passwort">Passwort</label>
+        <input class="field__input" id="passwort" name="passwort" type="password"
+               autocomplete="current-password" aria-describedby="passwort-hint">
+        <p class="field__hint" id="passwort-hint">Mindestens zwölf Zeichen.</p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="nachricht">Ihr Anliegen</label>
+        <textarea class="field__input" id="nachricht" name="nachricht" rows="5"
+                  aria-describedby="nachricht-hint"></textarea>
+        <p class="field__hint" id="nachricht-hint">Welcher Ablauf kostet heute zu viel Zeit?</p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="anhang">Anhang</label>
+        <input class="field__input" id="anhang" name="anhang" type="file" accept=".pdf,.png,.jpg"
+               aria-describedby="anhang-hint">
+        <p class="field__hint" id="anhang-hint">PDF oder Bild, höchstens zehn Megabyte.</p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="art">Art</label>
+        <select class="field__input" id="art" name="art" aria-describedby="art-hint">
+          <option value="angebot" selected>Angebot</option>
+          <option value="bericht">Bericht</option>
+          <option value="sonstiges">Sonstiges</option>
+        </select>
+        <p class="field__hint" id="art-hint">Wofür dieses Dokument steht.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Fehler</h2>
+    <p>Die Fassung trägt <code>field--invalid</code>, das Feld <code>aria-invalid="true"</code> und
+      beschreibt sich über <code>aria-describedby</code> mit Hilfe- und Fehlertext. Rot ist nur der
+      kleine Punkt, der Satz selbst steht in Textfarbe.</p>
+    <div class="field field--invalid">
+      <label class="field__label" for="mail-fehler">E-Mail</label>
+      <input class="field__input" id="mail-fehler" name="mail-fehler" type="email"
+             value="jens@" aria-invalid="true"
+             aria-describedby="mail-fehler-hint mail-fehler-error">
+      <p class="field__hint" id="mail-fehler-hint">Nur für die Antwort auf Ihre Anfrage.</p>
+      <p class="field__error" id="mail-fehler-error">Diese E-Mail-Adresse ist unvollständig. Nach dem
+        Klammeraffen fehlt der Rest.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Deaktiviert und auf Sekundärgrund</h2>
+    <div class="grounds">
+      <div class="ground">
+        <div class="field">
+          <label class="field__label" for="konto">Kundennummer</label>
+          <input class="field__input" id="konto" name="konto" type="text" value="P51-0042" disabled>
+        </div>
+      </div>
+      <div class="ground ground--2">
+        <div class="field">
+          <label class="field__label" for="suche">Suche</label>
+          <input class="field__input" id="suche" name="suche" type="text" placeholder="Stichwort">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tastatur</h2>
+    <p class="note">Mit der Tabulatortaste durch die Felder gehen: jedes zeigt einen blauen
+      Fokusrahmen. Ein Klick auf die Beschriftung setzt den Fokus in das Feld, weil
+      <code>for</code> und <code>id</code> zusammenpassen. Beim Dateifeld öffnen Leertaste und
+      Eingabetaste den Dialog des Systems.</p>
+  </section>
+
+</div>
+
+<script>
+// Only script of this page: the mode switch from components/tokens/demo.html.
+// Without data-theme the system decides, with it the page forces the mode.
+const root = document.documentElement;
+for (const button of document.querySelectorAll('.switch button')) {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.set;
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    for (const other of document.querySelectorAll('.switch button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+  });
+}
+</script>
+</body>
+</html>

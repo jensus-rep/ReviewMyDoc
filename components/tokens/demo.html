@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokens Demo</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* This page uses only the tokens, no raw values, so it is also a check of them. */
+  body {
+    margin: 0;
+    padding: var(--space-11) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+    transition: background var(--motion-duration) var(--motion-ease), color var(--motion-duration) var(--motion-ease);
+  }
+  .wrap { max-width: 900px; margin-inline: auto; display: grid; gap: var(--space-11); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-section-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+  }
+  p { margin: 0 0 var(--space-4); max-width: var(--measure-text); }
+  p:last-child { margin-bottom: 0; }
+  .lead { color: var(--ink-2); }
+  .note { font-size: var(--font-size-label-web); color: var(--ink-2); }
+
+  /* Head with the theme switch. */
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+  .switch { display: flex; gap: var(--space-1); }
+  .switch button {
+    font: inherit;
+    font-size: var(--font-size-label-web);
+    color: var(--ink-2);
+    background: none;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-button);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+    transition: color var(--motion-duration) var(--motion-ease), border-color var(--motion-duration) var(--motion-ease);
+  }
+  .switch button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); }
+
+  /* Colour fields. */
+  .colors { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .color { border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); overflow: hidden; }
+  .color__patch { height: 72px; display: grid; place-items: center; font-size: var(--font-size-label-web); }
+  .color__meta { padding: var(--space-3); border-top: var(--hairline-width) solid var(--hairline); }
+  .color__name { font-size: var(--font-size-text-app); }
+  .color__value { font-size: var(--font-size-label-web); color: var(--ink-2); }
+
+  /* Text on ground, for the contrast check by eye. */
+  .grounds { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .ground { padding: var(--space-5); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); }
+  .ground--2 { background: var(--bg-2); }
+
+  /* Type scale. */
+  .scale { width: 100%; border-collapse: collapse; }
+  .scale th, .scale td { text-align: left; padding: var(--space-3) var(--space-4) var(--space-3) 0; border-bottom: var(--hairline-width) solid var(--hairline); vertical-align: baseline; }
+  .scale th { font-size: var(--font-size-label-web); font-weight: var(--font-weight-text); color: var(--ink-2); }
+
+  /* Spacing bars. */
+  .space { display: grid; gap: var(--space-2); }
+  .space__row { display: grid; grid-template-columns: 90px 1fr; gap: var(--space-4); align-items: center; font-size: var(--font-size-label-web); color: var(--ink-2); }
+  .space__bar { height: 8px; border-radius: var(--radius-button); background: var(--ink-2); }
+
+  /* Radii, shadow. */
+  .tiles { display: flex; flex-wrap: wrap; gap: var(--space-6); }
+  .tile { width: 120px; height: 80px; display: grid; place-items: center; text-align: center; font-size: var(--font-size-label-web); color: var(--ink-2); border: var(--hairline-width) solid var(--hairline); background: var(--bg); }
+  .tile--s { border-radius: var(--radius-s); }
+  .tile--m { border-radius: var(--radius-m); }
+  .tile--button { border-radius: var(--radius-button); }
+  .tile--float { border-radius: var(--radius-m); box-shadow: var(--shadow-float); }
+
+  /* Motion. */
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--blue); transition: transform var(--motion-duration-story) var(--motion-ease); }
+  .track { border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); padding: var(--space-4); }
+  .track:hover .dot, .track:focus-within .dot { transform: translateX(200px); }
+
+  /* Full token list. */
+  .list { width: 100%; border-collapse: collapse; font-size: var(--font-size-text-app); }
+  .list th, .list td { text-align: left; padding: var(--space-2) var(--space-4) var(--space-2) 0; border-bottom: var(--hairline-width) solid var(--hairline); }
+  .list th { font-size: var(--font-size-label-web); font-weight: var(--font-weight-text); color: var(--ink-2); }
+  .list td:first-child { white-space: nowrap; }
+  .list td:last-child { color: var(--ink-2); word-break: break-word; }
+  .list caption { text-align: left; font-size: var(--font-size-label-web); color: var(--ink-2); padding-bottom: var(--space-3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Tokens</h1>
+      <p class="lead">Alle Werte der Designsprache als CSS-Variablen. Hell und dunkel.</p>
+    </div>
+    <div class="switch" role="group" aria-label="Darstellung">
+      <button type="button" data-set="system" aria-pressed="true">System</button>
+      <button type="button" data-set="light" aria-pressed="false">Hell</button>
+      <button type="button" data-set="dark" aria-pressed="false">Dunkel</button>
+    </div>
+  </div>
+
+  <section>
+    <h2>Farben</h2>
+    <div class="colors" id="colors"></div>
+  </section>
+
+  <section>
+    <h2>Text auf Grund</h2>
+    <div class="grounds">
+      <div class="ground">
+        <p>Text auf Grund. <span style="color: var(--ink-2)">Sekundärtext.</span></p>
+        <p><a href="#" style="color: var(--blue)">Ein Link in Akzentblau</a></p>
+        <p class="note" style="color: var(--red)">Kritisch, nur als kleiner Hinweis</p>
+      </div>
+      <div class="ground ground--2">
+        <p>Text auf Sekundärgrund. <span style="color: var(--ink-2)">Sekundärtext.</span></p>
+        <p><a href="#" style="color: var(--blue)">Ein Link in Akzentblau</a></p>
+        <p class="note" style="color: var(--red)">Kritisch, nur als kleiner Hinweis</p>
+      </div>
+    </div>
+    <p class="note" style="margin-top: var(--space-4)">Gemessene Kontraste stehen in der README. Blau und Rot
+      erreichen im hellen Modus nur AA für große Schrift, nicht für Fließtext.</p>
+  </section>
+
+  <section>
+    <h2>Schrift</h2>
+    <table class="scale">
+      <thead>
+        <tr><th>Rolle</th><th>Anwendung</th><th>Website</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Seitentitel</th>
+          <td style="font-size: var(--font-size-page-title-app); font-weight: var(--font-weight-title); line-height: var(--line-height-title)">Process 51</td>
+          <td style="font-size: var(--font-size-page-title-web); font-weight: var(--font-weight-title); line-height: var(--line-height-title); letter-spacing: var(--letter-spacing-page-title-web)">Process 51</td>
+        </tr>
+        <tr>
+          <th>Abschnittstitel</th>
+          <td style="font-size: var(--font-size-section-title-app); font-weight: var(--font-weight-title)">So arbeiten wir</td>
+          <td style="font-size: var(--font-size-section-title-web); font-weight: var(--font-weight-title)">So arbeiten wir</td>
+        </tr>
+        <tr>
+          <th>Text</th>
+          <td style="font-size: var(--font-size-text-app); line-height: var(--line-height-text)">Jede Zeile trägt eine Information.</td>
+          <td style="font-size: var(--font-size-text-web); line-height: var(--line-height-text)">Jede Zeile trägt eine Information.</td>
+        </tr>
+        <tr>
+          <th>Sekundär, Beschriftung</th>
+          <td style="font-size: var(--font-size-label-app); color: var(--ink-2)">Zuletzt geändert</td>
+          <td style="font-size: var(--font-size-label-web); color: var(--ink-2)">Zuletzt geändert</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top: var(--space-4)">Zahlen in Listen mit <code>.tabular-nums</code>:
+      <span class="tabular-nums">1.110,00&nbsp;&nbsp;999,50&nbsp;&nbsp;12,25</span></p>
+  </section>
+
+  <section>
+    <h2>Abstände</h2>
+    <div class="space" id="space"></div>
+    <p class="note" style="margin-top: var(--space-4)">Zwölf Stufen auf dem 4-px-Raster.</p>
+  </section>
+
+  <section>
+    <h2>Radien, Haarlinie, Schatten</h2>
+    <div class="tiles">
+      <div class="tile tile--s">--radius-s<br>8 px</div>
+      <div class="tile tile--m">--radius-m<br>12 px</div>
+      <div class="tile tile--button">--radius-button<br>7 px</div>
+      <div class="tile tile--float">--shadow-float</div>
+    </div>
+    <p class="note" style="margin-top: var(--space-4)">Die Ränder sind Haarlinien mit
+      <code>--hairline-width</code> und <code>--hairline</code>. Schatten nur für schwebende Ebenen.</p>
+  </section>
+
+  <section>
+    <h2>Bewegung</h2>
+    <div class="track" tabindex="0">
+      <div class="dot"></div>
+    </div>
+    <p class="note" style="margin-top: var(--space-4)">Zeigen oder Fokussieren bewegt den Punkt mit
+      <code>--motion-duration-story</code>. Ist im Betriebssystem „Bewegung reduzieren“ aktiv, stehen
+      <code>--motion-duration</code> und <code>--motion-duration-story</code> auf 0&nbsp;ms, der Punkt springt
+      ohne Übergang. Aktuell: <strong id="rm">wird geprüft</strong>.</p>
+  </section>
+
+  <section>
+    <h2>Alle Variablen</h2>
+    <table class="list">
+      <caption>Werte, wie der Browser sie im gewählten Modus berechnet.</caption>
+      <thead><tr><th>Variable</th><th>Wert</th></tr></thead>
+      <tbody id="all"></tbody>
+    </table>
+  </section>
+
+</div>
+
+<script>
+// Every token, in the order of tokens.css. The table reads the computed value,
+// so switching the mode shows the values of that mode.
+const COLORS = [
+  ['--color-bg', 'Grund'],
+  ['--color-bg-2', 'Sekundärgrund'],
+  ['--color-hairline', 'Haarlinie'],
+  ['--color-ink', 'Text'],
+  ['--color-ink-2', 'Sekundärtext'],
+  ['--color-blue', 'Akzent, interaktiv'],
+  ['--color-red', 'Kritisch']
+];
+const ALIASES = ['--bg', '--bg-2', '--hairline', '--ink', '--ink-2', '--blue', '--red'];
+const SPACES = ['--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6',
+  '--space-7', '--space-8', '--space-9', '--space-10', '--space-11', '--space-12'];
+const OTHERS = ['--font-sans',
+  '--font-size-page-title-app', '--font-size-page-title-web',
+  '--font-size-section-title-app', '--font-size-section-title-web',
+  '--font-size-text-app', '--font-size-text-web',
+  '--font-size-label-app', '--font-size-label-web',
+  '--font-weight-text', '--font-weight-title',
+  '--line-height-text', '--line-height-title', '--letter-spacing-page-title-web', '--measure-text',
+  '--radius-s', '--radius-m', '--radius-button', '--hairline-width',
+  '--shadow-float', '--motion-duration', '--motion-duration-story', '--motion-ease'];
+
+const root = document.documentElement;
+const read = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+
+// Black or white on the patch, whichever is readable on that colour.
+// Custom properties come back as written, so as six digit hex.
+function labelOn(cssColor) {
+  let r = 0, g = 0, b = 0;
+  if (/^#[0-9a-f]{6}$/i.test(cssColor)) {
+    const n = parseInt(cssColor.slice(1), 16);
+    [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  } else {
+    const parts = (cssColor.match(/\d+(\.\d+)?/g) || []).map(Number);
+    if (parts.length < 3) return '#000';
+    [r, g, b] = parts;
+  }
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 140 ? '#000' : '#fff';
+}
+
+function renderColors() {
+  document.getElementById('colors').innerHTML = COLORS.map(([name, role]) => {
+    const value = read(name);
+    return '<div class="color">'
+      + '<div class="color__patch" style="background:' + value + ';color:' + labelOn(value) + '">' + role + '</div>'
+      + '<div class="color__meta"><div class="color__name">' + name + '</div>'
+      + '<div class="color__value">' + value + '</div></div></div>';
+  }).join('');
+}
+
+function renderSpace() {
+  document.getElementById('space').innerHTML = SPACES.map((name) => {
+    const value = read(name);
+    return '<div class="space__row"><span>' + name.replace('--space-', 'space ') + ' · ' + value + '</span>'
+      + '<span class="space__bar" style="width:' + value + '"></span></div>';
+  }).join('');
+}
+
+function renderAll() {
+  const rows = COLORS.map(([n]) => n).concat(ALIASES, OTHERS, SPACES);
+  document.getElementById('all').innerHTML = rows.map((name) =>
+    '<tr><td><code>' + name + '</code></td><td>' + read(name) + '</td></tr>').join('');
+}
+
+function render() { renderColors(); renderSpace(); renderAll(); }
+
+for (const button of document.querySelectorAll('.switch button')) {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.set;
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    for (const other of document.querySelectorAll('.switch button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+    render();
+  });
+}
+
+// System changes are only visible while no mode is forced.
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+
+document.getElementById('rm').textContent =
+  matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Bewegung reduziert' : 'Bewegung erlaubt';
+
+render();
+</script>
+</body>
+</html>

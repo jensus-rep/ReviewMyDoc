@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Button Demo</title>
+<!--
+  Demo of the component button: both variants on a <button> and on an <a>, the
+  disabled state, and one element that carries button and busy-button at the
+  same time. The page combines two independent components; neither knows the
+  other. The only script is the mode switch, as in components/tokens/demo.html.
+-->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="button.css">
+<link rel="stylesheet" href="../busy-button/busy-button.css">
+<style>
+  /* This page uses tokens only, no raw values, so it also checks them. */
+  body {
+    margin: 0;
+    padding: var(--space-10) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+  }
+  .wrap { max-width: 56em; margin-inline: auto; display: grid; gap: var(--space-10); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-section-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+  }
+  p { margin: 0 0 var(--space-4); max-width: var(--measure-text); }
+  p:last-child { margin-bottom: 0; }
+  .lead, .note { color: var(--ink-2); }
+  .note { font-size: var(--font-size-label-web); }
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+  .ground { padding: var(--space-6); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); }
+  .ground--2 { background: var(--bg-2); }
+  .grounds { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(16em, 100%), 1fr)); }
+
+  /* The switch is part of the demo, not of the component, and stays quiet. */
+  .switch { display: flex; gap: var(--space-1); }
+  .switch button {
+    font: inherit;
+    font-size: var(--font-size-label-web);
+    color: var(--ink-2);
+    background: none;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-button);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); }
+  .switch button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Button</h1>
+      <p class="lead">Primär blau, sekundär als Textlink mit Rahmen. Hell und dunkel.</p>
+    </div>
+    <div class="switch" role="group" aria-label="Darstellung">
+      <button type="button" data-set="system" aria-pressed="true">System</button>
+      <button type="button" data-set="light" aria-pressed="false">Hell</button>
+      <button type="button" data-set="dark" aria-pressed="false">Dunkel</button>
+    </div>
+  </div>
+
+  <section id="varianten">
+    <h2>Varianten</h2>
+    <div class="grounds">
+      <div class="ground">
+        <p class="note">Auf Grund</p>
+        <div class="row">
+          <button class="button button--primary" type="button">Erstgespräch</button>
+          <button class="button button--secondary" type="button">Mehr erfahren</button>
+        </div>
+      </div>
+      <div class="ground ground--2">
+        <p class="note">Auf Sekundärgrund</p>
+        <div class="row">
+          <button class="button button--primary" type="button">Erstgespräch</button>
+          <button class="button button--secondary" type="button">Mehr erfahren</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Als Link</h2>
+    <p>Dieselben Klassen auf einem <code>&lt;a&gt;</code>. Der Link ist mit der Tabulatortaste
+      erreichbar und zeigt denselben Fokusrahmen.</p>
+    <div class="row">
+      <a class="button button--primary" href="#varianten">Zum Kontakt</a>
+      <a class="button button--secondary" href="#varianten">Leistungen</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Deaktiviert</h2>
+    <p>Am <code>&lt;button&gt;</code> das echte Attribut, am Link <code>aria-disabled</code> ohne
+      <code>href</code>, damit er weder anklickbar noch mit der Tastatur erreichbar ist.</p>
+    <div class="row">
+      <button class="button button--primary" type="button" disabled>Erstgespräch</button>
+      <button class="button button--secondary" type="button" disabled>Mehr erfahren</button>
+      <a class="button button--secondary" aria-disabled="true">Noch nicht verfügbar</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Zusammen mit busy-button</h2>
+    <p>Dasselbe Element trägt beide Klassen. Solange <code>aria-busy="true"</code> steht, weicht die
+      Beschriftung dem Spinner des Bausteins busy-button, die Breite bleibt. Für die sekundäre
+      Variante kommt <code>busy-button--quiet</code> dazu, damit der Spinner blau ist.</p>
+    <div class="row">
+      <button class="button button--primary busy-button" type="button" aria-busy="true">Erstgespräch</button>
+      <button class="button button--secondary busy-button busy-button--quiet" type="button" aria-busy="true">Mehr erfahren</button>
+      <button class="button button--primary busy-button" type="button">Nicht beschäftigt</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tastatur</h2>
+    <p class="note">Mit der Tabulatortaste durch die Seite gehen: jede Schaltfläche und jeder Link
+      zeigt einen blauen Fokusrahmen. Leertaste und Eingabetaste lösen aus, deaktivierte Elemente
+      werden übersprungen.</p>
+  </section>
+
+</div>
+
+<script>
+// Only script of this page: the mode switch from components/tokens/demo.html.
+// Without data-theme the system decides, with it the page forces the mode.
+const root = document.documentElement;
+for (const button of document.querySelectorAll('.switch button')) {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.set;
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    for (const other of document.querySelectorAll('.switch button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+  });
+}
+</script>
+</body>
+</html>

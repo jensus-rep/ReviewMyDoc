@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skeleton Demo</title>
+<!--
+  Demo of the component skeleton: a list with the sheen, figures with the
+  staggered pulse and the page variant as a document pane, each on the ground
+  and the page variant on the secondary ground. The only script is the mode
+  switch, as in components/tokens/demo.html.
+-->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="skeleton.css">
+<style>
+  /* This page uses tokens only, no raw values, so it also checks them. */
+  body {
+    margin: 0;
+    padding: var(--space-10) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+  }
+  .wrap { max-width: 64em; margin-inline: auto; display: grid; gap: var(--space-7); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  h2 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-label-web);
+    font-weight: var(--font-weight-title);
+    color: var(--ink-2);
+  }
+  p { margin: 0; max-width: var(--measure-text); }
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+  .lead { color: var(--ink-2); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16em, 100%), 1fr)); gap: var(--space-6); }
+  .panel { border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-m); padding: var(--space-6); }
+  .doc { background: var(--bg-2); border-radius: var(--radius-m); padding: var(--space-6); }
+  .figures { display: flex; gap: var(--space-8); }
+  .figures .skeleton { gap: var(--space-2); width: var(--space-10); }
+
+  /* The switch is part of the demo, not of the component, and stays quiet. */
+  .switch { display: flex; gap: var(--space-1); }
+  .switch button {
+    font: inherit;
+    font-size: var(--font-size-label-web);
+    color: var(--ink-2);
+    background: none;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-button);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); }
+  .switch button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Skeleton</h1>
+      <p class="lead">Graue Blöcke in der Form des Inhalts, der gleich kommt.</p>
+    </div>
+    <div class="switch" role="group" aria-label="Darstellung">
+      <button type="button" data-set="system" aria-pressed="true">System</button>
+      <button type="button" data-set="light" aria-pressed="false">Hell</button>
+      <button type="button" data-set="dark" aria-pressed="false">Dunkel</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <h2>Liste, mit Glanz</h2>
+      <div class="panel skeleton" aria-hidden="true">
+        <span class="skeleton__block skeleton__block--title"></span>
+        <span class="skeleton__space"></span>
+        <div class="skeleton__row"><span class="skeleton__block"></span><span class="skeleton__block"></span></div>
+        <div class="skeleton__row"><span class="skeleton__block skeleton__block--mid"></span><span class="skeleton__block"></span></div>
+        <div class="skeleton__row"><span class="skeleton__block skeleton__block--short"></span><span class="skeleton__block"></span></div>
+      </div>
+    </div>
+    <div>
+      <h2>Kennzahlen, pulsierend</h2>
+      <div class="panel figures skeleton--pulse" aria-hidden="true">
+        <div class="skeleton"><span class="skeleton__block skeleton__block--figure" style="--i:0"></span><span class="skeleton__block" style="--i:0"></span></div>
+        <div class="skeleton"><span class="skeleton__block skeleton__block--figure" style="--i:1;width:var(--space-6)"></span><span class="skeleton__block" style="--i:1"></span></div>
+        <div class="skeleton"><span class="skeleton__block skeleton__block--figure" style="--i:2;width:var(--space-6)"></span><span class="skeleton__block" style="--i:2"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2>Kreis und Zeile</h2>
+    <div class="panel skeleton" aria-hidden="true">
+      <div class="skeleton__row"><span class="skeleton__block skeleton__block--circle"></span><span class="skeleton__block skeleton__block--mid"></span></div>
+    </div>
+  </div>
+
+  <div>
+    <h2>Dokumentseite, auf Sekundärgrund</h2>
+    <div class="doc">
+      <div class="skeleton skeleton--page skeleton--pulse" aria-hidden="true">
+        <span class="skeleton__block skeleton__block--title" style="--i:0"></span><span class="skeleton__space"></span>
+        <span class="skeleton__block" style="--i:1"></span><span class="skeleton__block" style="--i:2"></span><span class="skeleton__block skeleton__block--mid" style="--i:3"></span>
+        <span class="skeleton__space"></span>
+        <span class="skeleton__block" style="--i:4"></span><span class="skeleton__block" style="--i:5"></span><span class="skeleton__block skeleton__block--short" style="--i:6"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+// Only script of this page: the mode switch from components/tokens/demo.html.
+// Without data-theme the system decides, with it the page forces the mode.
+const root = document.documentElement;
+for (const button of document.querySelectorAll('.switch button')) {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.set;
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    for (const other of document.querySelectorAll('.switch button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+  });
+}
+</script>
+</body>
+</html>

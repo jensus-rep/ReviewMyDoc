@@ -1,0 +1,61 @@
+/*!
+ * Busy Button 0.1.1 · Atelier (Process 51)
+ * While aria-busy="true", the label gives way to a small spinner. The button
+ * keeps its width and ignores further clicks. Colour and stroke come from the
+ * design tokens: the spinner stands in for the label of a filled button, so it
+ * carries the same colour the label had.
+ */
+
+/* Defaults in :where(), so a page can override them without a specificity
+   fight. Every value is a token, derived from one, or named as an exception in
+   the README. */
+:where(.busy-button) {
+  /* The ground colour, because that is what a label on a filled surface has:
+     white on blue in light mode, black on blue in dark mode, exactly like
+     --button-foreground of the component button. */
+  --busy-button-spinner: var(--bg);
+
+  /* Diameter of the ring. A touch smaller than the label it replaces, so the
+     button keeps its height. No token: see README. */
+  --busy-button-size: 14px;
+
+  /* One and a half hairlines: thin enough to stay quiet, thick enough to read
+     at this diameter. */
+  --busy-button-stroke: calc(var(--hairline-width) * 1.5);
+
+  /* How much of the ring stays visible behind the running arc. */
+  --busy-button-track-mix: 35%;
+
+  /* One turn of the ring. No token: the tokens carry the duration of state
+     changes, not the speed of a loop that runs on. */
+  --busy-button-speed: 0.9s;
+}
+
+.busy-button[aria-busy="true"] {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.busy-button[aria-busy="true"]::after {
+  content: "";
+  position: absolute; top: 50%; left: 50%;
+  box-sizing: border-box;
+  width: var(--busy-button-size);
+  height: var(--busy-button-size);
+  margin: calc(var(--busy-button-size) / -2) 0 0 calc(var(--busy-button-size) / -2);
+  border-radius: 50%;
+  border: var(--busy-button-stroke) solid color-mix(in srgb, var(--busy-button-spinner) var(--busy-button-track-mix), transparent);
+  border-top-color: var(--busy-button-spinner);
+  animation: busy-button-rotate var(--busy-button-speed) linear infinite;
+}
+
+/* For text buttons without fill: spinner in the interaction colour, because
+   there is no filled surface whose label colour it could take. */
+.busy-button--quiet { --busy-button-spinner: var(--blue); }
+
+@keyframes busy-button-rotate { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .busy-button[aria-busy="true"]::after { animation-duration: calc(var(--busy-button-speed) * 2); }
+}
