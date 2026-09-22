@@ -27,14 +27,14 @@ Code, Struktur, Tests und Zusammenarbeit ist [docs/Konventionen.md](docs/Konvent
 
 ## Prüfbefehle
 
-Diese Befehle laufen im Build-Job der Pipeline, sobald sie eingerichtet ist; ohne grün kein
-Deployment. Alle laufen vom Repositorywurzelverzeichnis aus.
+Diese Befehle laufen im Build-Job der Pipeline (`.github/workflows/build.yml`) bei jedem Push und
+jedem Pull Request; ohne grün kein Deployment. Alle laufen vom Repositorywurzelverzeichnis aus.
 
 | Befehl                               | Prüft                                                                                          |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | `dotnet build -warnaserror`          | alle vier Projekte übersetzen, jede Warnung zählt als Fehler                                     |
 | `dotnet format --verify-no-changes`  | Formatierung und C#-Stil nach `.editorconfig`, ohne etwas zu ändern                              |
-| `dotnet test`                        | xUnit-Tests in `tests/ReviewMyDoc.Tests`: heute die Projektgrenzen, mit der Fachlichkeit dann Unit-Tests für Core und Integrationstests über `WebApplicationFactory` |
+| `dotnet test`                        | xUnit-Tests in `tests/ReviewMyDoc.Tests`: die Projektgrenzen, den Vertrag des Objektspeichers gegen beide Ablagen und die Auswahl zwischen ihnen. Ohne konfiguriertes Blob Storage werden dessen Tests mit Grund übersprungen, sie sind dann nicht rot |
 | `npm run typecheck`                  | `tsc --noEmit` über `components/**/*.ts` und das Build-Skript unter `scripts/`                  |
 | `npm test`                           | `node --test` über die Bausteintests: `components/**/*.test.mjs` und `components/**/*.test.ts`  |
 | `npm run build`                      | esbuild erzeugt aus jeder `components/<name>/<name>.ts` das ES-Modul `<name>.js` daneben         |
@@ -55,7 +55,7 @@ Directory.Build.props            gemeinsame Einstellungen (.NET 10, Nullable, Wa
 src/ReviewMyDoc.Web/              Razor Pages, Program.cs, wwwroot, Properties/launchSettings.json
 src/ReviewMyDoc.Core/              Fachlogik hinter Schnittstellen, ohne ASP.NET, Azure oder AI-Anbieter
 src/ReviewMyDoc.Infrastructure/    Implementierungen der Schnittstellen aus Core (Ablage, AI, Mail)
-tests/ReviewMyDoc.Tests/           xUnit: Unit-Tests und Integrationstests über WebApplicationFactory
+tests/ReviewMyDoc.Tests/           xUnit: Unit- und Vertragstests, später Integrationstests über WebApplicationFactory
 components/                        framework-freie Bausteine, ausgeliefert unter /components/, Regeln in components/README.md
 scripts/build-components.mjs       Frontend-Build (esbuild)
 docs/                              Konzept, Konventionen, Datenmodell, Betrieb
