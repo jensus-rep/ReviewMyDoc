@@ -1,0 +1,26 @@
+@*
+    Renders the building block components/rows: a list of items of the same
+    kind. Only the list element itself stands here, because an ordered and a
+    plain list are two elements and not one attribute; one item stands in
+    Ui/_RowsItem.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model RowsModel
+@if (Model.Ordered)
+{
+    <ol class="rows">
+        @foreach (var item in Model.Items)
+        {
+            <partial name="Ui/_RowsItem" model="item" />
+        }
+    </ol>
+}
+else
+{
+    <ul class="rows">
+        @foreach (var item in Model.Items)
+        {
+            <partial name="Ui/_RowsItem" model="item" />
+        }
+    </ul>
+}

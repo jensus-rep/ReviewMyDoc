@@ -9,4 +9,18 @@
     <ProjectReference Include="..\ReviewMyDoc.Infrastructure\ReviewMyDoc.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!--
+    The building blocks stay where they are and are copied into the published
+    output next to the application, so /components/ finds them there as well.
+    Not into wwwroot and not into the build output: locally the application
+    reads them straight out of the repository, which is what makes a change to a
+    building block visible without a build.
+  -->
+  <ItemGroup>
+    <Content Include="..\..\components\**\*"
+             Link="components\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="Never"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

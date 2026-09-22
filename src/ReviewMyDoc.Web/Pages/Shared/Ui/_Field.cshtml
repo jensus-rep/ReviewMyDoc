@@ -1,0 +1,61 @@
+@*
+    Renders the building block components/field: label, control, hint and error
+    message. The partial writes name and id itself and works with the model
+    binding of Razor Pages that way; the antiforgery token comes from the
+    surrounding form, not from here.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model FieldModel
+<div class="@Model.CssClass">
+    <label class="field__label" for="@Model.Id">@Model.Label</label>
+    @if (Model.Control == FieldControl.MultiLine)
+    {
+        <textarea class="field__input"
+                  id="@Model.Id"
+                  name="@Model.Name"
+                  rows="@Model.Rows"
+                  autocomplete="@Model.Autocomplete"
+                  aria-describedby="@Model.DescribedBy"
+                  aria-invalid="@Model.AriaInvalid"
+                  required="@Model.Required"
+                  disabled="@Model.Disabled">@Model.Value</textarea>
+    }
+    else if (Model.Control == FieldControl.Choice)
+    {
+        <select class="field__input"
+                id="@Model.Id"
+                name="@Model.Name"
+                autocomplete="@Model.Autocomplete"
+                aria-describedby="@Model.DescribedBy"
+                aria-invalid="@Model.AriaInvalid"
+                required="@Model.Required"
+                disabled="@Model.Disabled">
+            @foreach (var option in Model.Options)
+            {
+                <option value="@option.Value" selected="@(option.Value == Model.Value)">@option.Label</option>
+            }
+        </select>
+    }
+    else
+    {
+        <input class="field__input"
+               id="@Model.Id"
+               name="@Model.Name"
+               type="@Model.TypeAttribute"
+               value="@Model.Value"
+               accept="@Model.Accept"
+               autocomplete="@Model.Autocomplete"
+               aria-describedby="@Model.DescribedBy"
+               aria-invalid="@Model.AriaInvalid"
+               required="@Model.Required"
+               disabled="@Model.Disabled" />
+    }
+    @if (Model.HasHint)
+    {
+        <p class="field__hint" id="@Model.HintId">@Model.Hint</p>
+    }
+    @if (Model.HasError)
+    {
+        <p class="field__error" id="@Model.ErrorId">@Model.Error</p>
+    }
+</div>

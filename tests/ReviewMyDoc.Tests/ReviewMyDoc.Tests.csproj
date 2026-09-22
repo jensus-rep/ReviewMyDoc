@@ -10,6 +10,12 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <!--
+      WebApplicationFactory and the TestServer behind it: the integration tests
+      of docs/Konventionen.md, section Tests, start the application in the
+      process of the test and never a port of their own.
+    -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <!--
       xunit.v3 und nicht xunit 2.x: docs/Konventionen.md, Abschnitt Tests,

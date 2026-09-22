@@ -1,0 +1,16 @@
+@*
+    Renders the building block components/button. The classes come from the
+    model, never from the page, so the one interactive surface of the
+    application looks the same everywhere. A model with an Href becomes an
+    anchor, everything else a button.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model ButtonModel
+@if (Model.IsLink)
+{
+    <a class="@Model.CssClass" href="@Model.LinkHref" aria-disabled="@Model.AriaDisabled">@Model.Label</a>
+}
+else
+{
+    <button class="@Model.CssClass" type="@Model.TypeAttribute" disabled="@Model.Disabled">@Model.Label</button>
+}

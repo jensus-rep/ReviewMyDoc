@@ -1,20 +1,46 @@
 @*
-    Frame of every page of the application. Deliberately bare at this point: the
-    real frame with navigation and the design tokens from components/ arrives
-    with the task that brings the building blocks over from Atelier.
+    Frame of every page of the application: skip link, head, navigation, content
+    and footer. A page brings its content and never its own frame, so what is
+    decided here holds for every page that follows.
+
+    The stylesheets are loaded in the order they build on each other: the tokens
+    first, because every building block and site.css reads their values, then
+    the building blocks the partials under Ui/ render, and site.css last, so the
+    application can set the values of a building block without a specificity
+    fight. The files are delivered from the repository folder components/ under
+    /components/ and exist exactly once; nothing of them lies in wwwroot.
 *@
+@{
+    var currentPage = ViewContext.RouteData.Values["page"] as string;
+}
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ReviewMyDoc</title>
+    <link rel="stylesheet" href="~/components/tokens/tokens.css" />
+    <link rel="stylesheet" href="~/components/button/button.css" />
+    <link rel="stylesheet" href="~/components/field/field.css" />
+    <link rel="stylesheet" href="~/components/rows/rows.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
-    <main>
+<body class="app">
+    <a class="app__skip" href="#inhalt">Zum Inhalt springen</a>
+    <header class="app__header">
+        <div class="app__bar">
+            <a class="app__brand" href="/">ReviewMyDoc</a>
+            <nav class="app__nav" aria-label="Hauptnavigation">
+                <a class="app__nav-link" href="/" aria-current="@(currentPage == "/Index" ? "page" : null)">Übersicht</a>
+            </nav>
+        </div>
+    </header>
+    <main class="app__main" id="inhalt">
         @RenderBody()
     </main>
+    <footer class="app__footer">
+        <p class="app__footer-note">ReviewMyDoc</p>
+    </footer>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

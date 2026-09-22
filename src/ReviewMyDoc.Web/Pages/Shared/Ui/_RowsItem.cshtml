@@ -1,0 +1,23 @@
+@*
+    One item of the building block components/rows. The title is a span and not
+    a heading, so a list does not push its way into the outline of the page; a
+    page that needs a heading there writes its own markup. Every other part may
+    be missing and leaves no gap behind.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model RowModel
+<li class="rows__item">
+    @if (Model.Number is not null)
+    {
+        <span class="rows__number">@Model.Number</span>
+    }
+    <span class="rows__title">@Model.Title</span>
+    @if (Model.Text is not null)
+    {
+        <p class="rows__text">@Model.Text</p>
+    }
+    @if (Model.Action is not null)
+    {
+        <a class="rows__action" href="@Model.Action.Href">@Model.Action.Label</a>
+    }
+</li>
