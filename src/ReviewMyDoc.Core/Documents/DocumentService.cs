@@ -441,24 +441,31 @@ public sealed class DocumentService
     /// </para>
     /// <para>
     /// <b>Which part keeps <paramref name="sectionId"/>, and why.</b>
-    /// <c>docs/Konzept.md</c> is explicit that the identifier stays with the
-    /// first of the three - not with whichever part happens to end up first when
-    /// one of them is empty, but with the text that stood <i>before</i> the mark.
-    /// When that text is empty - the mark starts at the very beginning of the
-    /// section - there is no such part to carry it, and the identifier does not
-    /// jump to the mark instead: it ends here, and every part this call produces
-    /// is freshly drawn. Handing it to the mark would look like a small mercy -
-    /// something keeps the old name - but it would be the wrong section keeping
-    /// it: a review order or a piece of feedback pointing at <paramref name="sectionId"/>
-    /// was written against the text that used to open the section, not against
-    /// whatever the owner has now chosen to mark, and letting the identifier
-    /// silently reattach to different prose is exactly the kind of drift a stable
-    /// identifier exists to prevent. One case looks like an exception to this and
-    /// is not: when the mark reaches from the very start of the text to the very
-    /// end, there is neither a part before it nor after it, so nothing is actually
-    /// split - the single result is the same section under
+    /// The identifier stays with the part that holds the first character of the
+    /// original text: what stood before the mark, or the mark itself when the
+    /// mark opens the section. <c>docs/Konzept.md</c> calls that "the first of
+    /// the three", and where the first of the three is empty, the first one
+    /// there actually is inherits it.
+    /// </para>
+    /// <para>
+    /// The alternative would be to let the identifier end whenever no text
+    /// stands before the mark, on the grounds that feedback pointing at it was
+    /// written against the opening prose and should not silently reattach. That
+    /// is the worse of the two. A piece of feedback belongs to a section, not to
+    /// a particular stretch inside it, and dropping the identifier orphans that
+    /// feedback while the prose it was written about is still in the document,
+    /// only under a new name. A reference that leads nowhere although its
+    /// subject is right there is harder to make sense of later than one that
+    /// leads to a section grown shorter. Splitting therefore never orphans
+    /// anything; only deleting a section does, and the owner is asked to confirm
+    /// that.
+    /// </para>
+    /// <para>
+    /// One case looks like an exception and is not: when the mark reaches from
+    /// the very start of the text to the very end, nothing is split at all - the
+    /// single result is the same section under
     /// <see cref="Document.RenameSection"/>, keeping <paramref name="sectionId"/>
-    /// precisely because no text has moved to another identifier at all.
+    /// because no text has moved anywhere.
     /// </para>
     /// <para>
     /// <b>The order of the writes, and why.</b> A split touches up to three
@@ -476,7 +483,7 @@ public sealed class DocumentService
     /// </para>
     /// <para>
     /// The one entry this does not write first is the text that stays under
-    /// <paramref name="sectionId"/>, shortened to what stood before the mark.
+    /// <paramref name="sectionId"/>, shortened to the part that keeps it.
     /// That happens last, after <c>document.json</c> has already committed the
     /// split, and deliberately not before it. Shortening it first and writing
     /// the outline second would risk the failure
@@ -548,18 +555,29 @@ public sealed class DocumentService
             return await WriteChangeAsync(renamed, expectedETag, cancellationToken);
         }
 
-        var markedId = SectionIdentifier.Draw();
+        // The part that keeps sectionId is the one holding the first character
+        // of the original text; every other part is written under a freshly
+        // drawn identifier. See the remarks above.
+        var markOpensTheSection = beforeText.Length == 0;
+        var keptText = markOpensTheSection ? markedText : beforeText;
+        var markedId = markOpensTheSection ? sectionId : SectionIdentifier.Draw();
         var afterId = afterText.Length > 0 ? SectionIdentifier.Draw() : null;
 
-        var markedWritten = await _store.WriteSectionTextAsync(
-            documentId,
-            markedId,
-            markedText,
-            WriteCondition.MustNotExist,
-            cancellationToken);
-        if (markedWritten is not ObjectWriteResult.Written)
+        var fresh = new List<SectionIdentifier>(2);
+        if (!markOpensTheSection)
         {
-            return new DocumentResult.Conflict();
+            var markedWritten = await _store.WriteSectionTextAsync(
+                documentId,
+                markedId,
+                markedText,
+                WriteCondition.MustNotExist,
+                cancellationToken);
+            if (markedWritten is not ObjectWriteResult.Written)
+            {
+                return new DocumentResult.Conflict();
+            }
+
+            fresh.Add(markedId);
         }
 
         if (afterId is not null)
@@ -572,19 +590,23 @@ public sealed class DocumentService
                 cancellationToken);
             if (afterWritten is not ObjectWriteResult.Written)
             {
-                await _store.DeleteSectionTextAsync(documentId, markedId, cancellationToken);
+                await RemoveAsync(fresh);
 
                 return new DocumentResult.Conflict();
             }
+
+            fresh.Add(afterId);
         }
 
         var replacement = new List<Section>(3);
-        if (beforeText.Length > 0)
+        if (!markOpensTheSection)
         {
             replacement.Add(section with { UpdatedAt = now });
         }
 
-        replacement.Add(new Section(markedId, trimmedHeading, Order: 0, UpdatedAt: now));
+        replacement.Add(markOpensTheSection
+            ? section with { Heading = trimmedHeading, UpdatedAt = now }
+            : new Section(markedId, trimmedHeading, Order: 0, UpdatedAt: now));
         if (afterId is not null)
         {
             replacement.Add(new Section(afterId, section.Heading, Order: 0, UpdatedAt: now));
@@ -594,19 +616,15 @@ public sealed class DocumentService
         var written = await _store.WriteAsync(changed, WriteCondition.MustMatch(expectedETag), cancellationToken);
         if (written is not ObjectWriteResult.Written updated)
         {
-            // Nothing yet refers to the two fresh texts, so removing them costs
+            // Nothing yet refers to the fresh texts, so removing them costs
             // nothing - the same compensation AddSectionAsync and
-            // FreezeVersionAsync run when their own second write is refused.
-            await _store.DeleteSectionTextAsync(documentId, markedId, cancellationToken);
-            if (afterId is not null)
-            {
-                await _store.DeleteSectionTextAsync(documentId, afterId, cancellationToken);
-            }
+            // FreezeVersionAsync run when their own second write is refused. The
+            // text under sectionId is untouched at this point and stays whole.
+            await RemoveAsync(fresh);
 
             return new DocumentResult.Conflict();
         }
 
-        if (beforeText.Length > 0)
         {
             // See the remarks above: only now, with document.json already
             // committed to the split, is it safe to shorten the text that stayed
@@ -619,12 +637,20 @@ public sealed class DocumentService
             await _store.WriteSectionTextAsync(
                 documentId,
                 sectionId,
-                beforeText,
+                keptText,
                 WriteCondition.MustMatch(storedText.ETag),
                 cancellationToken);
         }
 
         return new DocumentResult.Success(changed, updated.ETag);
+
+        async Task RemoveAsync(IReadOnlyList<SectionIdentifier> written)
+        {
+            foreach (var identifier in written)
+            {
+                await _store.DeleteSectionTextAsync(documentId, identifier, cancellationToken);
+            }
+        }
     }
 
     /// <summary>Freezes the current state of a document as its next version.</summary>

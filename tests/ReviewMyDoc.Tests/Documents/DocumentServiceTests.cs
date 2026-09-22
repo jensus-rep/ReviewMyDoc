@@ -487,11 +487,13 @@ public sealed class DocumentServiceTests : IDisposable
         await AssertNoEntryWithoutFileAsync(split.Document);
     }
 
-    // The random case docs/Konzept.md spells out: the mark starts at the very
-    // beginning, so there is no text left over to carry the old identifier -
-    // it does not jump to the mark either, it simply ends here.
+    // The mark opens the section, so there is no text before it. The identifier
+    // goes to the part that holds the first character of the original text,
+    // which is now the mark itself. It never ends here: a piece of feedback
+    // pointing at it would otherwise lead nowhere while the prose it was written
+    // about is still in the document, only under another name.
     [Fact]
-    public async Task Splitting_at_the_start_of_the_section_produces_two_parts_and_the_old_identifier_disappears()
+    public async Task Splitting_at_the_start_of_the_section_leaves_the_identifier_on_the_mark()
     {
         var created = await CreateDocumentAsync("Gutachten");
         var withSection = await SucceedsAsync(
@@ -507,14 +509,36 @@ public sealed class DocumentServiceTests : IDisposable
         Assert.Equal(2, split.Document.Sections.Count);
         var marked = split.Document.Sections[0];
         var after = split.Document.Sections[1];
-        Assert.NotEqual(sectionId, marked.Id);
+        Assert.Equal(sectionId, marked.Id);
         Assert.NotEqual(sectionId, after.Id);
-        Assert.NotEqual(marked.Id, after.Id);
         Assert.Equal("Markierter Abschnitt", marked.Heading);
         Assert.Equal("Ausgangslage", after.Heading);
-        Assert.Null(split.Document.FindSection(sectionId));
-        Assert.Equal("Die Markierung selbst.", await ReadEntryAsync($"documents/{split.Document.Id}/sections/{marked.Id}.md"));
+        Assert.Equal("Die Markierung selbst.", await ReadEntryAsync($"documents/{split.Document.Id}/sections/{sectionId}.md"));
         Assert.Equal(" Nach der Markierung.", await ReadEntryAsync($"documents/{split.Document.Id}/sections/{after.Id}.md"));
+        await AssertNoEntryWithoutFileAsync(split.Document);
+    }
+
+    // Whichever way the mark falls, the identifier survives the split. Without
+    // that, a review order or a piece of feedback would point at a section that
+    // is no longer there while its text still is.
+    [Theory]
+    [InlineData(0, 22)]
+    [InlineData(4, 22)]
+    [InlineData(4, 43)]
+    public async Task Splitting_never_makes_the_identifier_disappear(int markStart, int markEnd)
+    {
+        var created = await CreateDocumentAsync("Gutachten");
+        var withSection = await SucceedsAsync(
+            _service.AddSectionAsync(created.Document.Id, "Ausgangslage", created.ETag, Token));
+        var sectionId = withSection.Document.Sections[0].Id;
+        await WriteSectionTextAsync(
+            withSection.Document.Id, sectionId, "Die Markierung selbst. Nach der Markierung.");
+
+        var split = await SucceedsAsync(_service.SplitSectionAsync(
+            withSection.Document.Id, sectionId, markStart, markEnd, "Markierter Abschnitt", withSection.ETag, Token));
+
+        Assert.NotNull(split.Document.FindSection(sectionId));
+        await AssertNoEntryWithoutFileAsync(split.Document);
     }
 
     // The mirror image: the mark reaches to the very end, so there is nothing
