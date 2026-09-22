@@ -1,0 +1,35 @@
+@page "/dokumente"
+@*
+    The list of every document: built by listing the object store by prefix, see
+    IndexModel and docs/Datenmodell.md, not by a second file that names them and
+    could fall out of step. Newest change first. An empty list gets a designed
+    empty state that says what to do next instead of a blank page, and the way
+    to the next document, /dokumente/anlegen, is the one link this page adds to
+    the frame's own navigation.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model IndexModel
+@{
+    ViewData["Title"] = "Dokumente";
+
+    var neu = new ButtonModel("Neues Dokument") { Href = "/dokumente/anlegen" };
+}
+
+<h1>Dokumente</h1>
+
+@if (Model.Rows.Items.Count == 0)
+{
+    <div class="surface karte">
+        <p>Es gibt noch keine Dokumente.</p>
+        <p>Leg dein erstes Dokument an, um mit dem Schreiben zu beginnen.</p>
+        <partial name="Ui/_Button" model="neu" />
+    </div>
+}
+else
+{
+    <div class="dokumente__neu">
+        <partial name="Ui/_Button" model="neu" />
+    </div>
+
+    <partial name="Ui/_Rows" model="Model.Rows" />
+}

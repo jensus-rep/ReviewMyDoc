@@ -173,30 +173,45 @@
   padding-block: var(--space-7) var(--space-10);
 }
 
-/* The sign-in form. The field and the button are building blocks and bring
-   themselves, and the glossy card is the class surface of the theme; what is
-   missing is the distance between them and the size of the card, and that is a
-   question of this one form and therefore neither a building block nor part of
-   the frame. It stands here and not in a style attribute, because the Content
-   Security Policy of this application allows no inline style. */
-.anmeldung {
+/* A card: the glossy shape comes from the class surface of the theme, the
+   inside comes from here. Everything a card holds stands one below the other
+   with the same distance, and the last child brings no distance of its own, so
+   the padding below is the padding and not the padding plus a margin.
+
+   One class for all of them, because the third one was the moment the three
+   near-identical blocks that stood here turned into a pattern. It stands here
+   and not in a style attribute, because the Content Security Policy of this
+   application allows no inline style. */
+.karte {
   box-sizing: border-box;
-  max-width: 24em;
+  max-width: 32em;
   padding: var(--space-7);
 }
 
-.anmeldung > * {
+.karte > * {
   margin-block-end: var(--space-5);
 }
 
-.anmeldung > :last-child {
+.karte > :last-child {
   margin-block-end: 0;
+}
+
+/* A form with a single field would look lost at the full width. */
+.karte--schmal {
+  max-width: 24em;
 }
 
 .anmeldung__message {
   margin: 0 0 var(--space-5);
   color: var(--ink);
   font-size: var(--font-size-label-app);
+}
+
+/* The space above the list of documents that holds the way to the next one. A
+   div and not a p: the link inside is a button of the building block, not a
+   sentence of running text. */
+.dokumente__neu {
+  margin: 0 0 var(--space-6);
 }
 
 /* Type of the content, so a page writes its text and not its sizes. */

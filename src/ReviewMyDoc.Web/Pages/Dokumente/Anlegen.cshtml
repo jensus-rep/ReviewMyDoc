@@ -1,0 +1,28 @@
+@page "/dokumente/anlegen"
+@*
+    The form that creates a document: a title and nothing else, on the glossy
+    card of the theme, the same shape Anmeldung.cshtml uses. method="post" alone
+    makes the form tag helper write the antiforgery token, and Razor Pages
+    checks it before AnlegenModel ever runs.
+*@
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@model AnlegenModel
+@{
+    ViewData["Title"] = "Dokument anlegen";
+
+    var title = new FieldModel(nameof(Model.Title), "Titel")
+    {
+        Value = Model.Title,
+        Error = Model.TitleError,
+        Required = true,
+    };
+
+    var submit = new ButtonModel("Anlegen");
+}
+
+<h1>Dokument anlegen</h1>
+
+<form class="surface karte karte--schmal" method="post">
+    <partial name="Ui/_Field" model="title" />
+    <partial name="Ui/_Button" model="submit" />
+</form>

@@ -162,6 +162,52 @@ public sealed class DocumentServiceTests : IDisposable
         Assert.IsType<DocumentResult.DocumentNotFound>(result);
     }
 
+    // The list Pages/Dokumente/Index.cshtml shows when nobody has written
+    // anything yet: no document, and an empty list is the honest answer, not a
+    // failure.
+    [Fact]
+    public async Task Listing_documents_when_there_are_none_returns_an_empty_list()
+    {
+        var documents = await _service.ListDocumentsAsync(Token);
+
+        Assert.Empty(documents);
+    }
+
+    // The one rule of the operation: newest change first, regardless of the
+    // order the documents were created in.
+    [Fact]
+    public async Task Listing_documents_returns_every_one_newest_change_first()
+    {
+        var first = await CreateDocumentAsync("Zuerst angelegt");
+        _clock.UtcNow = Changed;
+        var second = await CreateDocumentAsync("Zuletzt angelegt");
+
+        // The first document is renamed after the second was created, so the
+        // moment it last changed is now the later one - the list has to follow
+        // that and not the order the two were created in.
+        _clock.UtcNow = Changed + TimeSpan.FromDays(1);
+        var renamed = await SucceedsAsync(
+            _service.RenameDocumentAsync(first.Document.Id, "Zuerst angelegt, zuletzt geändert", first.ETag, Token));
+
+        var documents = await _service.ListDocumentsAsync(Token);
+
+        Assert.Equal(
+            [renamed.Document.Id, second.Document.Id],
+            documents.Select(document => document.Id));
+    }
+
+    // The list holds one entry per document, however many other entries - here
+    // three section texts - that document owns under the same prefix.
+    [Fact]
+    public async Task Listing_documents_with_sections_still_lists_each_document_once()
+    {
+        await WithThreeSectionsAsync();
+
+        var documents = await _service.ListDocumentsAsync(Token);
+
+        Assert.Single(documents);
+    }
+
     [Fact]
     public async Task Renaming_a_document_changes_its_title_and_nothing_else()
     {

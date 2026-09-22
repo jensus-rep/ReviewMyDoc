@@ -87,6 +87,22 @@ public sealed class DocumentService
             : new DocumentResult.Conflict();
     }
 
+    /// <summary>Lists every document, newest change first.</summary>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>Every document there is, sorted by <see cref="Document.UpdatedAt"/> descending.</returns>
+    /// <remarks>
+    /// The sort is the one rule of this operation and the reason it is not left
+    /// to the page: whoever asks for the list of documents wants the one that
+    /// changed most recently first, and stating that once here means every page
+    /// that shows the list agrees on it without repeating it.
+    /// </remarks>
+    public async Task<IReadOnlyList<Document>> ListDocumentsAsync(CancellationToken cancellationToken)
+    {
+        var documents = await _store.ListDocumentsAsync(cancellationToken);
+
+        return [.. documents.OrderByDescending(document => document.UpdatedAt)];
+    }
+
     /// <summary>Loads a document with the version needed for the next change.</summary>
     /// <param name="documentId">Which document.</param>
     /// <param name="cancellationToken">Cancels the operation.</param>

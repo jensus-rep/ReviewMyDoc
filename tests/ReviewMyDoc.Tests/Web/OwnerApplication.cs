@@ -33,6 +33,10 @@ public class OwnerApplication : WebApplicationFactory<Program>
 
     private readonly RecordingLoggerProvider _log = new();
     private readonly SemaphoreSlim _ownerClientGate = new(1, 1);
+    private readonly string _storageRoot = Path.Combine(
+        Path.GetTempPath(),
+        "reviewmydoc-tests",
+        Guid.NewGuid().ToString("n"));
     private HttpClient? _ownerClient;
 
     /// <summary>
@@ -176,6 +180,12 @@ public class OwnerApplication : WebApplicationFactory<Program>
         // anything a registration reads while the application starts.
         builder.UseSetting($"{OwnerOptions.SectionName}:{nameof(OwnerOptions.PasswordHash)}", PasswordHash);
 
+        // A directory of its own and not the App_Data/storage of the running
+        // development instance: docs/Konventionen.md, section Tests, asks for a
+        // temporary directory per run so that parallel runs, in this worktree and
+        // in every other one on the machine, do not read each other's documents.
+        builder.UseSetting("Storage:Directory:RootPath", _storageRoot);
+
         if (LoginPermitLimit > 0)
         {
             builder.UseSetting(
@@ -193,6 +203,23 @@ public class OwnerApplication : WebApplicationFactory<Program>
         {
             _ownerClient?.Dispose();
             _ownerClientGate.Dispose();
+
+            // Best effort, exactly as DocumentServiceTests does it: a directory
+            // that cannot be removed does not turn a green test red, because the
+            // test has already shown what it had to show by the time this runs.
+            try
+            {
+                if (Directory.Exists(_storageRoot))
+                {
+                    Directory.Delete(_storageRoot, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         base.Dispose(disposing);

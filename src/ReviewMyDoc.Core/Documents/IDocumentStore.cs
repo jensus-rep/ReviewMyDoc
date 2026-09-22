@@ -56,6 +56,23 @@ public interface IDocumentStore
         WriteCondition condition,
         CancellationToken cancellationToken);
 
+    /// <summary>Reads every document there is.</summary>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>
+    /// Every document, in no particular order. Empty if there is none, which is
+    /// an ordinary answer and not a failure.
+    /// </returns>
+    /// <remarks>
+    /// <c>docs/Datenmodell.md</c> answers the question "which documents are
+    /// there" by listing the container by prefix instead of keeping a second
+    /// file that names them, so this is the one place that turns the plain paths
+    /// <see cref="Storage.IObjectStore.ListAsync"/> hands back into documents. It
+    /// reads every <c>document.json</c> it finds; ordering the result for a page
+    /// is not its job, because two different pages may want two different
+    /// orders.
+    /// </remarks>
+    Task<IReadOnlyList<Document>> ListDocumentsAsync(CancellationToken cancellationToken);
+
     /// <summary>Writes the Markdown text of one section.</summary>
     /// <param name="documentId">Which document the section belongs to.</param>
     /// <param name="sectionId">Which section.</param>

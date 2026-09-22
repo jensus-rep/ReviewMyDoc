@@ -2,8 +2,12 @@
 // come together here, so there is exactly one place that answers what happens to
 // every request. See docs/Konventionen.md, section Struktur.
 
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.WebEncoders;
+using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Infrastructure.Markdown;
 using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
@@ -23,12 +27,34 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 
+// Umlauts stay umlauts in the markup. By default the HTML encoder escapes every
+// character outside Basic Latin as a numeric entity, so a title a person typed
+// arrives in the page as "Musterstra&#xDF;e" - correct in a browser, unreadable
+// in the source, and impossible to search for in a test. The interface of this
+// application is German, so the whole range is allowed through. This changes
+// nothing about safety: the characters that carry meaning in HTML, < > & " and
+// the apostrophe, are still escaped, and every page is delivered as UTF-8.
+builder.Services.Configure<WebEncoderOptions>(options =>
+    options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
+
 // Which of the two object stores this is, Azure or a local directory, the
 // section "Storage" of the configuration decides; see docs/Betrieb.md. The
 // choice is made in the infrastructure assembly so that no Azure type has to be
 // named here.
 builder.Services.AddObjectStore(builder.Configuration);
 
+// The document aggregate of ReviewMyDoc.Core: a store that turns it into the
+// entries of docs/Datenmodell.md through the object store above, and the
+// service the pages under Pages/Dokumente/ call. Both are stateless singletons
+// over the one object store, and the clock is the real one everywhere but in a
+// test, which hands the service a fixed one instead.
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IDocumentStore, DocumentStore>();
+builder.Services.AddSingleton<DocumentService>();
+
+// Markdown to safe HTML, the one translation a section's text takes on its way
+// to a page; the renderer lives in the infrastructure assembly because Markdig
+// does, see Markdown/MarkdigMarkdownRenderer.cs.
 builder.Services.AddMarkdownRenderer();
 
 // The keys that encrypt every cookie and every antiforgery token. They go to the

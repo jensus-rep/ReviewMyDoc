@@ -4,9 +4,9 @@
     button are the building blocks, the frame is the layout of the application,
     and the distance between the two is one rule in site.css, because the
     Content Security Policy of this application allows no inline style. The
-    class surface comes from the theme and makes the form a glossy card; it is
-    the one shape of this style, so the form states it instead of site.css
-    repeating its four lines.
+    class surface comes from the theme and gives the form the glossy shape;
+    karte adds the inside of a card, the padding and the distance between the
+    children, and is shared with every other card of this application.
 
     method="post" alone makes the form tag helper write the antiforgery token,
     and Razor Pages checks it before this page ever runs.
@@ -35,7 +35,7 @@
     <p class="anmeldung__message" role="alert">@Model.Message</p>
 }
 
-<form class="anmeldung surface" method="post" asp-page="/Anmeldung" asp-route-ReturnUrl="@Model.ReturnUrl">
+<form class="surface karte karte--schmal" method="post" asp-page="/Anmeldung" asp-route-ReturnUrl="@Model.ReturnUrl">
     <partial name="Ui/_Field" model="password" />
     <partial name="Ui/_Button" model="submit" />
 </form>

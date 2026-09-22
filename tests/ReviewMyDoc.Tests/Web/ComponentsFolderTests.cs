@@ -3,6 +3,7 @@
 // on the day it is made and drifts away from the original from the next change
 // on, and nothing in a running application would ever say so.
 
+using System.Text;
 using System.Xml.Linq;
 
 namespace ReviewMyDoc.Tests.Web;
@@ -62,13 +63,52 @@ public sealed class ComponentsFolderTests
     [Fact]
     public void The_styles_of_the_application_use_no_raw_values()
     {
-        var css = File.ReadAllText(
-            Path.Combine(RepositoryRoot(), "src", "ReviewMyDoc.Web", "wwwroot", "css", "site.css"));
+        var css = WithoutComments(File.ReadAllText(
+            Path.Combine(RepositoryRoot(), "src", "ReviewMyDoc.Web", "wwwroot", "css", "site.css")));
 
         Assert.DoesNotContain("#", css, StringComparison.Ordinal);
         Assert.DoesNotContain("rgb(", css, StringComparison.Ordinal);
         Assert.DoesNotContain("px", css, StringComparison.Ordinal);
         Assert.DoesNotContain("rem", css, StringComparison.Ordinal);
+    }
+
+    /// <summary>Removes every comment from a stylesheet.</summary>
+    /// <param name="css">The stylesheet as it stands on disk.</param>
+    /// <returns>The same stylesheet with every /* … */ taken out.</returns>
+    /// <remarks>
+    /// The check above searches for text and not for declarations, so a comment
+    /// explaining a rule would be searched as well: the word "premature" carries
+    /// "rem", "approximately" carries "px", and a sentence about a colour may
+    /// well carry a "#". None of them is a raw value, and none of them should
+    /// make a green test red.
+    /// </remarks>
+    private static string WithoutComments(string css)
+    {
+        var text = new StringBuilder(css.Length);
+        var at = 0;
+
+        while (at < css.Length)
+        {
+            var start = css.IndexOf("/*", at, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                text.Append(css, at, css.Length - at);
+                break;
+            }
+
+            text.Append(css, at, start - at);
+
+            var end = css.IndexOf("*/", start + 2, StringComparison.Ordinal);
+            if (end < 0)
+            {
+                // An unclosed comment: everything from here on is comment.
+                break;
+            }
+
+            at = end + 2;
+        }
+
+        return text.ToString();
     }
 
     /// <summary>Walks up from the test output until the solution file appears.</summary>

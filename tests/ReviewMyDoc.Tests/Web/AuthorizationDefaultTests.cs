@@ -89,6 +89,8 @@ public sealed class AuthorizationDefaultTests
     [Theory]
     [InlineData("/")]
     [InlineData("/abmelden")]
+    [InlineData("/dokumente")]
+    [InlineData("/dokumente/anlegen")]
     public async Task A_page_of_the_application_sends_an_anonymous_visitor_to_the_sign_in(string path)
     {
         using var application = new OwnerApplication();

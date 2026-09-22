@@ -72,6 +72,40 @@ public sealed class DocumentStore : IDocumentStore
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Document>> ListDocumentsAsync(CancellationToken cancellationToken)
+    {
+        var paths = await _objects.ListAsync(DocumentPaths.DocumentsPrefix, cancellationToken);
+
+        var documents = new List<Document>();
+        foreach (var path in paths)
+        {
+            // The prefix also matches every section text, every frozen version,
+            // every review order and every piece of feedback of every document -
+            // "documents/" is a prefix over characters, not over one path
+            // segment. Only the one entry per document that is its
+            // document.json belongs in this list.
+            if (!DocumentPaths.IsDocumentEntry(path))
+            {
+                continue;
+            }
+
+            var entry = await _objects.ReadAsync(path, cancellationToken);
+            if (entry is ObjectReadResult.Found found)
+            {
+                documents.Add(DocumentJson.Read(found.Content));
+            }
+
+            // A path that ListAsync just handed back and that ReadAsync no
+            // longer finds is a document deleted between the two calls, which
+            // this model does not do today. Leaving it out rather than failing
+            // is the same choice IDocumentStore.ReadAsync makes for a single
+            // missing document.
+        }
+
+        return documents;
+    }
+
+    /// <inheritdoc />
     public async Task<ObjectWriteResult> WriteSectionTextAsync(
         DocumentIdentifier documentId,
         SectionIdentifier sectionId,
