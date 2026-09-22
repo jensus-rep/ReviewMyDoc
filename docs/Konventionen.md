@@ -151,8 +151,11 @@ Radien. Kein Baustein und keine Seite verwendet Rohwerte.
 - AI und Mail haben Ersatzimplementierungen; Tests verwenden nur diese. Kein Test ruft einen
   externen Anbieter.
 - **Ein lokaler Server, ein Port.** Die Anwendung läuft lokal ausschließlich unter
-  `http://localhost:5061`. Browserprüfungen und Vorschauen verwenden diese eine Instanz. Eine
+  `http://localhost:5071`. Browserprüfungen und Vorschauen verwenden diese eine Instanz. Eine
   Vorschau, die nicht den Stand des Arbeitsbaums zeigt, gilt als nicht geprüft.
+  Der Port ist nicht beliebig: Browser führen eine feste Sperrliste, und 5060 und 5061 stehen darauf,
+  weil sie für SIP vergeben sind. Chrome antwortet dort mit `ERR_UNSAFE_PORT`, ohne dass die
+  Anwendung etwas davon merkt. Wer den Port ändert, prüft ihn vorher gegen diese Liste.
 
 ## Git und Ablauf
 

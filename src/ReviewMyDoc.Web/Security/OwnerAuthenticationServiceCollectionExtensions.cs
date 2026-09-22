@@ -80,7 +80,7 @@ public static class OwnerAuthenticationServiceCollectionExtensions
                 cookie.Cookie.SameSite = SameSiteMode.Lax;
 
                 // Never over plain http outside development. In development the
-                // application runs on http://localhost:5061, where Always would
+                // application runs on http://localhost:5071, where Always would
                 // mean no cookie at all and therefore no sign-in; see
                 // docs/Konventionen.md, section Tests.
                 cookie.Cookie.SecurePolicy = environment.IsDevelopment()
