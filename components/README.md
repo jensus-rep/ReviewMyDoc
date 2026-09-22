@@ -6,8 +6,17 @@ Bausteinen, kein Framework. Jeder hat eine README und eine `demo.html`, die sich
 öffnen lässt. `ReviewMyDoc.Web` liefert diesen Ordner unter `/components/` aus, siehe
 [docs/Konventionen.md](../docs/Konventionen.md), Abschnitt Struktur.
 
-Dieser Ordner ist zum Zeitpunkt dieser Änderung noch leer bis auf diese README; die Werkzeugkette
-darunter läuft trotzdem, damit jeder weitere Task ohne Einrichtungsarbeit beginnen kann.
+Vorhanden sind `tokens`, `button`, `field`, `rows`, `busy-button`, `busy-region`, `progress-line`,
+`skeleton`, `loading-dots` und `dashboard`, alle aus Atelier übernommen.
+
+Zwei Dinge fallen beim Lesen der übernommenen Bausteine auf, beide sind bekannt und bewusst nicht
+geändert, weil an einer Kopie nichts geändert wird außer der Herkunftszeile:
+
+- Die READMEs einiger Bausteine verweisen auf `docs/Design/…` und auf Mockups. Diese Pfade gibt es
+  nur in Atelier. Wohin sie zeigen, sagt die Herkunftszeile in Zeile eins derselben Datei.
+- `button/demo.html` und `busy-button/demo.html` binden jeweils das CSS des anderen ein, um die
+  Kombination zu zeigen. Die Bausteine selbst hängen nicht voneinander ab, nur diese beiden
+  Vorführseiten.
 
 ## Regeln
 
