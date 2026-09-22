@@ -291,6 +291,64 @@ public sealed class Document
         return new Document(Id, OwnerId, Title, State, Version, sections, CreatedAt, now);
     }
 
+    /// <summary>Puts one to three sections where a single section stood.</summary>
+    /// <param name="sectionId">Which section is being replaced.</param>
+    /// <param name="replacement">
+    /// The sections to put in its place, in the order they are to appear.
+    /// <see cref="DocumentService.SplitSectionAsync"/> hands over one, two or
+    /// three, matching what a split at a mark can leave: nothing before the
+    /// mark, nothing after it, or both.
+    /// </param>
+    /// <param name="now">The moment of the change.</param>
+    /// <returns>
+    /// A document whose outline holds <paramref name="replacement"/> exactly
+    /// where <paramref name="sectionId"/> stood; every other section keeps its
+    /// identifier, its heading and its place relative to the others.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// The document has no such section, <paramref name="replacement"/> is
+    /// empty, or one of its identifiers is already used by another section of
+    /// this document - which none of <see cref="DocumentService.SplitSectionAsync"/>'s
+    /// freshly drawn identifiers can be, so reaching this would be a defect.
+    /// </exception>
+    /// <remarks>
+    /// The list stays the one authority over <see cref="Section.Order"/>: this
+    /// method only decides which entries go where in it, and the constructor's
+    /// <see cref="Renumber"/> does the rest, exactly as it does for every other
+    /// change to the outline.
+    /// </remarks>
+    public Document SplitSection(SectionIdentifier sectionId, IReadOnlyList<Section> replacement, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(sectionId);
+        ArgumentNullException.ThrowIfNull(replacement);
+        RequireSection(sectionId);
+
+        if (replacement.Count == 0)
+        {
+            throw new ArgumentException("A split puts at least one section in the place of the original.", nameof(replacement));
+        }
+
+        foreach (var part in replacement)
+        {
+            ArgumentNullException.ThrowIfNull(part, nameof(replacement));
+        }
+
+        var sections = new List<Section>(Sections.Count - 1 + replacement.Count);
+        foreach (var section in Sections)
+        {
+            if (section.Id == sectionId)
+            {
+                sections.AddRange(replacement);
+            }
+            else
+            {
+                sections.Add(section);
+            }
+        }
+
+        return new Document(Id, OwnerId, Title, State, Version, sections, CreatedAt, now);
+    }
+
     /// <summary>Records that another state of the document has just been frozen.</summary>
     /// <param name="version">
     /// The version number the state was frozen as; must be exactly

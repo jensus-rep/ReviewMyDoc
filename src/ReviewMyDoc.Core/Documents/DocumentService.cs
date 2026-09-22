@@ -407,6 +407,226 @@ public sealed class DocumentService
         return new DocumentResult.Success(changed, removed.ETag);
     }
 
+    /// <summary>Splits one section into up to three at the edges of a marked stretch of its text.</summary>
+    /// <param name="documentId">Which document.</param>
+    /// <param name="sectionId">Which section is being split.</param>
+    /// <param name="markStart">
+    /// The offset, in <see cref="char"/>s from the start of the section's text,
+    /// where the mark begins.
+    /// </param>
+    /// <param name="markEnd">
+    /// The offset where the mark ends. The marked text is
+    /// <c>text[markStart..markEnd]</c>, so this is exclusive, and it must be
+    /// strictly greater than <paramref name="markStart"/>.
+    /// </param>
+    /// <param name="heading">The heading of the section the mark becomes.</param>
+    /// <param name="expectedETag">The version the caller read.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>
+    /// Success with the document whose outline has the split section's parts in
+    /// its place, <see cref="DocumentResult.DocumentNotFound"/>,
+    /// <see cref="DocumentResult.SectionNotFound"/>,
+    /// <see cref="DocumentResult.InvalidSelection"/> if the mark does not name a
+    /// real, non-empty stretch of the text, or <see cref="DocumentResult.Conflict"/>.
+    /// </returns>
+    /// <exception cref="ArgumentException">The heading is empty.</exception>
+    /// <remarks>
+    /// <para>
+    /// This is <c>docs/Konzept.md</c>, section Dokument anlegen und ausarbeiten:
+    /// "Aus der Markierung wird der Abschnitt." The text before the mark, the
+    /// mark itself and the text after it can each be empty except the mark,
+    /// which the caller refused as <see cref="DocumentResult.InvalidSelection"/>
+    /// already were it empty - so this produces one, two or three sections, and
+    /// never zero.
+    /// </para>
+    /// <para>
+    /// <b>Which part keeps <paramref name="sectionId"/>, and why.</b>
+    /// <c>docs/Konzept.md</c> is explicit that the identifier stays with the
+    /// first of the three - not with whichever part happens to end up first when
+    /// one of them is empty, but with the text that stood <i>before</i> the mark.
+    /// When that text is empty - the mark starts at the very beginning of the
+    /// section - there is no such part to carry it, and the identifier does not
+    /// jump to the mark instead: it ends here, and every part this call produces
+    /// is freshly drawn. Handing it to the mark would look like a small mercy -
+    /// something keeps the old name - but it would be the wrong section keeping
+    /// it: a review order or a piece of feedback pointing at <paramref name="sectionId"/>
+    /// was written against the text that used to open the section, not against
+    /// whatever the owner has now chosen to mark, and letting the identifier
+    /// silently reattach to different prose is exactly the kind of drift a stable
+    /// identifier exists to prevent. One case looks like an exception to this and
+    /// is not: when the mark reaches from the very start of the text to the very
+    /// end, there is neither a part before it nor after it, so nothing is actually
+    /// split - the single result is the same section under
+    /// <see cref="Document.RenameSection"/>, keeping <paramref name="sectionId"/>
+    /// precisely because no text has moved to another identifier at all.
+    /// </para>
+    /// <para>
+    /// <b>The order of the writes, and why.</b> A split touches up to three
+    /// entries that cannot be written at once: the text of the part after the
+    /// mark, the text of the mark itself, both under freshly drawn identifiers,
+    /// and <c>document.json</c>. The two fresh texts are written first, under
+    /// <see cref="WriteCondition.MustNotExist"/> and for the same reason as
+    /// <see cref="AddSectionAsync"/> - nothing yet refers to a freshly drawn
+    /// identifier, so a text under one is harmless to leave behind, while an
+    /// entry in the outline that already names a text which is not there is not.
+    /// Should either fail, or should <c>document.json</c> itself then be refused,
+    /// the fresh texts already written are removed again, the same compensation
+    /// <see cref="AddSectionAsync"/> and <see cref="FreezeVersionAsync"/> run for
+    /// their own second write.
+    /// </para>
+    /// <para>
+    /// The one entry this does not write first is the text that stays under
+    /// <paramref name="sectionId"/>, shortened to what stood before the mark.
+    /// That happens last, after <c>document.json</c> has already committed the
+    /// split, and deliberately not before it. Shortening it first and writing
+    /// the outline second would risk the failure
+    /// <see cref="DeleteSectionAsync"/>'s remarks warn against in the other
+    /// direction: the process stopping in between would leave a
+    /// <c>document.json</c> that still lists one section with its original
+    /// heading over a file that has already lost the marked and trailing text -
+    /// content silently gone from a section the outline never said had changed.
+    /// Writing the outline first and shortening the text second leaves the
+    /// opposite residue in the same failure: <c>document.json</c> already
+    /// describes the split correctly, and the one file that has not yet caught
+    /// up merely holds more than it should - the marked and trailing text still
+    /// sitting, unreachable through the outline, underneath the part that kept
+    /// <paramref name="sectionId"/>. Surplus bytes in a file nobody's client
+    /// reads past its own boundary once split are a rounding error, while
+    /// content missing from a section that looks untouched is not - the same
+    /// choice <see cref="DeleteSectionAsync"/> makes between an orphaned file and
+    /// a broken reference, applied to a shrink instead of a removal.
+    /// </para>
+    /// </remarks>
+    public async Task<DocumentResult> SplitSectionAsync(
+        DocumentIdentifier documentId,
+        SectionIdentifier sectionId,
+        int markStart,
+        int markEnd,
+        string heading,
+        ETag expectedETag,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(sectionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(heading);
+
+        var (stored, refused) = await LoadForChangeAsync(documentId, expectedETag, cancellationToken);
+        if (refused is not null)
+        {
+            return refused;
+        }
+
+        var document = stored!.Document;
+        var section = document.FindSection(sectionId);
+        if (section is null)
+        {
+            return new DocumentResult.SectionNotFound(sectionId);
+        }
+
+        var storedText = await _store.ReadSectionTextAsync(documentId, sectionId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Section '{sectionId}' is listed in document.json but has no text; the store is inconsistent.");
+        var text = storedText.Content;
+
+        if (markStart < 0 || markEnd > text.Length || markStart >= markEnd)
+        {
+            return new DocumentResult.InvalidSelection();
+        }
+
+        var now = Now();
+        var beforeText = text[..markStart];
+        var markedText = text[markStart..markEnd];
+        var afterText = text[markEnd..];
+        var trimmedHeading = heading.Trim();
+
+        if (beforeText.Length == 0 && afterText.Length == 0)
+        {
+            // The mark spans the whole section: nothing stands before or after
+            // it, so nothing splits off, and the identifier has nowhere else to
+            // go but stay exactly where it is - see the remarks above.
+            var renamed = document.RenameSection(sectionId, trimmedHeading, now);
+
+            return await WriteChangeAsync(renamed, expectedETag, cancellationToken);
+        }
+
+        var markedId = SectionIdentifier.Draw();
+        var afterId = afterText.Length > 0 ? SectionIdentifier.Draw() : null;
+
+        var markedWritten = await _store.WriteSectionTextAsync(
+            documentId,
+            markedId,
+            markedText,
+            WriteCondition.MustNotExist,
+            cancellationToken);
+        if (markedWritten is not ObjectWriteResult.Written)
+        {
+            return new DocumentResult.Conflict();
+        }
+
+        if (afterId is not null)
+        {
+            var afterWritten = await _store.WriteSectionTextAsync(
+                documentId,
+                afterId,
+                afterText,
+                WriteCondition.MustNotExist,
+                cancellationToken);
+            if (afterWritten is not ObjectWriteResult.Written)
+            {
+                await _store.DeleteSectionTextAsync(documentId, markedId, cancellationToken);
+
+                return new DocumentResult.Conflict();
+            }
+        }
+
+        var replacement = new List<Section>(3);
+        if (beforeText.Length > 0)
+        {
+            replacement.Add(section with { UpdatedAt = now });
+        }
+
+        replacement.Add(new Section(markedId, trimmedHeading, Order: 0, UpdatedAt: now));
+        if (afterId is not null)
+        {
+            replacement.Add(new Section(afterId, section.Heading, Order: 0, UpdatedAt: now));
+        }
+
+        var changed = document.SplitSection(sectionId, replacement, now);
+        var written = await _store.WriteAsync(changed, WriteCondition.MustMatch(expectedETag), cancellationToken);
+        if (written is not ObjectWriteResult.Written updated)
+        {
+            // Nothing yet refers to the two fresh texts, so removing them costs
+            // nothing - the same compensation AddSectionAsync and
+            // FreezeVersionAsync run when their own second write is refused.
+            await _store.DeleteSectionTextAsync(documentId, markedId, cancellationToken);
+            if (afterId is not null)
+            {
+                await _store.DeleteSectionTextAsync(documentId, afterId, cancellationToken);
+            }
+
+            return new DocumentResult.Conflict();
+        }
+
+        if (beforeText.Length > 0)
+        {
+            // See the remarks above: only now, with document.json already
+            // committed to the split, is it safe to shorten the text that stayed
+            // under sectionId. The condition is the stamp read at the top of this
+            // call - nothing else in this model writes a section's text back
+            // conditionally today, so it still applies, and the one write it
+            // could ever refuse is not reported as a conflict of this operation:
+            // the split itself already took effect in document.json, and the
+            // residue described above is what is left instead.
+            await _store.WriteSectionTextAsync(
+                documentId,
+                sectionId,
+                beforeText,
+                WriteCondition.MustMatch(storedText.ETag),
+                cancellationToken);
+        }
+
+        return new DocumentResult.Success(changed, updated.ETag);
+    }
+
     /// <summary>Freezes the current state of a document as its next version.</summary>
     /// <param name="documentId">Which document.</param>
     /// <param name="expectedETag">The version of <c>document.json</c> the caller read.</param>
@@ -484,7 +704,7 @@ public sealed class DocumentService
                 ?? throw new InvalidOperationException(
                     $"Section '{section.Id}' is listed in document.json but has no text; the store is inconsistent.");
 
-            sections.Add(new FrozenSection(section.Id, section.Heading, section.Order, text));
+            sections.Add(new FrozenSection(section.Id, section.Heading, section.Order, text.Content));
         }
 
         var frozen = new DocumentVersion(documentId, nextVersionNumber, document.Title, sections, now);
@@ -561,7 +781,7 @@ public sealed class DocumentService
         foreach (var section in stored.Document.Sections)
         {
             var frozenSection = frozen.FindSection(section.Id);
-            var currentText = await _store.ReadSectionTextAsync(documentId, section.Id, cancellationToken)
+            var currentText = (await _store.ReadSectionTextAsync(documentId, section.Id, cancellationToken))?.Content
                 ?? string.Empty;
 
             if (frozenSection is null || !string.Equals(frozenSection.Text, currentText, StringComparison.Ordinal))

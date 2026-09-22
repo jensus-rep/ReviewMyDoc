@@ -63,6 +63,21 @@ public abstract record DocumentResult
     public sealed record OrderDoesNotMatchSections : DocumentResult;
 
     /// <summary>
+    /// The marked range does not name a real, non-empty stretch of the
+    /// section's text: it starts or ends outside the text, ends before it
+    /// starts, or starts exactly where it ends.
+    /// </summary>
+    /// <remarks>
+    /// A result value and not an exception, for the same reason as
+    /// <see cref="OrderDoesNotMatchSections"/>: the marking happens in the
+    /// browser as character offsets into text the owner keeps typing, so a
+    /// selection that no longer fits by the time it reaches the server - the
+    /// text was shortened in another tab, or nothing was actually selected - is
+    /// the ordinary course of events here, not a defect to throw over.
+    /// </remarks>
+    public sealed record InvalidSelection : DocumentResult;
+
+    /// <summary>
     /// The document changed after it was read, and nothing was written.
     /// </summary>
     /// <remarks>

@@ -140,7 +140,7 @@ public sealed class DocumentStore : IDocumentStore
     }
 
     /// <inheritdoc />
-    public async Task<string?> ReadSectionTextAsync(
+    public async Task<StoredSectionText?> ReadSectionTextAsync(
         DocumentIdentifier documentId,
         SectionIdentifier sectionId,
         CancellationToken cancellationToken)
@@ -150,7 +150,7 @@ public sealed class DocumentStore : IDocumentStore
 
         var entry = await _objects.ReadAsync(DocumentPaths.SectionText(documentId, sectionId), cancellationToken);
 
-        return entry is ObjectReadResult.Found found ? found.Content : null;
+        return entry is ObjectReadResult.Found found ? new StoredSectionText(found.Content, found.ETag) : null;
     }
 
     /// <inheritdoc />

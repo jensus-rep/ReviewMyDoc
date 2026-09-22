@@ -106,18 +106,23 @@ public interface IDocumentStore
         SectionIdentifier sectionId,
         CancellationToken cancellationToken);
 
-    /// <summary>Reads the Markdown text of one section, without a version stamp.</summary>
+    /// <summary>Reads the Markdown text of one section, with the version stamp it carries.</summary>
     /// <param name="documentId">Which document the section belongs to.</param>
     /// <param name="sectionId">Which section.</param>
     /// <param name="cancellationToken">Cancels the operation.</param>
-    /// <returns>The text, or <see langword="null"/> if there is no such entry.</returns>
+    /// <returns>The text and its version, or <see langword="null"/> if there is no such entry.</returns>
     /// <remarks>
-    /// No version stamp travels with it, unlike <see cref="ReadAsync"/>: nothing
-    /// today writes a section's text back conditionally on having read it here -
-    /// freezing a state and comparing against one only ever read, never write,
-    /// a section's text.
+    /// The version stamp travels with it, unlike a plain read of content alone
+    /// would give: <see cref="DocumentService.SplitSectionAsync"/> reads a
+    /// section's text and, for the part that keeps the section's identifier,
+    /// writes a shortened version of the very same entry back - the one place in
+    /// this model that overwrites an existing section text rather than only ever
+    /// adding one under a fresh identifier or reading it for comparison. Freezing
+    /// a state and comparing against one still only ever read the content and
+    /// leave the stamp unused, which is why it is optional to use and not a
+    /// second required round trip.
     /// </remarks>
-    Task<string?> ReadSectionTextAsync(
+    Task<StoredSectionText?> ReadSectionTextAsync(
         DocumentIdentifier documentId,
         SectionIdentifier sectionId,
         CancellationToken cancellationToken);
@@ -174,3 +179,14 @@ public interface IDocumentStore
 /// how assurance 1 of <c>docs/Datenmodell.md</c> is kept.
 /// </param>
 public sealed record StoredDocument(Document Document, ETag ETag);
+
+/// <summary>The Markdown text of one section as it was read, together with the version its entry carried.</summary>
+/// <param name="Content">The text.</param>
+/// <param name="ETag">
+/// The version at the moment of the read. A caller that goes on to write a
+/// changed version of the very same entry hands this back on
+/// <see cref="WriteCondition.MustMatch(ETag)"/>, which is assurance 1 of
+/// <c>docs/Datenmodell.md</c> kept for a section's text exactly as it is kept
+/// for <c>document.json</c> through <see cref="StoredDocument"/>.
+/// </param>
+public sealed record StoredSectionText(string Content, ETag ETag);
