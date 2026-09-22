@@ -1,0 +1,79 @@
+# Prüfkette aus docs/Konventionen.md, Abschnitt Tests: baut und prüft ReviewMyDoc bei
+# jedem Push und jedem Pull Request. Nur bauen und prüfen, kein Deployment und kein
+# Azure-Schritt; das Ausliefern der Web App ist eine eigene Story in Epic 5.
+name: ReviewMyDoc bauen und prüfen
+
+on:
+  push:
+  pull_request:
+
+# Nur lesen: dieser Job baut und prüft, er meldet nichts an Azure oder sonst wohin.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Bauen und prüfen
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_NOLOGO: 'true'
+      DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Kein packages.lock.json im Repository, deshalb kein cache: true bei
+      # setup-dotnet (das verlangt eine Lock-Datei). Der Schlüssel über die
+      # .csproj-Dateien genügt, ohne dass dafür eine Lock-Datei eingeführt
+      # werden müsste.
+      - name: NuGet-Pakete zwischenspeichern
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Node 22 einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: .NET-Pakete wiederherstellen
+        run: dotnet restore
+
+      - name: Übersetzen, jede Warnung ist ein Fehler
+        run: dotnet build -warnaserror --no-restore
+
+      - name: Formatierung prüfen
+        run: dotnet format --verify-no-changes
+
+      - name: Tests
+        run: dotnet test --no-restore
+
+      - name: Frontend-Abhängigkeiten installieren
+        run: npm ci
+
+      - name: TypeScript-Typen prüfen
+        run: npm run typecheck
+
+      - name: Bausteintests
+        run: npm test
+
+      - name: Bausteine bauen
+        run: npm run build
+
+      # Zusicherung aus dem Task tsk_RZy1BanHYo: schlägt fehl, sobald eine
+      # eingecheckte .js-Datei unter components/ nicht mehr zu ihrem
+      # TypeScript-Quelltext passt, zum Beispiel weil jemand die .ts-Datei
+      # geändert und die generierte .js-Datei nicht neu gebaut hat.
+      - name: Erzeugte .js-Dateien passen zum Quelltext
+        run: git diff --exit-code components/
