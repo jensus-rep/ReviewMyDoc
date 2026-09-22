@@ -1,0 +1,11 @@
+<!--
+  Implementations of the interfaces declared in ReviewMyDoc.Core: object store
+  (Azure Blob Storage and a local directory), AI providers and mail.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReviewMyDoc.Core\ReviewMyDoc.Core.csproj" />
+  </ItemGroup>
+
+</Project>

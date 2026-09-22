@@ -1,0 +1,17 @@
+/*
+  Styles of the application itself, for what is not a building block. Kept nearly
+  empty on purpose: colours, type and spacing come from components/tokens as soon
+  as the building blocks are copied over from Atelier, and nothing here may
+  anticipate them with raw values.
+*/
+
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+}
+
+main {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+}

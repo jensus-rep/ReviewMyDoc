@@ -1,0 +1,12 @@
+<!--
+  The web application: Razor Pages, composition of services and middleware, and
+  delivery of the framework free building blocks under /components/.
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReviewMyDoc.Core\ReviewMyDoc.Core.csproj" />
+    <ProjectReference Include="..\ReviewMyDoc.Infrastructure\ReviewMyDoc.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<!--
+  Settings shared by every project in the solution, so that a new project cannot
+  drift away from the conventions: .NET 10, nullable reference types, implicit
+  usings, the latest language version and warnings treated as errors.
+  See docs/Konventionen.md, section Stack.
+-->
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

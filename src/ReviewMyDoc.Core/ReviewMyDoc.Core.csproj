@@ -1,0 +1,8 @@
+<!--
+  Domain model and services of ReviewMyDoc. This project must stay free of
+  ASP.NET, Azure and any AI provider so the rules of the domain can be tested
+  without infrastructure. See docs/Konventionen.md, section Code.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+</Project>

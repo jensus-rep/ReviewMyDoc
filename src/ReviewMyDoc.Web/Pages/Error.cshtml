@@ -1,0 +1,13 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Fehler";
+}
+
+<h1>Da ist etwas schiefgegangen</h1>
+<p>Der Vorgang konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.</p>
+
+@if (Model.ShowRequestId)
+{
+    <p>Kennung der Anfrage: <code>@Model.RequestId</code></p>
+}

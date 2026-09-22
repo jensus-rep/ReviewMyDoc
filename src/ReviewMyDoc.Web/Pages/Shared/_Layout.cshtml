@@ -1,0 +1,20 @@
+@*
+    Frame of every page of the application. Deliberately bare at this point: the
+    real frame with navigation and the design tokens from components/ arrives
+    with the task that brings the building blocks over from Atelier.
+*@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ReviewMyDoc</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <main>
+        @RenderBody()
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

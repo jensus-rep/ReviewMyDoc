@@ -1,0 +1,13 @@
+# Line endings for every text file. Git normalizes to LF on commit and checks out
+# LF, so a file looks the same on Windows, on Linux and in the pipeline.
+* text=auto eol=lf
+
+# Binary files must never be converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

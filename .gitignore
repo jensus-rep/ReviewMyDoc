@@ -1,0 +1,27 @@
+# Ignored paths for the ReviewMyDoc repository. Build output, restored packages
+# and local machine state never belong in Git; only sources, the generated
+# component JavaScript (committed on purpose) and documentation do.
+
+# .NET build output
+bin/
+obj/
+artifacts/
+
+# Output of the pipeline commands, when they are run locally
+out/
+testergebnisse/
+
+# Node
+node_modules/
+
+# Editors and local user state
+.vs/
+.idea/
+*.user
+*.suo
+
+# Worktrees of the subagents
+.claude/worktrees/
+
+# Local object store (Storage:LocalDirectory) and Data Protection keys
+App_Data/
