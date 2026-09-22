@@ -28,13 +28,13 @@ namespace ReviewMyDoc.Tests.Storage;
 public abstract class ObjectStoreContractTests
 {
     /// <summary>The entry of the model that carries a version stamp worth guarding.</summary>
-    private const string DocumentPath = "documents/d7Kq2fR/document.json";
+    private const string DocumentPath = "documents/d7kq2fr/document.json";
 
     /// <summary>The append-only entry of the model.</summary>
-    private const string AuditPath = "documents/d7Kq2fR/audit.log";
+    private const string AuditPath = "documents/d7kq2fr/audit.log";
 
     /// <summary>The prefix under which the section texts of one document live.</summary>
-    private const string SectionPrefix = "documents/d7Kq2fR/sections/";
+    private const string SectionPrefix = "documents/d7kq2fr/sections/";
 
     /// <summary>
     /// The token handed to every call. Cancellation is not part of this
@@ -129,7 +129,7 @@ public abstract class ObjectStoreContractTests
     public async Task Creating_an_entry_that_is_already_there_is_a_conflict_and_changes_nothing()
     {
         var store = CreateStore();
-        const string versionPath = "documents/d7Kq2fR/versions/4.json";
+        const string versionPath = "documents/d7kq2fr/versions/4.json";
         var version = await CreateAsync(store, versionPath, "eingefrorener Stand");
 
         var result = await store.WriteAsync(
@@ -244,7 +244,7 @@ public abstract class ObjectStoreContractTests
         var store = CreateStore();
         await CreateAsync(store, SectionPrefix + "s_1a2b.md", "Abschnitt");
         await CreateAsync(store, DocumentPath, "Metadaten");
-        await CreateAsync(store, "documents/d7Kq2fRZZ/sections/s_1a2b.md", "fremder Abschnitt");
+        await CreateAsync(store, "documents/d7kq2frzz/sections/s_1a2b.md", "fremder Abschnitt");
 
         var paths = await store.ListAsync(SectionPrefix, Token);
 
@@ -261,16 +261,16 @@ public abstract class ObjectStoreContractTests
         var store = CreateStore();
         await CreateAsync(store, DocumentPath, "Metadaten");
         await CreateAsync(store, SectionPrefix + "s_1a2b.md", "Abschnitt");
-        await CreateAsync(store, "documents/d7Kq2fRZZ/document.json", "fremde Metadaten");
+        await CreateAsync(store, "documents/d7kq2frzz/document.json", "fremde Metadaten");
 
-        var paths = await store.ListAsync("documents/d7Kq2fR", Token);
+        var paths = await store.ListAsync("documents/d7kq2fr", Token);
 
         Assert.Equal(
             new[]
             {
                 DocumentPath,
                 SectionPrefix + "s_1a2b.md",
-                "documents/d7Kq2fRZZ/document.json",
+                "documents/d7kq2frzz/document.json",
             },
             paths);
     }
@@ -283,7 +283,7 @@ public abstract class ObjectStoreContractTests
         var store = CreateStore();
         await CreateAsync(store, DocumentPath, "Metadaten");
 
-        var paths = await store.ListAsync("documents/d7Kq2fR/feedback/", Token);
+        var paths = await store.ListAsync("documents/d7kq2fr/feedback/", Token);
 
         Assert.Empty(paths);
     }
@@ -395,7 +395,7 @@ public abstract class ObjectStoreContractTests
     public async Task Deleting_one_entry_leaves_its_neighbours_alone()
     {
         var store = CreateStore();
-        const string feedbackPath = "documents/d7Kq2fR/feedback/f_4tZ.json";
+        const string feedbackPath = "documents/d7kq2fr/feedback/f_4tz.json";
         await CreateAsync(store, SectionPrefix + "s_1a2b.md", "erster Abschnitt");
         await CreateAsync(store, SectionPrefix + "s_3c4d.md", "zweiter Abschnitt");
         await CreateAsync(store, feedbackPath, "Rückmeldung");
@@ -457,7 +457,7 @@ public abstract class ObjectStoreContractTests
     {
         var store = CreateStore();
         const string longPath =
-            "documents/d7Kq2fR8mN3pL5vT/sections/"
+            "documents/d7kq2fr8mn3pl5vt/sections/"
             + "a-section-identifier-that-is-far-longer-than-any-this-application-draws"
             + ".md";
 
@@ -465,29 +465,30 @@ public abstract class ObjectStoreContractTests
 
         var entry = await ExpectFoundAsync(store, longPath);
         Assert.Equal("Abschnitt mit langem Pfad", entry.Content);
-        Assert.Equal(new[] { longPath }, await store.ListAsync("documents/d7Kq2fR8mN3pL5vT/", Token));
+        Assert.Equal(new[] { longPath }, await store.ListAsync("documents/d7kq2fr8mn3pl5vt/", Token));
     }
 
-    // The interface compares paths as ordinal strings, so two paths that differ
-    // only in case are two entries. This is the sharpest difference between the
-    // two storages: blob names are case sensitive, a Windows file system is
-    // not. Left untested, identifiers that differ only in case - and they are
-    // drawn at random - would overwrite each other in the local store while
-    // being kept apart in Azure.
+    // Case is the one point where the two storages genuinely disagree: blob
+    // names are case sensitive, a Windows file system is not, so an upper case
+    // letter in a path would mean two entries in Azure and one on a developer
+    // machine. The answer is not to encode the case into the file name, which
+    // would cost exactly the readability docs/Datenmodell.md gives as a reason
+    // for keeping Markdown as Markdown. Identifiers are drawn from a lower case
+    // alphabet, so the case can never collide, and the store refuses a path
+    // that breaks the rule instead of letting the two storages drift apart in
+    // silence.
     [Fact]
-    public async Task Paths_that_differ_only_in_case_are_different_entries()
+    public async Task A_path_with_an_upper_case_letter_is_rejected()
     {
         var store = CreateStore();
-        const string lowerCasePath = "documents/d7kq2fr/document.json";
         const string upperCasePath = "documents/D7Kq2fR/document.json";
 
-        await CreateAsync(store, lowerCasePath, "Dokument des einen");
-        await CreateAsync(store, upperCasePath, "Dokument des anderen");
-
-        Assert.Equal("Dokument des einen", (await ExpectFoundAsync(store, lowerCasePath)).Content);
-        Assert.Equal("Dokument des anderen", (await ExpectFoundAsync(store, upperCasePath)).Content);
-        Assert.Equal(ObjectDeleteResult.Deleted, await store.DeleteAsync(lowerCasePath, Token));
-        Assert.IsType<ObjectReadResult.Found>(await store.ReadAsync(upperCasePath, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.WriteAsync(upperCasePath, "Dokument", WriteCondition.MustNotExist, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.ReadAsync(upperCasePath, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.ListAsync("documents/D7Kq2fR/", Token));
     }
 
     /// <summary>Writes an entry that has to be new and hands back its version.</summary>

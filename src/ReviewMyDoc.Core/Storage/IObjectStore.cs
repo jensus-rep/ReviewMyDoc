@@ -15,9 +15,14 @@ namespace ReviewMyDoc.Core.Storage;
 /// Paths are exactly the ones listed in <c>docs/Datenmodell.md</c>, for example
 /// <c>documents/{documentId}/document.json</c>: segments separated by a forward
 /// slash, without a leading slash, relative to the one container. They are
-/// compared as ordinal strings and are therefore case sensitive. The store puts
-/// no meaning into a path; building paths is the business of exactly one place
-/// per aggregate, as laid down in <c>docs/Konventionen.md</c>.
+/// compared as ordinal strings, and they are lower case: an upper case letter
+/// is refused with an <see cref="ArgumentException"/>. Blob names tell case
+/// apart and a Windows file system does not, so a path that relied on case
+/// would mean two entries in one store and one in the other; drawing every
+/// identifier from a lower case alphabet removes that difference instead of
+/// hiding it behind an encoding. The store puts no meaning into a path;
+/// building paths is the business of exactly one place per aggregate, as laid
+/// down in <c>docs/Konventionen.md</c>.
 /// </para>
 /// <para>
 /// Content travels as text and is stored as UTF-8 without a byte order mark.

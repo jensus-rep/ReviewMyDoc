@@ -19,7 +19,14 @@ werden kann. Vorher nicht, denn ein Index, den niemand prüft, läuft auseinande
 ## Ablage
 
 Ein Container, Präfixe statt Tabellen. Kennungen sind URL-sichere Zufallswerte, keine laufenden
-Nummern.
+Nummern, und sie bestehen ausschließlich aus Kleinbuchstaben, Ziffern und Unterstrich.
+
+Die Kleinschreibung ist keine Kosmetik. Blobnamen unterscheiden Groß- und Kleinschreibung, ein
+Windows-Dateisystem nicht: zwei Kennungen, die sich nur darin unterscheiden, wären in Azure zwei
+Einträge und lokal einer. Die Alternative wäre, die Schreibweise in den Dateinamen zu kodieren, und
+das kostet genau die Lesbarkeit von Hand, die weiter oben als Grund dafür steht, einen Abschnitt als
+schlichte `.md`-Datei abzulegen. Der Objektspeicher weist deshalb jeden Pfad mit einem Großbuchstaben
+zurück, statt die beiden Implementierungen still auseinanderlaufen zu lassen.
 
 ```
 documents/{documentId}/document.json              Metadaten und Reihenfolge der Abschnitte
@@ -44,7 +51,7 @@ gemeinsamer Blob je Dokument wäre die einzige echte Konfliktstelle des ganzen S
 
 ```json
 {
-  "id": "d7Kq2fR",
+  "id": "d7kq2fr",
   "ownerId": "owner",
   "title": "Gutachten Musterstraße",
   "state": "InReview",
@@ -71,8 +78,8 @@ Gegenüberstellung alt gegen neu.
 
 ```json
 {
-  "id": "r_9xQ",
-  "documentId": "d7Kq2fR",
+  "id": "r_9xq",
+  "documentId": "d7kq2fr",
   "documentVersion": 4,
   "reviewerName": "Anna Berg",
   "reviewerEmail": "anna@example.org",
@@ -99,9 +106,9 @@ wird ein neuer erzeugt; der alte gilt dann nicht mehr.
 
 ```json
 {
-  "id": "f_4tZ",
-  "documentId": "d7Kq2fR",
-  "reviewId": "r_9xQ",
+  "id": "f_4tz",
+  "documentId": "d7kq2fr",
+  "reviewId": "r_9xq",
   "sectionId": "s_1a2b",
   "documentVersion": 4,
   "kind": "SuggestedChange",
