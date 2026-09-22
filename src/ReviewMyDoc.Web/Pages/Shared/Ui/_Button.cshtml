@@ -8,9 +8,9 @@
 @model ButtonModel
 @if (Model.IsLink)
 {
-    <a class="@Model.CssClass" href="@Model.LinkHref" aria-disabled="@Model.AriaDisabled">@Model.Label</a>
+    <a class="@Model.CssClass" href="@Model.LinkHref" aria-disabled="@Model.AriaDisabled" aria-label="@Model.AriaLabel">@Model.Label</a>
 }
 else
 {
-    <button class="@Model.CssClass" type="@Model.TypeAttribute" disabled="@Model.Disabled">@Model.Label</button>
+    <button class="@Model.CssClass" type="@Model.TypeAttribute" disabled="@Model.Disabled" aria-label="@Model.AriaLabel">@Model.Label</button>
 }

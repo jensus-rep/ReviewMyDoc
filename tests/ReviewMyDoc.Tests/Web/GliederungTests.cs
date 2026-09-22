@@ -58,6 +58,25 @@ public sealed class GliederungTests
         Assert.Equal(5, tokenCount);
     }
 
+    // Every section carries the same four captions. Somebody who hears the page
+    // instead of seeing it would get "Nach oben" five times in a row and no way
+    // to tell which section each one moves, so every one of them says its
+    // section by name.
+    [Fact]
+    public async Task Every_button_of_a_section_names_the_section_it_belongs_to()
+    {
+        using var application = new OwnerApplication();
+        using var client = await application.CreateOwnerClientAsync();
+        var documentId = await CreateDocumentWithSectionAsync(application, "Ausgangslage");
+
+        var html = await client.GetStringAsync($"/dokumente/{documentId}", TestContext.Current.CancellationToken);
+
+        Assert.Contains("aria-label=\"Überschrift von „Ausgangslage“ speichern\"", html, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"„Ausgangslage“ nach oben verschieben\"", html, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"„Ausgangslage“ nach unten verschieben\"", html, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"„Ausgangslage“ löschen\"", html, StringComparison.Ordinal);
+    }
+
     // The heart of the task: a real heading appends a section, and the page
     // redirects back to the outline instead of showing a stale form.
     [Fact]

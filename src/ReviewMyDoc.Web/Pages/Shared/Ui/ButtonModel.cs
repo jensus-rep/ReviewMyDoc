@@ -45,6 +45,19 @@ public sealed record ButtonModel(string Label)
     /// <summary>Whether the control is off.</summary>
     public bool Disabled { get; init; }
 
+    /// <summary>
+    /// What a screen reader announces instead of the caption, or nothing to
+    /// leave the caption as it is.
+    /// </summary>
+    /// <remarks>
+    /// For a button that appears once per entry of a list. Five buttons all
+    /// called "Nach oben" are five identical announcements, and a reader who
+    /// does not see the list around them cannot tell which section each one
+    /// moves. The caption stays short for the eye, and this says the whole
+    /// sentence for the ear.
+    /// </remarks>
+    public string? AriaLabel { get; init; }
+
     /// <summary>The classes of the building block for the chosen variant.</summary>
     public string CssClass => Variant switch
     {

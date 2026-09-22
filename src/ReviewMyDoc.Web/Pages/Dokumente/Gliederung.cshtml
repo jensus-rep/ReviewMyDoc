@@ -58,16 +58,42 @@
                     Error = renaming ? Model.RenameError : null,
                     Required = true,
                 };
-                var saveButton = new ButtonModel("Speichern") { Variant = ButtonVariant.Secondary };
-                var upButton = new ButtonModel("Nach oben") { Variant = ButtonVariant.Secondary, Disabled = index == 0 };
-                var downButton = new ButtonModel("Nach unten") { Variant = ButtonVariant.Secondary, Disabled = index == Model.Sections.Count - 1 };
+                @* Every one of these buttons appears once per section, so the
+                   caption alone repeats itself. The caption stays short for the
+                   eye; AriaLabel says which section it belongs to for the ear. *@
+                var saveButton = new ButtonModel("Speichern")
+                {
+                    Variant = ButtonVariant.Secondary,
+                    AriaLabel = $"Überschrift von „{entry.Heading}“ speichern",
+                };
+                var upButton = new ButtonModel("Nach oben")
+                {
+                    Variant = ButtonVariant.Secondary,
+                    Disabled = index == 0,
+                    AriaLabel = $"„{entry.Heading}“ nach oben verschieben",
+                };
+                var downButton = new ButtonModel("Nach unten")
+                {
+                    Variant = ButtonVariant.Secondary,
+                    Disabled = index == Model.Sections.Count - 1,
+                    AriaLabel = $"„{entry.Heading}“ nach unten verschieben",
+                };
                 var deleteLink = new ButtonModel("Löschen")
                 {
                     Variant = ButtonVariant.Secondary,
                     Href = $"/dokumente/{Model.DocumentId}?confirmDelete={entry.Id.Value}",
+                    AriaLabel = $"„{entry.Heading}“ löschen",
                 };
-                var cancelLink = new ButtonModel("Abbrechen") { Variant = ButtonVariant.Secondary, Href = $"/dokumente/{Model.DocumentId}" };
-                var confirmButton = new ButtonModel("Endgültig löschen");
+                var cancelLink = new ButtonModel("Abbrechen")
+                {
+                    Variant = ButtonVariant.Secondary,
+                    Href = $"/dokumente/{Model.DocumentId}",
+                    AriaLabel = $"Löschen von „{entry.Heading}“ abbrechen",
+                };
+                var confirmButton = new ButtonModel("Endgültig löschen")
+                {
+                    AriaLabel = $"„{entry.Heading}“ endgültig löschen",
+                };
 
                 <li class="gliederung__abschnitt">
                     <span class="gliederung__nummer">@entry.Order</span>

@@ -33,6 +33,30 @@ public sealed class UiPartialTests : IClassFixture<OwnerApplication>
         Assert.Contains(">Speichern</button>", html, StringComparison.Ordinal);
     }
 
+    // A button that appears once per entry of a list needs a sentence of its
+    // own for a screen reader; without one, five buttons announce themselves
+    // with the same two words.
+    [Fact]
+    public async Task A_button_says_for_the_ear_what_the_caption_leaves_out()
+    {
+        var html = await RenderAsync(
+            ButtonView,
+            new ButtonModel("Nach oben") { AriaLabel = "„Ausgangslage“ nach oben verschieben" });
+
+        Assert.Contains("aria-label=\"„Ausgangslage“ nach oben verschieben\"", html, StringComparison.Ordinal);
+        Assert.Contains(">Nach oben</button>", html, StringComparison.Ordinal);
+    }
+
+    // Without one, the attribute stays away entirely: an empty aria-label would
+    // silence the caption instead of leaving it alone.
+    [Fact]
+    public async Task A_button_without_a_sentence_of_its_own_carries_no_attribute()
+    {
+        var html = await RenderAsync(ButtonView, new ButtonModel("Speichern"));
+
+        Assert.DoesNotContain("aria-label", html, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_button_with_a_target_becomes_a_link()
     {
