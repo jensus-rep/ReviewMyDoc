@@ -1,0 +1,17 @@
+{
+  "name": "reviewmydoc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Frontend build of the components under components/: esbuild turns every <name>.ts into an ES module next to the source, tsc checks the types and node --test runs the component tests. JSON here carries no comment because npm does not allow one; this field is the file header.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "node scripts/build-components.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types \"components/**/*.test.mjs\" \"components/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

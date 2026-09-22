@@ -1,0 +1,30 @@
+// Type check of the TypeScript in the components: strict, ES2022 with the DOM
+// typing, and no emit, because esbuild writes the .js files (npm run build).
+// The build script under scripts/ is checked as well, through its JSDoc types.
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    // Node runs the .ts files directly (--experimental-strip-types) and does not
+    // rewrite import paths, so a test imports "./name.ts" with its extension.
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["components/**/*.ts", "scripts/**/*.mjs"]
+}
