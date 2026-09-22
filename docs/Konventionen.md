@@ -103,11 +103,11 @@ Funktionen ohne DOM-Zugriff, damit sie mit `node --test` ohne Browser prüfbar i
 
 Design-Tokens kommen aus Atelier und sind die einzige Quelle für Schrift, Abstände, Radien und
 Bewegung. Die Farben dieser Anwendung stehen nicht darin: Der hier entstandene Baustein `theme`
-schreibt die sieben Farbrollen der Tokens neu und trägt das Erscheinungsbild von ReviewMyDoc, ein
-warmes glänzendes Weiß mit Graphit, einem Aubergineakzent und vier flachen Kunstfarben für
+schreibt die sieben Farbrollen der Tokens neu und trägt das Erscheinungsbild von ReviewMyDoc: ein
+reduziertes System aus kühlem Weiß, Anthrazit und Dunkelblau mit tonalen blauen Abstufungen für
 Zustände. Er wird unmittelbar nach den Tokens geladen und vor allen übrigen Bausteinen. Kein
 Baustein und keine Seite verwendet Rohwerte; wer eine Farbe braucht, nimmt eine Rolle oder eine
-Kunstfarbe, und Farbe ist nie das einzige Merkmal eines Zustands.
+Farbrolle, und Farbe ist nie das einzige Merkmal eines Zustands.
 
 ## Code
 

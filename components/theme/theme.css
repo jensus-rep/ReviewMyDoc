@@ -1,119 +1,115 @@
 /*!
- * Theme 1.0.0 · ReviewMyDoc
- * The house style of this application: a warm, glossy corporate white, a graphite
- * ink, one plum accent and four flat art colours for states. It is loaded right
+ * Theme 1.1.0 · ReviewMyDoc
+ * The house style of this application: crisp white, anthracite ink and one dark
+ * blue colour family for accents and states. It is loaded right
  * after components/tokens/tokens.css and redefines that file's colour roles, and
  * only those; size, spacing, geometry and motion stay exactly as the tokens set
  * them. Every other file keeps reading the token names, so no building block
  * knows this file exists.
  *
- * Two names read oddly and are kept on purpose. --color-blue is the role "accent,
- * interactive" from Atelier and here carries a plum, and --color-red is the role
- * "critical" and carries the vermilion of the art palette. Renaming them would
- * mean touching every copied building block, and a copy is not touched.
+ * --color-red and the art colour names are legacy role names from Atelier. They
+ * remain for compatibility, while their values now stay inside the blue family.
  */
 
 :root {
-  /* Ground and ink, light mode. The page ground is a warm white and the raised
-     surface is pure white, so a card reads as a glossy layer above the paper
+  /* Ground and ink, light mode. The page ground is a cool white and the raised
+     surface is pure white, so a card reads as a restrained layer above the page
      instead of a rectangle drawn on it. */
-  --color-bg: #f8f6f3;        /* Grund, warmes Papierweiß */
-  --color-bg-2: #edeae4;      /* Sekundärgrund, vertieft */
-  --color-hairline: #e2ded6;  /* Haarlinie */
-  --color-ink: #17161b;       /* Text, warmes Graphit statt Schwarz */
-  --color-ink-2: #605d57;     /* Sekundärtext */
-  --color-blue: #6b2d5c;      /* Akzent, interaktiv: Aubergine */
-  --color-red: #b4311c;       /* Kritisch: Zinnober */
+  --color-bg: #f7f8fa;        /* Grund, kühles Weiß */
+  --color-bg-2: #eef1f4;      /* Sekundärgrund, vertieft */
+  --color-hairline: #d7dde3;  /* Haarlinie */
+  --color-ink: #24282d;       /* Text, Anthrazit */
+  --color-ink-2: #59636e;     /* Sekundärtext */
+  --color-blue: #123a5f;      /* Akzent, interaktiv: Dunkelblau */
+  --color-red: #214d73;       /* Kritisch, innerhalb der Blaupalette */
 
   /* The glossy layer. A surface is a card, a dialog, a panel: everything that
      lies above the paper. The sheen is a gradient and not a second colour, so a
      large surface stays quiet while its top edge catches the light. */
   --surface: #ffffff;
-  --surface-sheen: linear-gradient(180deg, #ffffff 0%, #fcfbf9 100%);
+  --surface-sheen: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   --surface-edge: inset 0 var(--hairline-width) 0 rgba(255, 255, 255, 0.9);
   --surface-shadow:
-    0 1px 2px rgba(23, 22, 27, 0.05),
-    0 12px 32px -16px rgba(23, 22, 27, 0.22);
+    0 1px 2px rgba(18, 58, 95, 0.05),
+    0 12px 32px -16px rgba(36, 40, 45, 0.22);
 
-  /* The art palette. Four flat colours for states, never for body text. Each has
-     a solid form for a mark or a filled block and a quiet form for a wide area
-     that carries text; text on a quiet area is always var(--ink). */
-  --art-vermilion: #b4311c;
-  --art-vermilion-quiet: #f7e3dd;
-  --art-chrome: #d99400;
-  --art-chrome-quiet: #f7ecd2;
-  --art-malachite: #0f6f4e;
-  --art-malachite-quiet: #dceee6;
-  --art-plum: #6b2d5c;
-  --art-plum-quiet: #efdfea;
+  /* Tonal state palette. The legacy names remain stable for copied components;
+     every value is now a dark-blue shade or tint. */
+  --art-vermilion: #0b2d4d;
+  --art-vermilion-quiet: #e7eef4;
+  --art-chrome: #123a5f;
+  --art-chrome-quiet: #e2ebf2;
+  --art-malachite: #1a466f;
+  --art-malachite-quiet: #dce7f0;
+  --art-plum: #23537f;
+  --art-plum-quiet: #d6e3ed;
 
-  /* Text on a solid art colour. In light mode the solid colours are deep and
-     carry pale text; in dark mode they are the brightened form and carry ink, so
-     --art-on-solid follows the mode. Chrome yellow is light in both modes and
-     therefore carries ink in both, which is why it has a token of its own. */
-  --art-on-solid: #fbf9f6;
-  --art-on-chrome: #17161b;
+  /* Text on a solid blue. The retained chrome token follows the same rule. */
+  --art-on-solid: #ffffff;
+  --art-on-chrome: #ffffff;
 }
 
-/* Dark mode by system preference, unless the page forces light. Not black: a
-   warm graphite, so the glossy surfaces above it stay readable as layers. */
+/* Dark mode by system preference, unless the page forces light. Anthracite
+   replaces black, so the surfaces above it stay readable as layers. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #191719;
-    --color-bg-2: #221f23;
-    --color-hairline: #332f34;
-    --color-ink: #f3f0ec;
-    --color-ink-2: #a39e99;
-    --color-blue: #d891c2;
-    --color-red: #ff7d64;
+    --color-bg: #24282d;
+    --color-bg-2: #2d333a;
+    --color-hairline: #414a54;
+    --color-ink: #ffffff;
+    --color-ink-2: #bcc5ce;
+    --color-blue: #9cc4e4;
+    --color-red: #b4d2e9;
 
-    --surface: #232025;
-    --surface-sheen: linear-gradient(180deg, #262329 0%, #201d22 100%);
+    --surface: #313840;
+    --surface-sheen: linear-gradient(180deg, #353d46 0%, #2d333a 100%);
     --surface-edge: inset 0 var(--hairline-width) 0 rgba(255, 255, 255, 0.06);
     --surface-shadow:
       0 1px 2px rgba(0, 0, 0, 0.40),
       0 12px 32px -16px rgba(0, 0, 0, 0.70);
 
-    --art-vermilion: #ff7d64;
-    --art-vermilion-quiet: #43221c;
-    --art-chrome: #e8b04a;
-    --art-chrome-quiet: #3c2f16;
-    --art-malachite: #4fbf92;
-    --art-malachite-quiet: #16352b;
-    --art-plum: #d891c2;
-    --art-plum-quiet: #37203a;
+    --art-vermilion: #8fb9da;
+    --art-vermilion-quiet: #20384d;
+    --art-chrome: #9bc3e1;
+    --art-chrome-quiet: #233f58;
+    --art-malachite: #a9cce6;
+    --art-malachite-quiet: #274661;
+    --art-plum: #b7d5eb;
+    --art-plum-quiet: #2b4d6a;
 
-    --art-on-solid: #17161b;
+    --art-on-solid: #24282d;
+    --art-on-chrome: #24282d;
   }
 }
 
 /* Dark mode forced by the page. Same values as the block above. */
 :root[data-theme="dark"] {
-  --color-bg: #191719;
-  --color-bg-2: #221f23;
-  --color-hairline: #332f34;
-  --color-ink: #f3f0ec;
-  --color-ink-2: #a39e99;
-  --color-blue: #d891c2;
-  --color-red: #ff7d64;
+  --color-bg: #24282d;
+  --color-bg-2: #2d333a;
+  --color-hairline: #414a54;
+  --color-ink: #ffffff;
+  --color-ink-2: #bcc5ce;
+  --color-blue: #9cc4e4;
+  --color-red: #b4d2e9;
 
-  --surface: #232025;
-  --surface-sheen: linear-gradient(180deg, #262329 0%, #201d22 100%);
+  --surface: #313840;
+  --surface-sheen: linear-gradient(180deg, #353d46 0%, #2d333a 100%);
   --surface-edge: inset 0 var(--hairline-width) 0 rgba(255, 255, 255, 0.06);
   --surface-shadow:
     0 1px 2px rgba(0, 0, 0, 0.40),
     0 12px 32px -16px rgba(0, 0, 0, 0.70);
 
-  --art-vermilion: #ff7d64;
-  --art-vermilion-quiet: #43221c;
-  --art-chrome: #e8b04a;
-  --art-chrome-quiet: #3c2f16;
-  --art-malachite: #4fbf92;
-  --art-malachite-quiet: #16352b;
-  --art-plum: #d891c2;
-  --art-plum-quiet: #37203a;
+  --art-vermilion: #8fb9da;
+  --art-vermilion-quiet: #20384d;
+  --art-chrome: #9bc3e1;
+  --art-chrome-quiet: #233f58;
+  --art-malachite: #a9cce6;
+  --art-malachite-quiet: #274661;
+  --art-plum: #b7d5eb;
+  --art-plum-quiet: #2b4d6a;
 
-  --art-on-solid: #17161b;
+  --art-on-solid: #24282d;
+  --art-on-chrome: #24282d;
 }
 
 /*

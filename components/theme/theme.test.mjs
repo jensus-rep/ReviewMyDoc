@@ -52,13 +52,13 @@ const darkForced = block(css, ':root[data-theme="dark"]');
 // The seven roles of tokens.css that this theme replaces, with the values the
 // README documents. Nothing else of tokens.css is touched.
 const COLOR_ROLES = {
-  '--color-bg': ['#f8f6f3', '#191719'],
-  '--color-bg-2': ['#edeae4', '#221f23'],
-  '--color-hairline': ['#e2ded6', '#332f34'],
-  '--color-ink': ['#17161b', '#f3f0ec'],
-  '--color-ink-2': ['#605d57', '#a39e99'],
-  '--color-blue': ['#6b2d5c', '#d891c2'],
-  '--color-red': ['#b4311c', '#ff7d64']
+  '--color-bg': ['#f7f8fa', '#24282d'],
+  '--color-bg-2': ['#eef1f4', '#2d333a'],
+  '--color-hairline': ['#d7dde3', '#414a54'],
+  '--color-ink': ['#24282d', '#ffffff'],
+  '--color-ink-2': ['#59636e', '#bcc5ce'],
+  '--color-blue': ['#123a5f', '#9cc4e4'],
+  '--color-red': ['#214d73', '#b4d2e9']
 };
 
 const ART = ['vermilion', 'chrome', 'malachite', 'plum'];
@@ -91,17 +91,15 @@ test('every art colour exists solid and quiet in every mode', () => {
   }
 });
 
-test('text on a solid art colour follows the mode, except on chrome yellow', () => {
-  // The solid colours are deep in light mode and brightened in dark mode, so the
-  // text on them turns over. Chrome yellow is light in both and keeps its ink.
+test('text on a solid art colour follows the mode', () => {
+  // The solid blues are deep in light mode and brightened in dark mode, so the
+  // text on them turns over.
   for (const body of [light, darkMedia, darkForced]) {
     assert.match(decl(body, '--art-on-solid') ?? '', /^#[0-9a-f]{6}$/, '--art-on-solid');
+    assert.equal(decl(body, '--art-on-chrome'), decl(body, '--art-on-solid'));
   }
   assert.notEqual(decl(light, '--art-on-solid'), decl(darkForced, '--art-on-solid'));
   assert.equal(decl(darkMedia, '--art-on-solid'), decl(darkForced, '--art-on-solid'));
-  assert.match(decl(light, '--art-on-chrome') ?? '', /^#[0-9a-f]{6}$/, '--art-on-chrome');
-  assert.equal(decl(darkMedia, '--art-on-chrome'), null, '--art-on-chrome is not redefined in dark mode');
-  assert.equal(decl(darkForced, '--art-on-chrome'), null, '--art-on-chrome is not redefined in forced dark mode');
 });
 
 test('the glossy surface exists in every mode and as one class', () => {
@@ -129,7 +127,7 @@ test('the dark mode block and the forced dark mode never drift apart', () => {
   // lines differs in its whitespace and in nothing else. Only the value counts.
   const flat = (value) => value?.replace(/\s+/g, ' ') ?? null;
   const names = Object.keys(COLOR_ROLES)
-    .concat(GLOSS, ART.flatMap((n) => ['--art-' + n, '--art-' + n + '-quiet']), '--art-on-solid');
+    .concat(GLOSS, ART.flatMap((n) => ['--art-' + n, '--art-' + n + '-quiet']), '--art-on-solid', '--art-on-chrome');
   for (const name of names) {
     assert.equal(flat(decl(darkMedia, name)), flat(decl(darkForced, name)), name);
   }
@@ -143,7 +141,7 @@ const channel = (value) => {
 
 /**
  * Relative luminance of a six digit hex colour.
- * @param {string} hex e.g. '#17161b'.
+ * @param {string} hex e.g. '#24282d'.
  * @returns {number} luminance between 0 and 1.
  */
 function luminance(hex) {
@@ -165,24 +163,24 @@ function contrast(a, b) {
 // Every pair the README names, with its ratio. All of them reach AA for body
 // text (4.5:1); the theme has no pair that only reaches the large text level.
 const PAIRS = [
-  ['hell', '--color-ink', '--color-bg', 16.68],
-  ['hell', '--color-ink', '--color-bg-2', 14.99],
-  ['hell', '--color-ink', '--surface', 17.99],
-  ['hell', '--color-ink-2', '--color-bg', 6.08],
-  ['hell', '--color-ink-2', '--color-bg-2', 5.46],
-  ['hell', '--color-blue', '--color-bg', 9.03],
-  ['hell', '--color-blue', '--surface', 9.74],
-  ['hell', '--color-red', '--color-bg', 5.73],
-  ['hell', '--color-red', '--surface', 6.18],
-  ['dunkel', '--color-ink', '--color-bg', 15.69],
-  ['dunkel', '--color-ink', '--color-bg-2', 14.35],
-  ['dunkel', '--color-ink', '--surface', 14.17],
-  ['dunkel', '--color-ink-2', '--color-bg', 6.71],
-  ['dunkel', '--color-ink-2', '--color-bg-2', 6.14],
-  ['dunkel', '--color-blue', '--color-bg', 7.43],
-  ['dunkel', '--color-blue', '--surface', 6.71],
-  ['dunkel', '--color-red', '--color-bg', 7.11],
-  ['dunkel', '--color-red', '--surface', 6.41]
+  ['hell', '--color-ink', '--color-bg', 13.95],
+  ['hell', '--color-ink', '--color-bg-2', 13.08],
+  ['hell', '--color-ink', '--surface', 14.83],
+  ['hell', '--color-ink-2', '--color-bg', 5.75],
+  ['hell', '--color-ink-2', '--color-bg-2', 5.39],
+  ['hell', '--color-blue', '--color-bg', 11.00],
+  ['hell', '--color-blue', '--surface', 11.69],
+  ['hell', '--color-red', '--color-bg', 8.33],
+  ['hell', '--color-red', '--surface', 8.85],
+  ['dunkel', '--color-ink', '--color-bg', 14.83],
+  ['dunkel', '--color-ink', '--color-bg-2', 12.76],
+  ['dunkel', '--color-ink', '--surface', 11.86],
+  ['dunkel', '--color-ink-2', '--color-bg', 8.48],
+  ['dunkel', '--color-ink-2', '--color-bg-2', 7.30],
+  ['dunkel', '--color-blue', '--color-bg', 8.07],
+  ['dunkel', '--color-blue', '--surface', 6.46],
+  ['dunkel', '--color-red', '--color-bg', 9.42],
+  ['dunkel', '--color-red', '--surface', 7.53]
 ];
 
 test('every documented contrast holds for the values in theme.css', () => {
@@ -204,13 +202,11 @@ test('the filled primary button reaches AA in both modes', () => {
 });
 
 test('an art colour is readable the way the README says it is used', () => {
-  const onChrome = decl(light, '--art-on-chrome');
   for (const [mode, body] of [['hell', light], ['dunkel', darkForced]]) {
     for (const name of ART) {
-      // Solid: the text token of the mode on it, chrome yellow the one exception
-      // that carries ink in both modes.
+      // Solid: the text token of the mode on it.
       const solid = decl(body, '--art-' + name);
-      const text = name === 'chrome' ? onChrome : decl(body, '--art-on-solid');
+      const text = decl(body, '--art-on-solid');
       assert.ok(contrast(text, solid) >= 4.5, mode + ': Text auf --art-' + name + ' is ' + contrast(text, solid).toFixed(2));
       // Quiet: always the ink of the mode on it.
       const quiet = decl(body, '--art-' + name + '-quiet');

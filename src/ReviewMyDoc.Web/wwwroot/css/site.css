@@ -103,7 +103,7 @@
   padding-block: var(--space-4);
 }
 
-/* The name of the application with its mark: a filled square in the accent
+/* The name of the application with its mark: a filled square in dark blue
    colour, sharp cornered, in the size of the type around it. It is the one
    ornament of the frame and it is drawn and not loaded, so it needs no file and
    follows the mode by itself. */
@@ -122,7 +122,7 @@
   content: "";
   width: 0.7em;
   height: 0.7em;
-  background: var(--art-plum);
+  background: var(--blue);
 }
 
 .app__nav {

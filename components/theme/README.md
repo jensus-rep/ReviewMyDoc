@@ -2,10 +2,9 @@ Herkunft: ReviewMyDoc
 
 # Theme
 
-Version 1.0.0. Die Hausfarben von ReviewMyDoc: ein warmes, glänzendes Weiß als Grund, Graphit statt
-Schwarz als Tinte, eine Aubergine als Akzent und vier flache Kunstfarben für Zustände. Das Dunkel
-ist kein Schwarz, sondern ein warmes Graphit, damit die glänzenden Flächen darüber noch als Schicht
-lesbar sind.
+Version 1.1.0. Die Hausfarben von ReviewMyDoc bilden ein reduziertes System aus Weiß, Anthrazit und
+Dunkelblau. Im hellen Modus tragen weiße Flächen anthrazitfarbenen Text und dunkelblaue Akzente;
+im dunklen Modus werden die Rollen mit zugänglichen Abstufungen derselben Farbfamilien umgekehrt.
 
 Der Baustein ist kein Element der Oberfläche, sondern eine Schicht über
 [tokens](../tokens/README.md): Er schreibt die sieben Farbrollen aus `tokens.css` neu und lässt
@@ -31,20 +30,19 @@ Hell und Dunkel folgen dem System, wie bei den Tokens. Eine Seite erzwingt eine 
 
 ## Farben
 
-| Rolle              | Bedeutung                     | Hell      | Dunkel    |
-| ------------------ | ----------------------------- | --------- | --------- |
-| `--color-bg`       | Grund, warmes Papierweiß      | `#f8f6f3` | `#191719` |
-| `--color-bg-2`     | Sekundärgrund, vertieft       | `#edeae4` | `#221f23` |
-| `--color-hairline` | Haarlinie                     | `#e2ded6` | `#332f34` |
-| `--color-ink`      | Text                          | `#17161b` | `#f3f0ec` |
-| `--color-ink-2`    | Sekundärtext                  | `#605d57` | `#a39e99` |
-| `--color-blue`     | Akzent, interaktiv: Aubergine | `#6b2d5c` | `#d891c2` |
-| `--color-red`      | Kritisch: Zinnober            | `#b4311c` | `#ff7d64` |
+| Rolle              | Bedeutung                           | Hell      | Dunkel    |
+| ------------------ | ----------------------------------- | --------- | --------- |
+| `--color-bg`       | Grund, kühles Weiß                  | `#f7f8fa` | `#24282d` |
+| `--color-bg-2`     | Sekundärgrund                       | `#eef1f4` | `#2d333a` |
+| `--color-hairline` | Haarlinie                           | `#d7dde3` | `#414a54` |
+| `--color-ink`      | Text, Anthrazit bzw. Weiß           | `#24282d` | `#ffffff` |
+| `--color-ink-2`    | Sekundärtext                        | `#59636e` | `#bcc5ce` |
+| `--color-blue`     | Akzent, interaktiv: Dunkelblau      | `#123a5f` | `#9cc4e4` |
+| `--color-red`      | Kritisch, innerhalb der Blaupalette | `#214d73` | `#b4d2e9` |
 
-Zwei Namen lesen sich schief und bleiben trotzdem: `--color-blue` trägt eine Aubergine und
-`--color-red` den Zinnober der Kunstpalette. Die Namen stammen aus Atelier und bezeichnen dort die
-Rollen „Akzent, interaktiv" und „kritisch". Sie umzubenennen hieße, jeden kopierten Baustein
-anzufassen, und an einer Kopie wird nichts geändert.
+`--color-red` bleibt als technischer Rollenname aus Atelier bestehen, trägt in diesem Theme jedoch
+bewusst eine blaue Abstufung. So bleibt die öffentliche Schnittstelle der kopierten Bausteine
+stabil, während die sichtbare Oberfläche konsequent in der neuen Palette bleibt.
 
 ## Glänzende Fläche
 
@@ -74,26 +72,26 @@ Anders als `--shadow-float` aus den Tokens, der nur für schwebende Schichten wi
 gedacht ist, darf `--surface-shadow` auch eine Karte im Fluss tragen. Das ist der bewusste
 Unterschied zwischen dem matten Grundsystem und diesem Theme.
 
-## Kunstpalette
+## Tonale Zustandspalette
 
-Vier flache Farben für Zustände, nie für Fließtext. Jede kommt in zwei Formen vor:
+Vier Abstufungen des Dunkelblaus für Zustände, nie für Fließtext. Die historischen Variablennamen
+bleiben aus Kompatibilitätsgründen erhalten. Jede Abstufung kommt in zwei Formen vor:
 
 - **kräftig** (`--art-<name>`) für eine Marke, einen Punkt, einen Balken oder eine kleine gefüllte
-  Fläche. Text darauf ist `--art-on-solid`; die Ausnahme ist Chromgelb, das in beiden Fassungen
-  hell ist und deshalb `--art-on-chrome` trägt.
+  Fläche. Text darauf ist `--art-on-solid`; der ältere Alias `--art-on-chrome` hat denselben Wert.
 - **ruhig** (`--art-<name>-quiet`) für eine breite Fläche, die Text trägt, etwa eine
   Zustandsmarkierung in einer Liste. Text darauf ist immer `--ink`.
 
-| Kunstfarbe             | kräftig hell | ruhig hell | kräftig dunkel | ruhig dunkel |
+| Farbrolle              | kräftig hell | ruhig hell | kräftig dunkel | ruhig dunkel |
 | ---------------------- | ------------ | ---------- | -------------- | ------------ |
-| `--art-vermilion`      | `#b4311c`    | `#f7e3dd`  | `#ff7d64`      | `#43221c`    |
-| `--art-chrome`         | `#d99400`    | `#f7ecd2`  | `#e8b04a`      | `#3c2f16`    |
-| `--art-malachite`      | `#0f6f4e`    | `#dceee6`  | `#4fbf92`      | `#16352b`    |
-| `--art-plum`           | `#6b2d5c`    | `#efdfea`  | `#d891c2`      | `#37203a`    |
+| `--art-vermilion`      | `#0b2d4d`    | `#e7eef4`  | `#8fb9da`      | `#20384d`    |
+| `--art-chrome`         | `#123a5f`    | `#e2ebf2`  | `#9bc3e1`      | `#233f58`    |
+| `--art-malachite`      | `#1a466f`    | `#dce7f0`  | `#a9cce6`      | `#274661`    |
+| `--art-plum`           | `#23537f`    | `#d6e3ed`  | `#b7d5eb`      | `#2b4d6a`    |
 
-`--art-on-solid` wechselt mit der Fassung (`#fbf9f6` hell, `#17161b` dunkel), weil die kräftigen
-Farben im Dunkeln die aufgehellte Form sind und dann dunklen Text tragen. `--art-on-chrome` bleibt
-`#17161b`, weil Chromgelb in beiden Fassungen hell ist.
+`--art-on-solid` und `--art-on-chrome` wechseln mit der Fassung (`#ffffff` hell, `#24282d`
+dunkel), weil die kräftigen Farben im Dunkeln aufgehellt werden und dann anthrazitfarbenen Text
+tragen.
 
 Welcher Zustand welche Farbe bekommt, entscheidet nicht dieser Baustein, sondern die Seite, die ihn
 verwendet. Farbe ist dabei nie das einzige Merkmal: Jeder Zustand trägt zusätzlich sein Wort.
@@ -106,18 +104,18 @@ Schrift reicht.
 
 | Paar                        | Hell  | Dunkel |
 | --------------------------- | ----- | ------ |
-| Tinte auf Grund             | 16,68 | 15,69  |
-| Tinte auf Sekundärgrund     | 14,99 | 14,35  |
-| Tinte auf Fläche            | 17,99 | 14,17  |
-| Sekundärtext auf Grund      | 6,08  | 6,71   |
-| Sekundärtext auf Sekundär   | 5,46  | 6,14   |
-| Akzent auf Grund            | 9,03  | 7,43   |
-| Akzent auf Fläche           | 9,74  | 6,71   |
-| Kritisch auf Grund          | 5,73  | 7,11   |
-| Kritisch auf Fläche         | 6,18  | 6,41   |
+| Tinte auf Grund             | 13,95 | 14,83  |
+| Tinte auf Sekundärgrund     | 13,08 | 12,76  |
+| Tinte auf Fläche            | 14,83 | 11,86  |
+| Sekundärtext auf Grund      | 5,75  | 8,48   |
+| Sekundärtext auf Sekundär   | 5,39  | 7,30   |
+| Akzent auf Grund            | 11,00 | 8,07   |
+| Akzent auf Fläche           | 11,69 | 6,46   |
+| Kritisch auf Grund          | 8,33  | 9,42   |
+| Kritisch auf Fläche         | 8,85  | 7,53   |
 
 Dazu prüft der Test zwei Dinge, die sich aus der Verwendung ergeben und nicht aus der Tabelle: die
-gefüllte primäre Schaltfläche, die `--bg` auf `--blue` schreibt, und jede Kunstfarbe in beiden
+gefüllte primäre Schaltfläche, die `--bg` auf `--blue` schreibt, und jede Tonstufe in beiden
 Formen mit dem Text, den die Regeln oben ihr zuweisen.
 
 ## Prüfen

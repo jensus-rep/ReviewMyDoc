@@ -6,7 +6,7 @@
 <title>Theme · Vorführung</title>
 <!--
   Demo of the component theme: die Hausfarben von ReviewMyDoc, gezeigt an den
-  Rollen selbst, an der glänzenden Fläche und an der Kunstpalette, dazu drei
+  Rollen selbst, an der glänzenden Fläche und an der tonalen Zustandspalette, dazu drei
   fremde Bausteine, die diese Farben ungefragt mitbekommen. Kein Umschalter und
   kein Skript: Hell und Dunkel folgen dem System, erzwungen wird mit
   data-theme auf <html>, wie am Ende der Seite beschrieben.
@@ -80,7 +80,7 @@
   .card { padding: var(--space-6); }
   .card p:last-child { color: var(--ink-2); }
 
-  /* c) Kunstpalette: ein kräftiges und ein ruhiges Feld je Farbe, nebeneinander.
+  /* c) Zustandspalette: ein kräftiges und ein ruhiges Feld je Ton, nebeneinander.
      Auch hier trägt data-art die Variable statt eines Rohwerts im Markup. */
   .palette { display: grid; gap: var(--space-5); }
   .palette__pair { display: grid; gap: var(--space-3); grid-template-columns: 1fr 1fr; }
@@ -114,8 +114,8 @@
   <div class="head">
     <div>
       <h1>Theme</h1>
-      <p class="lead">Die Hausfarben von ReviewMyDoc: ein warmes Papierweiß, graphitfarbene Tinte,
-        ein Aubergine-Akzent und vier Kunstfarben für Zustände. Die Datei wird direkt nach
+      <p class="lead">Die Hausfarben von ReviewMyDoc: kühles Weiß, Anthrazit und Dunkelblau mit
+        tonalen Abstufungen für Zustände. Die Datei wird direkt nach
         <code>tokens.css</code> geladen und ersetzt dort nur die Farbrollen; Größe, Abstand,
         Geometrie und Bewegung bleiben, wie die Tokens sie vorgeben, unangetastet. Hell und
         Dunkel folgen dem System und lassen sich mit <code>data-theme</code> auf
@@ -194,8 +194,8 @@
   </section>
 
   <section>
-    <h2>Kunstpalette</h2>
-    <p class="note">Vier flache Farben für Zustände, nie für Fließtext. Links die kräftige Form
+    <h2>Tonale Zustandspalette</h2>
+    <p class="note">Vier blaue Tonstufen für Zustände, nie für Fließtext. Links die kräftige Form
       für eine Markierung oder eine gefüllte Fläche, rechts die ruhige Form für eine breite
       Fläche mit Text.</p>
     <div class="palette">
