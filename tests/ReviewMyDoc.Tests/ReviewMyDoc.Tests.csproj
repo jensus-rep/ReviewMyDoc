@@ -11,7 +11,16 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <!--
+      xunit.v3 und nicht xunit 2.x: docs/Konventionen.md, Abschnitt Tests,
+      verlangt Tests, die ohne konfigurierte Verbindung mit genanntem Grund
+      übersprungen werden. Das setzt voraus, dass eine Testmethode zur Laufzeit
+      überspringen kann (Assert.Skip). xunit 2.x kann das nicht, und die
+      Vertragsklasse, in der die Testmethoden stehen, darf dafür nicht
+      geändert werden. Der bisherige Testlauf bleibt unverändert: dieselben
+      Befehle, derselbe VSTest-Runner.
+    -->
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
 

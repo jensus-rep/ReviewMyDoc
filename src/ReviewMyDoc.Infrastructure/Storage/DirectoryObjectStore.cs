@@ -65,15 +65,12 @@ public sealed class DirectoryObjectStore : IObjectStore
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The characters a Windows file name cannot carry. A path is refused
-    /// because of them instead of failing later with an error of the file
-    /// system that says nothing about the path. The colon is in the list twice
-    /// over: it opens an alternate data stream and it begins a drive letter.
+    /// Side files carry this prefix. It is the very character
+    /// <see cref="ObjectPath"/> refuses at the start of a path segment, which
+    /// is what makes a side file invisible to <see cref="ListAsync"/> and
+    /// impossible to address as an entry.
     /// </summary>
-    private static readonly char[] ForbiddenCharacters = ['\\', ':', '*', '?', '"', '<', '>', '|'];
-
-    /// <summary>Side files carry this prefix, which no path of the model may carry.</summary>
-    private const string SideFilePrefix = ".";
+    private const string SideFilePrefix = ObjectPath.DotPrefix;
 
     /// <summary>How often an append waits for a writer of another process.</summary>
     private const int AppendAttempts = 10;
@@ -117,7 +114,7 @@ public sealed class DirectoryObjectStore : IObjectStore
     /// <inheritdoc />
     public async Task<ObjectReadResult> ReadAsync(string path, CancellationToken cancellationToken)
     {
-        ValidatePath(path, nameof(path));
+        ObjectPath.Validate(path, nameof(path));
 
         var file = Resolve(path, nameof(path));
 
@@ -162,7 +159,7 @@ public sealed class DirectoryObjectStore : IObjectStore
         WriteCondition condition,
         CancellationToken cancellationToken)
     {
-        ValidatePath(path, nameof(path));
+        ObjectPath.Validate(path, nameof(path));
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(condition);
 
@@ -183,7 +180,7 @@ public sealed class DirectoryObjectStore : IObjectStore
     /// <inheritdoc />
     public Task<IReadOnlyList<string>> ListAsync(string prefix, CancellationToken cancellationToken)
     {
-        ValidatePrefix(prefix, nameof(prefix));
+        ObjectPath.ValidatePrefix(prefix, nameof(prefix));
         cancellationToken.ThrowIfCancellationRequested();
 
         // Everything the prefix can match lies below the directory it names in
@@ -230,7 +227,7 @@ public sealed class DirectoryObjectStore : IObjectStore
     /// <inheritdoc />
     public async Task AppendLineAsync(string path, string line, CancellationToken cancellationToken)
     {
-        ValidatePath(path, nameof(path));
+        ObjectPath.Validate(path, nameof(path));
         ArgumentNullException.ThrowIfNull(line);
 
         // Checked before anything is created: a rejected line must not leave an
@@ -267,7 +264,7 @@ public sealed class DirectoryObjectStore : IObjectStore
     /// <inheritdoc />
     public async Task<ObjectDeleteResult> DeleteAsync(string path, CancellationToken cancellationToken)
     {
-        ValidatePath(path, nameof(path));
+        ObjectPath.Validate(path, nameof(path));
 
         var file = Resolve(path, nameof(path));
         var gate = GateFor(file);
@@ -503,120 +500,6 @@ public sealed class DirectoryObjectStore : IObjectStore
         }
 
         return file;
-    }
-
-    /// <summary>Refuses everything that is not a path of the model.</summary>
-    /// <remarks>
-    /// The rejection happens before a single call to the file system, so a path
-    /// with <c>..</c> or with an absolute part never reaches it.
-    /// </remarks>
-    private static void ValidatePath(string path, string parameterName)
-    {
-        ArgumentNullException.ThrowIfNull(path, parameterName);
-
-        if (path.Length == 0)
-        {
-            throw new ArgumentException("A path names an entry and is therefore not empty.", parameterName);
-        }
-
-        ValidateCharacters(path, parameterName);
-        ValidatePathIsLowerCase(path, parameterName);
-
-        foreach (var segment in path.Split('/'))
-        {
-            ValidateSegment(segment, path, parameterName, mayBeEmpty: false);
-        }
-    }
-
-    /// <summary>Refuses a prefix that no path of the model could begin with.</summary>
-    private static void ValidatePrefix(string prefix, string parameterName)
-    {
-        ArgumentNullException.ThrowIfNull(prefix, parameterName);
-
-        ValidateCharacters(prefix, parameterName);
-        ValidatePathIsLowerCase(prefix, parameterName);
-
-        // A prefix may end in the middle of a name and it may end with a
-        // separator, so only its last part may be empty.
-        var segments = prefix.Split('/');
-        for (var index = 0; index < segments.Length; index++)
-        {
-            ValidateSegment(segments[index], prefix, parameterName, mayBeEmpty: index == segments.Length - 1);
-        }
-    }
-
-    /// <summary>Refuses the characters a path of the model never carries.</summary>
-    private static void ValidateCharacters(string value, string parameterName)
-    {
-        foreach (var character in value)
-        {
-            if (char.IsControl(character) || Array.IndexOf(ForbiddenCharacters, character) >= 0)
-            {
-                throw new ArgumentException(
-                    "A path uses the forward slash as its only separator and carries none of the characters a file name cannot hold.",
-                    parameterName);
-            }
-        }
-    }
-
-    /// <summary>Refuses an upper case letter anywhere in a path.</summary>
-    /// <remarks>
-    /// Blob names tell case apart and a Windows file system does not, so a path
-    /// that relied on case would mean two entries in one store and one in the
-    /// other. <c>docs/Datenmodell.md</c> answers that by drawing every
-    /// identifier from a lower case alphabet and having the store refuse
-    /// anything else. The rule covers the whole path, directories and the name
-    /// of the entry alike, because the entry names are drawn the same way the
-    /// directory names are.
-    /// </remarks>
-    private static void ValidatePathIsLowerCase(string value, string parameterName)
-    {
-        foreach (var character in value)
-        {
-            if (char.IsUpper(character))
-            {
-                throw new ArgumentException(
-                    "A path is lower case; identifiers are drawn from a lower case alphabet.",
-                    parameterName);
-            }
-        }
-    }
-
-    /// <summary>Refuses one part of a path that does not name anything.</summary>
-    private static void ValidateSegment(string segment, string value, string parameterName, bool mayBeEmpty)
-    {
-        if (segment.Length == 0)
-        {
-            if (mayBeEmpty)
-            {
-                return;
-            }
-
-            // Catches the leading slash of an absolute path as well as a
-            // doubled separator.
-            throw new ArgumentException(
-                $"The path '{value}' has an empty part; it is relative to the container and has no empty names.",
-                parameterName);
-        }
-
-        // A part that begins with a dot is ".", ".." or a name of the store's
-        // own bookkeeping. None of them names an entry, and the first two are
-        // the way out of the root.
-        if (segment.StartsWith(SideFilePrefix, StringComparison.Ordinal))
-        {
-            throw new ArgumentException(
-                $"The path '{value}' has a part that begins with a dot; no entry of the model does.",
-                parameterName);
-        }
-
-        // Windows drops a trailing dot or space from a name without a word,
-        // which would store the entry under a name nobody asked for.
-        if (segment[^1] is '.' or ' ')
-        {
-            throw new ArgumentException(
-                $"The path '{value}' has a part that ends with a dot or a space.",
-                parameterName);
-        }
     }
 
     /// <summary>
