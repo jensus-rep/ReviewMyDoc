@@ -291,6 +291,35 @@ public sealed class Document
         return new Document(Id, OwnerId, Title, State, Version, sections, CreatedAt, now);
     }
 
+    /// <summary>Records that another state of the document has just been frozen.</summary>
+    /// <param name="version">
+    /// The version number the state was frozen as; must be exactly
+    /// <see cref="Version"/> plus one.
+    /// </param>
+    /// <param name="now">The moment of the freeze.</param>
+    /// <returns>A document whose version count reflects the freeze; the title and the outline are untouched.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The version is not exactly the next one.</exception>
+    /// <remarks>
+    /// The number is not chosen here. <see cref="DocumentService.FreezeVersionAsync"/>
+    /// decides it as <see cref="Version"/> plus one and has already written the
+    /// frozen state itself by the time this runs; this call only records that the
+    /// counter has caught up with what is now on disk, and refuses to record
+    /// anything else - a gap or a repeat in the count would mean some caller
+    /// numbered a freeze without going through that method.
+    /// </remarks>
+    public Document Freeze(int version, DateTimeOffset now)
+    {
+        if (version != Version + 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(version),
+                version,
+                "A document's version counts up by exactly one at a time.");
+        }
+
+        return new Document(Id, OwnerId, Title, State, version, Sections, CreatedAt, now);
+    }
+
     /// <summary>Refuses a section that does not belong to this document.</summary>
     /// <remarks>
     /// A guard and not a check a caller is meant to lean on: a service asks

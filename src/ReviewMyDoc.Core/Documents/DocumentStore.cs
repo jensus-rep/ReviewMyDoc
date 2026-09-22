@@ -138,4 +138,58 @@ public sealed class DocumentStore : IDocumentStore
             DocumentPaths.SectionText(documentId, sectionId),
             cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<string?> ReadSectionTextAsync(
+        DocumentIdentifier documentId,
+        SectionIdentifier sectionId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(documentId);
+        ArgumentNullException.ThrowIfNull(sectionId);
+
+        var entry = await _objects.ReadAsync(DocumentPaths.SectionText(documentId, sectionId), cancellationToken);
+
+        return entry is ObjectReadResult.Found found ? found.Content : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<ObjectWriteResult> WriteVersionAsync(
+        DocumentVersion version,
+        WriteCondition condition,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        ArgumentNullException.ThrowIfNull(condition);
+
+        return await _objects.WriteAsync(
+            DocumentPaths.Version(version.DocumentId, version.Version),
+            DocumentVersionJson.Write(version),
+            condition,
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<DocumentVersion?> ReadVersionAsync(
+        DocumentIdentifier documentId,
+        int version,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(documentId);
+
+        var entry = await _objects.ReadAsync(DocumentPaths.Version(documentId, version), cancellationToken);
+
+        return entry is ObjectReadResult.Found found ? DocumentVersionJson.Read(found.Content) : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<ObjectDeleteResult> DeleteVersionAsync(
+        DocumentIdentifier documentId,
+        int version,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(documentId);
+
+        return await _objects.DeleteAsync(DocumentPaths.Version(documentId, version), cancellationToken);
+    }
 }

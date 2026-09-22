@@ -105,6 +105,66 @@ public interface IDocumentStore
         DocumentIdentifier documentId,
         SectionIdentifier sectionId,
         CancellationToken cancellationToken);
+
+    /// <summary>Reads the Markdown text of one section, without a version stamp.</summary>
+    /// <param name="documentId">Which document the section belongs to.</param>
+    /// <param name="sectionId">Which section.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The text, or <see langword="null"/> if there is no such entry.</returns>
+    /// <remarks>
+    /// No version stamp travels with it, unlike <see cref="ReadAsync"/>: nothing
+    /// today writes a section's text back conditionally on having read it here -
+    /// freezing a state and comparing against one only ever read, never write,
+    /// a section's text.
+    /// </remarks>
+    Task<string?> ReadSectionTextAsync(
+        DocumentIdentifier documentId,
+        SectionIdentifier sectionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>Writes the <c>versions/{version}.json</c> of one frozen state.</summary>
+    /// <param name="version">The frozen state to write.</param>
+    /// <param name="condition">
+    /// The condition the write has to satisfy;
+    /// <see cref="WriteCondition.MustNotExist"/> for every ordinary freeze, as
+    /// assurance 2 of <c>docs/Datenmodell.md</c> demands.
+    /// </param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The new version, or <see cref="ObjectWriteResult.Conflict"/> if the condition did not hold.</returns>
+    Task<ObjectWriteResult> WriteVersionAsync(
+        DocumentVersion version,
+        WriteCondition condition,
+        CancellationToken cancellationToken);
+
+    /// <summary>Reads one frozen state of a document.</summary>
+    /// <param name="documentId">Which document.</param>
+    /// <param name="version">Which version.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>
+    /// The frozen state, or <see langword="null"/> if this document was never
+    /// frozen at that version - an ordinary answer, for example a stale link.
+    /// </returns>
+    Task<DocumentVersion?> ReadVersionAsync(
+        DocumentIdentifier documentId,
+        int version,
+        CancellationToken cancellationToken);
+
+    /// <summary>Removes one frozen state.</summary>
+    /// <param name="documentId">Which document.</param>
+    /// <param name="version">Which version.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns><see cref="ObjectDeleteResult.Deleted"/>, or <see cref="ObjectDeleteResult.NotFound"/>.</returns>
+    /// <remarks>
+    /// Not a way to undo assurance 2 of <c>docs/Datenmodell.md</c>: the only
+    /// caller is <see cref="DocumentService.FreezeVersionAsync"/>, and only for a
+    /// state that <c>document.json</c> never ended up naming, because the write
+    /// that would have made it official failed. Once a version is recorded in
+    /// <c>document.json</c>, nothing in this model calls this again for it.
+    /// </remarks>
+    Task<ObjectDeleteResult> DeleteVersionAsync(
+        DocumentIdentifier documentId,
+        int version,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>A document as it was read, together with the version its entry carried.</summary>

@@ -65,4 +65,11 @@ internal static class DocumentPaths
     /// </remarks>
     internal static string SectionText(DocumentIdentifier documentId, SectionIdentifier sectionId) =>
         $"{DocumentsPrefix}{documentId.Value}/sections/{sectionId.Value}.md";
+
+    /// <summary>The path of one frozen state of a document.</summary>
+    /// <param name="documentId">Which document.</param>
+    /// <param name="version">Which version; <c>docs/Datenmodell.md</c> counts these from one.</param>
+    /// <returns><c>documents/{documentId}/versions/{version}.json</c>.</returns>
+    internal static string Version(DocumentIdentifier documentId, int version) =>
+        $"{DocumentsPrefix}{documentId.Value}/versions/{version}.json";
 }

@@ -3,11 +3,7 @@
 // an implementation detail of the store: field names, their order, the spelling
 // of the state and the form of the timestamps are decided here and nowhere else.
 
-using System.Globalization;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
 
 namespace ReviewMyDoc.Core.Documents;
 
@@ -32,42 +28,6 @@ namespace ReviewMyDoc.Core.Documents;
 /// </remarks>
 internal static class DocumentJson
 {
-    /// <summary>
-    /// How the file is written and read: names in camelCase as
-    /// <c>docs/Konventionen.md</c>, section Sprache, requires, the state as the
-    /// word the model uses, and every timestamp in UTC with a trailing
-    /// <c>Z</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The encoder lets every letter through as itself, so
-    /// <c>Musterstraße</c> stays readable instead of becoming an escape
-    /// sequence, while the characters that matter in HTML keep being escaped -
-    /// a title is shown on a page, and nothing about this file should depend on
-    /// the page escaping it a second time.
-    /// </para>
-    /// <para>
-    /// The line break is stated and not left to the platform. Without that, the
-    /// same document would be written with a carriage return on a developer
-    /// machine and without one in the Linux web app: every file would differ
-    /// depending on where it was last saved, every comparison of two frozen
-    /// states would be full of changes nobody made, and the version stamp of the
-    /// local store, which is a hash of the content, would move for no reason.
-    /// </para>
-    /// </remarks>
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-        Converters =
-        {
-            new JsonStringEnumConverter(),
-            new UtcTimestampConverter(),
-        },
-    };
-
     /// <summary>Writes a document as the text of its <c>document.json</c>.</summary>
     /// <param name="document">The document to write.</param>
     /// <returns>The complete content of the file.</returns>
@@ -91,7 +51,7 @@ internal static class DocumentJson
             UpdatedAt = document.UpdatedAt,
         };
 
-        return JsonSerializer.Serialize(file, Options);
+        return JsonSerializer.Serialize(file, DocumentJsonOptions.Options);
     }
 
     /// <summary>Reads the text of a <c>document.json</c> back into a document.</summary>
@@ -104,7 +64,7 @@ internal static class DocumentJson
     /// </exception>
     internal static Document Read(string content)
     {
-        var file = JsonSerializer.Deserialize<DocumentFile>(content, Options)
+        var file = JsonSerializer.Deserialize<DocumentFile>(content, DocumentJsonOptions.Options)
             ?? throw new JsonException("A document.json holds an object and not the literal null.");
 
         try
@@ -178,37 +138,5 @@ internal static class DocumentJson
         public required int Order { get; init; }
 
         public required DateTimeOffset UpdatedAt { get; init; }
-    }
-
-    /// <summary>
-    /// Writes a moment the way <c>docs/Datenmodell.md</c> shows it:
-    /// <c>2026-09-22T08:14:00Z</c>.
-    /// </summary>
-    /// <remarks>
-    /// Without it the serializer would write <c>+00:00</c> instead of the
-    /// <c>Z</c>, which is the same moment but not the same file. The fraction of
-    /// a second is written only when there is one, so a timestamp the
-    /// application stamped - it counts in whole seconds - comes out exactly as
-    /// the model shows it, while a value from somewhere else is still written
-    /// without losing anything.
-    /// </remarks>
-    private sealed class UtcTimestampConverter : JsonConverter<DateTimeOffset>
-    {
-        private const string WholeSeconds = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
-        private const string WithFraction = "yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'";
-
-        /// <inheritdoc />
-        public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            reader.GetDateTimeOffset();
-
-        /// <inheritdoc />
-        public override void Write(Utf8JsonWriter writer, DateTimeOffset value, JsonSerializerOptions options)
-        {
-            var utc = value.ToUniversalTime();
-            var format = utc.UtcTicks % TimeSpan.TicksPerSecond == 0 ? WholeSeconds : WithFraction;
-
-            writer.WriteStringValue(utc.ToString(format, CultureInfo.InvariantCulture));
-        }
     }
 }

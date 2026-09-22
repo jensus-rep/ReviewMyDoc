@@ -70,9 +70,24 @@ eingefroren wird, nicht bei jedem Tastendruck.
 
 ### versions/{version}.json
 
+```json
+{
+  "documentId": "d7kq2fr",
+  "version": 4,
+  "title": "Gutachten Musterstraße",
+  "sections": [
+    { "id": "s_1a2b", "heading": "Ausgangslage", "order": 1, "text": "Der Auftraggeber hat …" }
+  ],
+  "frozenAt": "2026-09-22T08:14:00Z"
+}
+```
+
 Der vollständige Stand zum Zeitpunkt des Einfrierens, samt Abschnittstexten. Er wird geschrieben und
 nie wieder geändert. Er ist die Fassung, die ein Reviewer sieht, und die Grundlage jeder
-Gegenüberstellung alt gegen neu.
+Gegenüberstellung alt gegen neu. `documentId` steht auch hier, obwohl der Pfad das Dokument schon
+nennt, aus demselben Grund wie `id` in `document.json`: die Datei bleibt für sich lesbar, auch aus
+dem Zusammenhang gerissen. `title` und die Überschriften sind die Werte, die zum Zeitpunkt des
+Einfrierens galten, nicht die aktuellen.
 
 ### reviews/{reviewId}.json
 
