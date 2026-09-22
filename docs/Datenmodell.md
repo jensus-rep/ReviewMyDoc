@@ -129,6 +129,10 @@ gehasht.
 1. **Optimistisches Schreiben.** Jeder Schreibvorgang auf einen bestehenden Blob läuft mit
    `If-Match` gegen das ETag, das beim Lesen galt. Passt es nicht, ist das ein Konflikt, der der
    Oberfläche gemeldet wird („inzwischen geändert“), nie ein stilles Überschreiben.
+   Das Löschen fällt nicht darunter und trägt keine Bedingung: Ob ein Abschnitt zum Dokument gehört,
+   entscheidet `document.json`, und das wird unter dieser Zusicherung geschrieben. Den verwaisten
+   Textblob danach zu entfernen ist Aufräumarbeit, kein Wettlauf, und zweimal löschen bleibt
+   folgenlos.
 2. **Versionen sind unveränderlich.** `versions/{n}.json` wird einmal geschrieben. Ein Schreibversuch
    auf eine bestehende Version ist ein Fehler, kein Überschreiben.
 3. **Rückmeldung nur auf zugewiesene Abschnitte.** Der Dienst prüft gegen `sectionIds` des Auftrags,
@@ -140,6 +144,13 @@ gehasht.
 7. **Kein Token im Klartext**, weder in Blobs noch in Logs.
 
 ## Lokal und in Azure
+
+Erwartete Ausgänge sind Ergebniswerte, keine Ausnahmen: ein fehlender Eintrag und eine nicht
+erfüllte Bedingung sind normale Antworten, die die Oberfläche in eine Meldung übersetzt. Alles, was
+niemand einplanen kann, also eine abgerissene Verbindung, ein fehlendes Recht, eine kaputte
+Konfiguration, kommt als `ObjectStoreException` aus `ReviewMyDoc.Core.Storage`. Keine
+Implementierung lässt dabei einen Typ ihrer Ablage nach außen; die ursprüngliche Ausnahme hängt
+innen dran, damit das Log sie behält.
 
 Dieselbe Schnittstelle, zwei Implementierungen: in Azure `Azure.Storage.Blobs` mit Managed Identity,
 lokal ein Verzeichnis unter `App_Data/`, das dieselben Pfade und dieselbe ETag-Semantik nachbildet
