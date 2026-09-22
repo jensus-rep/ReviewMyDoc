@@ -5,8 +5,8 @@ Daten liegen. Sie ist für jemanden geschrieben, der dieses Projekt nicht kennt.
 nur lokal starten will, braucht aus dieser Datei gar nichts zu tun: ohne jede Konfiguration
 speichert ReviewMyDoc in ein Verzeichnis auf der eigenen Festplatte und läuft.
 
-Zur Zeit beschreibt diese Datei die Ablage. Weitere Abschnitte kommen dazu, sobald Anmeldung, AI
-und Mail gebaut sind.
+Zur Zeit beschreibt diese Datei die Ablage, die Security-Header, die Data Protection und die
+Ratenbegrenzung. Weitere Abschnitte kommen dazu, sobald Anmeldung, AI und Mail gebaut sind.
 
 ## Wo die Daten liegen
 
@@ -183,3 +183,153 @@ Protokoll und verhält sich bei Bedingungen, ETags und Append-Blobs wie der Dien
 keine verwalteten Identitäten und keine Rollen, er ahmt das Verhalten unter Last nicht nach, und
 seine Fehlermeldungen stammen nicht aus derselben Quelle. Was nur ein echtes Speicherkonto zeigt,
 ist deshalb vor allem die Anmeldung mit verwalteter Identität und alles, was mit Rechten zu tun hat.
+
+## Die Security-Header
+
+Alle Security-Header werden an genau einer Stelle gesetzt, in einer Middleware, die als erste im
+Ablauf steht: `src/ReviewMyDoc.Web/Security/SecurityHeaders.cs`. Sie stehen deshalb auf jeder
+Antwort, auch auf einer Weiterleitung, auf einer Stildatei, auf einer 404 und auf einer Fehlerseite.
+Wer später eine Seite baut, muss an keinen einzigen von ihnen denken.
+
+Es gibt dafür keine Konfigurationsschlüssel. Ein Header, den man pro Umgebung abschalten kann, ist
+am Ende in der Umgebung abgeschaltet, in der es darauf ankommt.
+
+| Header | Wert | Wofür er da ist |
+| --- | --- | --- |
+| `Content-Security-Policy` | siehe unten | Legt fest, was der Browser überhaupt laden und ausführen darf. |
+| `X-Content-Type-Options` | `nosniff` | Eine Datei ist das, was ihr Content-Type sagt. Ohne diesen Header kann ein Browser ein hochgeladenes Dokument in etwas hineinraten, das er ausführt. |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Ein Reviewlink trägt seinen Token im Pfad. Nach außen geht nur noch die nackte Herkunft, nie die vollständige Adresse, sonst wäre der Token beim nächsten Klick verschenkt. |
+| `X-Frame-Options` | `DENY` | Sagt dasselbe wie `frame-ancestors 'none'`, für die Zwischenstellen und eingebetteten Ansichten, die nur den älteren Header lesen. Beide verbieten dasselbe und können sich deshalb nicht widersprechen. |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Ein fremdes Fenster bekommt keinen Griff auf den Browserkontext dieser Anwendung. |
+| `Cross-Origin-Resource-Policy` | `same-origin` | Keine fremde Seite darf etwas aus dieser Anwendung einbinden. `/components/` ist der Bausteinordner dieser Anwendung und kein CDN. |
+| `X-Robots-Tag` | `noindex, nofollow` | Die ganze Anwendung ist privat. Ein Reviewlink in einem Suchindex wäre ein verlorener Token, und deshalb gilt der Header für jede Antwort statt nur für die Reviewpfade. |
+| `Permissions-Policy` | alle Fähigkeiten aus | Die Anwendung braucht weder Kamera noch Mikrofon, weder Standort noch Bezahlung. Was ausgeschaltet ist, kann auch eingeschleuster Code nicht anfordern. |
+
+`Strict-Transport-Security` steht nicht in dieser Liste. Es wird von `UseHsts()` gesetzt, und
+absichtlich nur außerhalb der Entwicklung, weil der Header sonst `localhost` im Browser des
+Entwicklers monatelang auf HTTPS festnageln würde.
+
+### Die Content Security Policy im Einzelnen
+
+```
+default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self';
+connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
+```
+
+Die Richtlinie ist eng, weil die Anwendung es zulässt: ReviewMyDoc rendert auf dem Server, lädt
+seine Stile aus `/components/` und `/css/` der eigenen Herkunft und verwendet kein Framework, keine
+UI-Bibliothek und keine Fremdquelle.
+
+- `default-src 'none'` statt `'self'`. Jede Art von Abruf muss einzeln genannt werden, also wird
+  eine Art, an die niemand gedacht hat, abgelehnt statt stillschweigend erlaubt. Damit sind auch
+  `object-src`, `frame-src`, `media-src` und `worker-src` abgedeckt.
+- `style-src 'self'` **ohne** `'unsafe-inline'`. Das ist die eine Stelle, an der ReviewMyDoc
+  strenger ist als Atelier. Der Rahmen und die Partials unter `Pages/Shared/Ui/` tragen nur Klassen
+  und kein einziges `style`-Attribut, und jeder Baustein bringt seine eigene Datei mit. **Folge für
+  die Entwicklung:** die Entwickler-Fehlerseite von ASP.NET Core bringt ihre Stile inline mit und
+  erscheint deshalb unformatiert. Ihr Text bleibt lesbar. Wer eine Seite baut, hält sich an Dateien;
+  ein Test durchsucht das gerenderte Markup nach `style=`, `<style` und `<script`.
+- `img-src 'self'` ohne `data:`, weil heute weder eine Seite noch ein Stylesheet eine Daten-URL
+  verwendet. Wer eine braucht, ändert diese Zeile und begründet es.
+- `font-src 'self'` wird gebraucht: `components/tokens/website.css` lädt drei woff2-Dateien.
+- `base-uri 'none'` statt `'self'`: die Anwendung schreibt nie ein `<base>`-Element, und ein
+  eingeschleustes würde jede relative Adresse der Seite umlenken.
+
+## Data Protection: die Schlüssel für Cookies und Formulare
+
+Diese Schlüssel verschlüsseln das Anmeldecookie des Eigentümers, die Link-Session eines Reviewers
+und jeden Antiforgery-Token. Ohne einen Schlüsselbund, der den Prozess überlebt, erzeugt ASP.NET
+Core bei jedem Start einen neuen: **jede Anmeldung ist dann nach einem Neustart ungültig, und jedes
+gerade offene Formular scheitert.** In Azure wiegt das schwerer als ein Neustart auf dem eigenen
+Rechner, denn eine Web App wird verschoben, neu gestartet und skaliert, ohne dass jemand fragt, und
+eine zweite Instanz könnte nicht lesen, was die erste geschrieben hat.
+
+**Wo die Schlüssel liegen, entscheidet `Storage:Provider`, also genau die Einstellung, die auch über
+die Dokumente entscheidet.** Es gibt dafür keinen zweiten Schalter: wer eine Ablage einrichtet,
+richtet eine Ablage ein.
+
+- Verzeichnis: die Schlüssel liegen als `key-*.xml` in `DataProtection:KeysPath`.
+- Azure: die Schlüssel liegen im Blob `DataProtection:BlobName` **im selben Container** wie die
+  Dokumente, erreicht über dieselbe Verbindung und dieselbe verwaltete Identität. Es ist kein
+  zweiter Container, keine zweite Rolle und kein zusätzlicher Einrichtungsschritt nötig.
+
+```json
+"DataProtection": {
+  "ApplicationName": "ReviewMyDoc",
+  "KeysPath": "App_Data/keys",
+  "BlobName": "data-protection/keys.xml"
+}
+```
+
+| Schlüssel | Bedeutung | Entwicklungswert |
+| --- | --- | --- |
+| `DataProtection:ApplicationName` | Der Name, unter dem der Schlüsselbund isoliert wird. Er muss fest sein: ohne ihn leitet Data Protection den Namen aus dem Pfad der Anwendung ab, und dieselbe Anwendung in einem zweiten Bereitstellungsslot, einem zweiten Container oder einem anderen Ordner hätte einen eigenen Schlüsselbund. Dieser Wert wird im Normalfall nie geändert. | `ReviewMyDoc` |
+| `DataProtection:KeysPath` | Das Verzeichnis der Schlüssel, wenn die Verzeichnisablage verwendet wird. Ein relativer Pfad wird vom Arbeitsverzeichnis aus gelesen. Das Verzeichnis wird beim Start angelegt. | `App_Data/keys` |
+| `DataProtection:BlobName` | Der Blob im Container aus `Storage:Blob:ContainerName`, der den Schlüsselbund hält, wenn Azure verwendet wird. | `data-protection/keys.xml` |
+
+In Azure heißen dieselben Schlüssel `DataProtection__ApplicationName` und so weiter. Normalerweise
+muss dort keiner von ihnen gesetzt werden: die Standardwerte stimmen, sobald
+`Storage__Blob__ServiceUri` gesetzt ist.
+
+**Was zu sichern ist.** Das Verzeichnis beziehungsweise der Blob mit den Schlüsseln. Gehen sie
+verloren, ist kein Dokument verloren, aber jede Anmeldung und jede offene Reviewsitzung ist es.
+
+**Was passiert, wenn Azure verlangt wird, aber keine Verbindung konfiguriert ist:** die Anwendung
+startet nicht und nennt den fehlenden Schlüssel. Das ist bewusst anders als bei der Dokumentablage,
+die einen solchen Fehler erst beim ersten Zugriff meldet. Den Schlüsselbund braucht schon die erste
+Anfrage, die ein Formular rendert; eine Anwendung, die startet und danach jede einzelne Seite mit
+einem Fehler beantwortet, wäre der schlechtere Weg zur Lösung.
+
+## Die Ratenbegrenzung
+
+Es gibt drei benannte Limiter. Sie sind **keine** Policies der RateLimiter-Middleware, sondern
+Dienste, die die jeweilige Seite selbst fragt. Der Unterschied ist der ganze Punkt: die Middleware
+würde die Anfrage beenden, bevor die Seite überhaupt läuft, und der Benutzer bekäme eine leere 429
+und verlöre, was er getippt hat. Als Dienst gefragt, antwortet die Seite auf eine Ablehnung mit
+**429, `Retry-After` und ihrem eigenen Rahmen samt den eingegebenen Werten.**
+
+Gezählt wird je Limiter und je **gehashter Clientadresse** in einem festen Fenster von **einer
+Minute**. Die Adresse selbst wird nirgends behalten, wie es `docs/Konventionen.md` verlangt. Es gibt
+keine Warteschlange: eine abgelehnte Anfrage wird sofort beantwortet, statt eine Verbindung
+offenzuhalten.
+
+| Name | Was er schützt | Grenzwert | Was zählt |
+| --- | --- | --- | --- |
+| `login` | Die Passwortanmeldung des Eigentümers. Es gibt genau ein Konto und keine Kontosperre, also ist dieser Limiter das Einzige zwischen dem Passworthash und einem Wörterbuch. | 10 Versuche pro Minute | nur `POST`; die Seite zu lesen kostet nichts |
+| `review-link` | Das Einlösen eines Reviewlinks. Der Token in der Adresse ist der ganze Nachweis, also ist Raten der einzige Weg hinein. | 20 Aufrufe pro Minute | jede Methode, denn eingelöst wird mit `GET` |
+| `ai` | Die AI-Endpunkte. Dieser Limiter schützt kein Geheimnis, sondern eine Rechnung: jeder Aufruf geht an einen externen Anbieter und wird bezahlt. | 20 Aufrufe pro Minute | jede Methode |
+
+`review-link` ist absichtlich großzügiger als `login`. Ein Reviewer öffnet den Link, lädt ihn neu,
+öffnet ihn aus einer zweiten Mail und sitzt vielleicht hinter derselben Firmenadresse wie drei
+Kolleginnen. Ein zu enger Wert sperrt dort ehrliche Reviewer aus, und zwanzig Aufrufe pro Minute
+machen das Raten eines Tokens trotzdem aussichtslos.
+
+```json
+"RateLimits": {
+  "Login": { "PermitLimit": 10 },
+  "ReviewLink": { "PermitLimit": 20 },
+  "Ai": { "PermitLimit": 20 }
+}
+```
+
+| Schlüssel | Bedeutung | Entwicklungswert |
+| --- | --- | --- |
+| `RateLimits:Login:PermitLimit` | Anmeldeversuche pro Minute und Clientadresse. | `10` |
+| `RateLimits:ReviewLink:PermitLimit` | Einlösungen eines Reviewlinks pro Minute und Clientadresse. | `20` |
+| `RateLimits:Ai:PermitLimit` | Aufrufe der AI-Endpunkte pro Minute und Clientadresse. | `20` |
+
+Die Länge des Fensters ist absichtlich nicht einstellbar. Sie ist der Bezug, gegen den die
+Grenzwerte oben gelesen werden, und zwei Stellschrauben für dieselbe Rate machen die Werte
+unbesprechbar. Ein fehlender, leerer oder unbrauchbarer Wert bedeutet nicht „keine Grenze“, sondern
+den oben genannten Standardwert: eine fehlende Ablage ist ein Fehler, eine fehlende Grenze wäre eine
+offene Tür.
+
+In Azure heißen dieselben Schlüssel `RateLimits__Login__PermitLimit` und so weiter.
+
+### Die Prüfseite
+
+Unter `/pruefung/ratenbegrenzung` liegt eine Seite, die den Limiter `login` fragt und zeigt, wie
+eine Ablehnung aussieht: im Rahmen der Seite, mit dem eingegebenen Text, mit 429 und `Retry-After`.
+**Sie ist nur in der Entwicklung erreichbar.** In jeder anderen Umgebung wird ihr die Route
+genommen, sie antwortet also mit 404 wie eine Adresse, die es nie gab. Weil sie denselben Limiter
+fragt, den später die Anmeldung fragt, verbraucht ein Versuch auf ihr auch das Budget der Anmeldung.

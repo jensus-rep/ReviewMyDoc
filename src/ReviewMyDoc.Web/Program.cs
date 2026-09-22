@@ -4,11 +4,21 @@
 
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
+using ReviewMyDoc.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    // The check pages exist for development and for the integration tests. In a
+    // deployed application they have no address; see ProbePagesConvention.
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.Conventions.Add(new ProbePagesConvention());
+    }
+});
 
 // Which of the two object stores this is, Azure or a local directory, the
 // section "Storage" of the configuration decides; see docs/Betrieb.md. The
@@ -16,7 +26,27 @@ builder.Services.AddRazorPages();
 // named here.
 builder.Services.AddObjectStore(builder.Configuration);
 
+// The keys that encrypt every cookie and every antiforgery token. They go to the
+// same place the documents go, decided by the same setting, and they outlive a
+// restart of the application; without that, every sign-in and every open form
+// would end whenever the application is restarted, moved or scaled. Registered
+// in the infrastructure assembly for the same reason as the store above: no
+// Azure type is named here.
+builder.Services.AddDataProtectionKeys(builder.Configuration);
+
+// The named rate limiters of sign-in, review link and AI endpoints. A page asks
+// its limiter itself and answers a refusal with 429 inside its own frame, which
+// is why these are services and not policies of the RateLimiter middleware; see
+// src/ReviewMyDoc.Web/Security/RateLimitServiceCollectionExtensions.cs.
+builder.Services.AddRateLimits(builder.Configuration);
+
 var app = builder.Build();
+
+// First in the pipeline, so that a rendered page, a static file, a redirect, a
+// 404 and an error page all carry the same headers. See
+// src/ReviewMyDoc.Web/Security/SecurityHeaders.cs, which explains every single
+// one of them.
+app.UseSecurityHeaders();
 
 if (!app.Environment.IsDevelopment())
 {

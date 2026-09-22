@@ -13,6 +13,15 @@
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.29.2" />
     <!--
+      Data Protection and the one line that keeps its key ring in a blob. It is
+      referenced here and not in the web project, so that Program.cs registers
+      the key ring without naming an Azure type, the same way it registers the
+      object store. The standalone DataProtection package, not the shared
+      framework: this assembly is a class library and stays one.
+    -->
+    <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.4" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.12" />
+    <!--
       Configuration and the service container, so that this assembly can say
       itself which store belongs in the container. Only the abstractions: the
       host brings the implementations.

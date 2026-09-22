@@ -62,17 +62,7 @@ public static class StorageServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        var useBlob = options.Provider switch
-        {
-            StorageProvider.Blob => true,
-            StorageProvider.Directory => false,
-
-            // Auto: whoever configures a connection wants it used, and whoever
-            // configures none gets a store that works without one.
-            _ => options.Blob.IsConfigured,
-        };
-
-        if (!useBlob)
+        if (!UsesBlob(options))
         {
             return new DirectoryObjectStore(options.Directory.RootPath);
         }
@@ -87,8 +77,35 @@ public static class StorageServiceCollectionExtensions
         return new BlobObjectStore(CreateContainerClient(options.Blob));
     }
 
+    /// <summary>
+    /// Answers whether the configuration means Azure rather than the local
+    /// directory.
+    /// </summary>
+    /// <param name="options">The bound section <c>Storage</c>.</param>
+    /// <returns><see langword="true"/> for Azure Blob Storage.</returns>
+    /// <remarks>
+    /// Internal and not private, because the Data Protection key ring asks the
+    /// very same question and has to get the very same answer. An operator
+    /// configures one storage; documents and keys must not end up in different
+    /// places because the rule was written down twice.
+    /// </remarks>
+    internal static bool UsesBlob(StorageOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return options.Provider switch
+        {
+            StorageProvider.Blob => true,
+            StorageProvider.Directory => false,
+
+            // Auto: whoever configures a connection wants it used, and whoever
+            // configures none gets a store that works without one.
+            _ => options.Blob.IsConfigured,
+        };
+    }
+
     /// <summary>Builds the client of the one container, and signs in on the way.</summary>
-    private static BlobContainerClient CreateContainerClient(BlobStorageOptions options)
+    internal static BlobContainerClient CreateContainerClient(BlobStorageOptions options)
     {
         var service = string.IsNullOrWhiteSpace(options.ServiceUri)
             ? new BlobServiceClient(options.ConnectionString)

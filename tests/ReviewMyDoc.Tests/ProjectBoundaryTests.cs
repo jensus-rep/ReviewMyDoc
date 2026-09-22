@@ -43,6 +43,23 @@ public sealed class ProjectBoundaryTests
         Assert.Empty(project.Descendants("ProjectReference"));
     }
 
+    // The web project registers the object store and the Data Protection key
+    // ring, and both of them may end up in Azure. It must still not know that:
+    // the registration lives in Infrastructure precisely so that Program.cs
+    // names no Azure type and the application could be moved without touching a
+    // page. A package reference would be the first step back.
+    [Fact]
+    public void The_web_project_references_no_azure_package()
+    {
+        var project = LoadProject("src/ReviewMyDoc.Web/ReviewMyDoc.Web.csproj");
+
+        var packages = project.Descendants("PackageReference")
+            .Select(reference => reference.Attribute("Include")?.Value ?? string.Empty);
+
+        Assert.DoesNotContain(packages, package =>
+            package.StartsWith("Azure.", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public void Infrastructure_does_not_reference_the_web_project()
     {

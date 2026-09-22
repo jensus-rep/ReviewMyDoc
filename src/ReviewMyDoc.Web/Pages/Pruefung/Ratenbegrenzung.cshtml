@@ -1,0 +1,32 @@
+@page "/pruefung/ratenbegrenzung"
+@model ReviewMyDoc.Web.Pages.Pruefung.RatenbegrenzungModel
+@using ReviewMyDoc.Web.Pages.Shared.Ui
+@{
+    ViewData["Title"] = "Ratenbegrenzung";
+
+    var note = new FieldModel(nameof(Model.Note), "Notiz")
+    {
+        Value = Model.Note,
+        Hint = "Der Text kommt auch nach einer Ablehnung zurück.",
+        Error = Model.WasRefused ? Model.Message : null,
+    };
+
+    var send = new ButtonModel("Versuch senden");
+}
+
+<h1>Ratenbegrenzung</h1>
+<p>
+    Diese Seite fragt denselben Limiter, den die Anmeldung des Eigentümers bekommen wird. Sie zeigt,
+    wie eine abgelehnte Anfrage aussieht: im Rahmen der Seite, mit dem eingegebenen Text und mit dem
+    Statuscode 429 samt <code>Retry-After</code>. Sie ist nur in der Entwicklung erreichbar.
+</p>
+
+@if (Model.Message is not null)
+{
+    <p role="status">@Model.Message</p>
+}
+
+<form method="post">
+    <partial name="Ui/_Field" model="note" />
+    <partial name="Ui/_Button" model="send" />
+</form>
