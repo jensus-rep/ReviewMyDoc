@@ -24,6 +24,7 @@ public sealed class PageFrameTests : IClassFixture<OwnerApplication>
         var html = await GetHtmlAsync("/");
 
         Assert.Contains("href=\"/components/tokens/tokens.css\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"/components/theme/theme.css\"", html, StringComparison.Ordinal);
         Assert.Contains("href=\"/components/button/button.css\"", html, StringComparison.Ordinal);
         Assert.Contains("href=\"/components/field/field.css\"", html, StringComparison.Ordinal);
         Assert.Contains("href=\"/components/rows/rows.css\"", html, StringComparison.Ordinal);
@@ -31,17 +32,21 @@ public sealed class PageFrameTests : IClassFixture<OwnerApplication>
     }
 
     // The order is not decoration: every building block and site.css read the
-    // values of the tokens, and site.css sets the values of a building block.
+    // values of the tokens, the theme writes the colour roles of the tokens over
+    // and only wins at equal specificity because it stands after them, and
+    // site.css sets the values of a building block.
     [Fact]
-    public async Task The_tokens_stand_before_every_building_block_and_site_css_last()
+    public async Task The_tokens_stand_first_the_theme_after_them_and_site_css_last()
     {
         var html = await GetHtmlAsync("/");
 
         var tokens = html.IndexOf("/components/tokens/tokens.css", StringComparison.Ordinal);
+        var theme = html.IndexOf("/components/theme/theme.css", StringComparison.Ordinal);
         var button = html.IndexOf("/components/button/button.css", StringComparison.Ordinal);
         var site = html.IndexOf("/css/site.css", StringComparison.Ordinal);
 
-        Assert.True(tokens < button, "The tokens have to be loaded before the building blocks.");
+        Assert.True(tokens < theme, "The theme has to be loaded after the tokens.");
+        Assert.True(theme < button, "The theme has to be loaded before the building blocks.");
         Assert.True(button < site, "site.css has to be loaded after the building blocks.");
     }
 

@@ -7,7 +7,11 @@ Bausteinen, kein Framework. Jeder hat eine README und eine `demo.html`, die sich
 [docs/Konventionen.md](../docs/Konventionen.md), Abschnitt Struktur.
 
 Vorhanden sind `tokens`, `button`, `field`, `rows`, `busy-button`, `busy-region`, `progress-line`,
-`skeleton`, `loading-dots` und `dashboard`, alle aus Atelier übernommen.
+`skeleton`, `loading-dots` und `dashboard`, alle aus Atelier übernommen, und `theme`, hier
+entstanden. `theme` ist kein Element der Oberfläche, sondern die Schicht mit den Hausfarben von
+ReviewMyDoc: Es schreibt die Farbrollen aus `tokens` neu und lässt alles andere daran unberührt.
+Deshalb wird es unmittelbar nach `tokens` geladen und vor allen übrigen Bausteinen, siehe
+[theme/README.md](theme/README.md).
 
 Zwei Dinge fallen beim Lesen der übernommenen Bausteine auf, beide sind bekannt und bewusst nicht
 geändert, weil an einer Kopie nichts geändert wird außer der Herkunftszeile:
@@ -30,8 +34,9 @@ Es gelten dieselben Regeln wie in Atelier `components/README.md`, von dort über
 - Ruhig: keine automatischen Abläufe, kein Nachfedern, kurze Übergänge. Jeder Baustein
   berücksichtigt „Bewegung reduzieren“ (`prefers-reduced-motion`).
 - Versionsnummer im Kopf der Datei und in der README des Bausteins.
-- Design-Tokens kommen aus Atelier und sind die einzige Quelle für Farben, Schrift, Abstände und
-  Radien. Kein Baustein und keine Seite verwendet Rohwerte.
+- Design-Tokens kommen aus Atelier und sind die einzige Quelle für Schrift, Abstände, Radien und
+  Bewegung; die Farbwerte darin gelten in der Fassung, die `theme` daraus macht. Kein Baustein und
+  keine Seite verwendet Rohwerte.
 - Ein Baustein wird erst in eine Seite eingebaut, wenn seine `demo.html` steht.
 
 ## Herkunft

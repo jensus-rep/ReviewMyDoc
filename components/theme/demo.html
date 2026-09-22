@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme · Vorführung</title>
+<!--
+  Demo of the component theme: die Hausfarben von ReviewMyDoc, gezeigt an den
+  Rollen selbst, an der glänzenden Fläche und an der Kunstpalette, dazu drei
+  fremde Bausteine, die diese Farben ungefragt mitbekommen. Kein Umschalter und
+  kein Skript: Hell und Dunkel folgen dem System, erzwungen wird mit
+  data-theme auf <html>, wie am Ende der Seite beschrieben.
+-->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="../button/button.css">
+<link rel="stylesheet" href="../field/field.css">
+<link rel="stylesheet" href="../rows/rows.css">
+<style>
+  /* This page uses tokens only, no raw values, so it also checks them. */
+  body {
+    margin: 0;
+    padding: var(--space-10) var(--space-5);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-text);
+    line-height: var(--line-height-text);
+  }
+  .wrap { max-width: 56em; margin-inline: auto; display: grid; gap: var(--space-10); }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-page-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+    letter-spacing: var(--letter-spacing-page-title-web);
+  }
+  h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-section-title-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+  }
+  h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-text-web);
+    font-weight: var(--font-weight-title);
+    line-height: var(--line-height-title);
+  }
+  p { margin: 0 0 var(--space-4); max-width: var(--measure-text); }
+  p:last-child { margin-bottom: 0; }
+  .lead, .note { color: var(--ink-2); }
+  .note { font-size: var(--font-size-label-web); }
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: end; justify-content: space-between; }
+
+  /* a) Grund und Tinte: ein Feld pro Rolle, Beschriftung unter dem Feld statt
+     darauf, damit die Beschriftung nicht auf einer unbekannten Farbe steht. Das
+     Attribut data-role trägt die Variable, damit kein Rohwert im Markup steht. */
+  .roles { display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fit, minmax(min(10em, 100%), 1fr)); }
+  .role__field {
+    aspect-ratio: 3 / 2;
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-s);
+  }
+  .role__field[data-role="bg"] { background: var(--bg); }
+  .role__field[data-role="bg-2"] { background: var(--bg-2); }
+  .role__field[data-role="surface"] { background: var(--surface); }
+  .role__field[data-role="hairline"] { background: var(--hairline); }
+  .role__field[data-role="ink"] { background: var(--ink); }
+  .role__field[data-role="ink-2"] { background: var(--ink-2); }
+  .role__field[data-role="blue"] { background: var(--blue); }
+  .role__field[data-role="red"] { background: var(--red); }
+  .role__name { margin: var(--space-3) 0 0; font-size: var(--font-size-label-web); }
+  .role__role { margin: 0; font-size: var(--font-size-label-web); color: var(--ink-2); }
+
+  /* b) Glänzende Fläche: die Klasse surface aus theme.css trägt Kante, Schatten
+     und Verlauf, aber keinen Innenabstand; den gibt die Seite dazu. */
+  .cards { display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fit, minmax(min(16em, 100%), 1fr)); }
+  .card { padding: var(--space-6); }
+  .card p:last-child { color: var(--ink-2); }
+
+  /* c) Kunstpalette: ein kräftiges und ein ruhiges Feld je Farbe, nebeneinander.
+     Auch hier trägt data-art die Variable statt eines Rohwerts im Markup. */
+  .palette { display: grid; gap: var(--space-5); }
+  .palette__pair { display: grid; gap: var(--space-3); grid-template-columns: 1fr 1fr; }
+  .palette__field {
+    padding: var(--space-4);
+    border-radius: var(--radius-s);
+    display: flex;
+    align-items: end;
+    min-height: 5em;
+  }
+  .palette__field code { font-size: var(--font-size-label-web); }
+  .palette__field[data-art="vermilion"] { background: var(--art-vermilion); color: var(--art-on-solid); }
+  .palette__field[data-art="vermilion-quiet"] { background: var(--art-vermilion-quiet); color: var(--ink); }
+  .palette__field[data-art="chrome"] { background: var(--art-chrome); color: var(--art-on-chrome); }
+  .palette__field[data-art="chrome-quiet"] { background: var(--art-chrome-quiet); color: var(--ink); }
+  .palette__field[data-art="malachite"] { background: var(--art-malachite); color: var(--art-on-solid); }
+  .palette__field[data-art="malachite-quiet"] { background: var(--art-malachite-quiet); color: var(--ink); }
+  .palette__field[data-art="plum"] { background: var(--art-plum); color: var(--art-on-solid); }
+  .palette__field[data-art="plum-quiet"] { background: var(--art-plum-quiet); color: var(--ink); }
+
+  /* d) Bausteine im Theme: fremdes Markup, unverändert übernommen. */
+  .blocks { display: grid; gap: var(--space-6); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+  .ground { padding: var(--space-6); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); }
+  .ground--2 { background: var(--bg-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Theme</h1>
+      <p class="lead">Die Hausfarben von ReviewMyDoc: ein warmes Papierweiß, graphitfarbene Tinte,
+        ein Aubergine-Akzent und vier Kunstfarben für Zustände. Die Datei wird direkt nach
+        <code>tokens.css</code> geladen und ersetzt dort nur die Farbrollen; Größe, Abstand,
+        Geometrie und Bewegung bleiben, wie die Tokens sie vorgeben, unangetastet. Hell und
+        Dunkel folgen dem System und lassen sich mit <code>data-theme</code> auf
+        <code>&lt;html&gt;</code> erzwingen.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>Grund und Tinte</h2>
+    <p class="note">Die sieben Rollen, die dieses Theme gegenüber Atelier neu belegt, dazu die
+      glänzende Fläche.</p>
+    <div class="roles">
+      <div>
+        <div class="role__field" data-role="bg"></div>
+        <p class="role__name"><code>--bg</code></p>
+        <p class="role__role">Grund</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="bg-2"></div>
+        <p class="role__name"><code>--bg-2</code></p>
+        <p class="role__role">Sekundärgrund</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="surface"></div>
+        <p class="role__name"><code>--surface</code></p>
+        <p class="role__role">Fläche</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="hairline"></div>
+        <p class="role__name"><code>--hairline</code></p>
+        <p class="role__role">Haarlinie</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="ink"></div>
+        <p class="role__name"><code>--ink</code></p>
+        <p class="role__role">Text</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="ink-2"></div>
+        <p class="role__name"><code>--ink-2</code></p>
+        <p class="role__role">Sekundärtext</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="blue"></div>
+        <p class="role__name"><code>--blue</code></p>
+        <p class="role__role">Akzent, interaktiv</p>
+      </div>
+      <div>
+        <div class="role__field" data-role="red"></div>
+        <p class="role__name"><code>--red</code></p>
+        <p class="role__role">Kritisch</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Glänzende Fläche</h2>
+    <p class="note">Die Klasse <code>surface</code> aus theme.css: Kante, Verlauf und Schatten,
+      damit eine Karte als glänzende Schicht über dem Papier liegt statt als Rechteck darauf
+      gezeichnet zu sein.</p>
+    <div class="cards">
+      <div class="surface card">
+        <h3>Erstgespräch</h3>
+        <p>Eine halbe Stunde, unverbindlich. Genug, um zu sehen, ob der Ablauf zu diesem Werkzeug
+          passt.</p>
+      </div>
+      <div class="surface card">
+        <h3>Prozessanalyse</h3>
+        <p>Sichtbar machen, wie die Arbeit heute wirklich läuft, und zeigen, wo der Engpass sitzt.</p>
+      </div>
+      <div class="surface card">
+        <h3>Auswertung</h3>
+        <p>Ein kurzer Bericht, der den Ablauf beschreibt und die nächsten Schritte benennt.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kunstpalette</h2>
+    <p class="note">Vier flache Farben für Zustände, nie für Fließtext. Links die kräftige Form
+      für eine Markierung oder eine gefüllte Fläche, rechts die ruhige Form für eine breite
+      Fläche mit Text.</p>
+    <div class="palette">
+      <div class="palette__pair">
+        <div class="palette__field" data-art="vermilion">
+          <code>--art-vermilion</code>
+        </div>
+        <div class="palette__field" data-art="vermilion-quiet">
+          <code>--art-vermilion-quiet</code>
+        </div>
+      </div>
+      <div class="palette__pair">
+        <div class="palette__field" data-art="chrome">
+          <code>--art-chrome</code>
+        </div>
+        <div class="palette__field" data-art="chrome-quiet">
+          <code>--art-chrome-quiet</code>
+        </div>
+      </div>
+      <div class="palette__pair">
+        <div class="palette__field" data-art="malachite">
+          <code>--art-malachite</code>
+        </div>
+        <div class="palette__field" data-art="malachite-quiet">
+          <code>--art-malachite-quiet</code>
+        </div>
+      </div>
+      <div class="palette__pair">
+        <div class="palette__field" data-art="plum">
+          <code>--art-plum</code>
+        </div>
+        <div class="palette__field" data-art="plum-quiet">
+          <code>--art-plum-quiet</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bausteine im Theme</h2>
+    <p class="note">Drei fremde Bausteine, unverändert aus ihren eigenen Vorführseiten
+      übernommen. Keiner kennt theme.css; jeder liest nur die Variablennamen aus tokens.css, die
+      dieses Theme neu belegt.</p>
+    <div class="blocks">
+      <div class="row">
+        <button class="button button--primary" type="button">Erstgespräch</button>
+        <button class="button button--secondary" type="button">Mehr erfahren</button>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="mail">E-Mail</label>
+        <input class="field__input" id="mail" name="mail" type="email" autocomplete="email"
+               inputmode="email" aria-describedby="mail-hint">
+        <p class="field__hint" id="mail-hint">Nur für die Antwort auf Ihre Anfrage.</p>
+      </div>
+
+      <ol class="rows">
+        <li class="rows__item">
+          <span class="rows__number">01</span>
+          <h3 class="rows__title">Prozess- und Systemanalyse</h3>
+          <p class="rows__text">Sichtbar machen, wie die Arbeit heute wirklich läuft, und zeigen,
+            wo der Engpass sitzt.</p>
+          <a class="rows__action" href="#">Ansehen</a>
+        </li>
+        <li class="rows__item">
+          <span class="rows__number">02</span>
+          <h3 class="rows__title">Softwareentwicklung</h3>
+          <p class="rows__text">Anwendungen, die einen konkreten Ablauf abbilden, mit
+            Datenmodell, Berechtigungen und Freigaben.</p>
+          <a class="rows__action" href="#">Ansehen</a>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>Erzwungener Modus</h2>
+    <p class="note">Diese Seite hat keinen Umschalter: Hell und Dunkel folgen der Einstellung des
+      Systems. Erzwungen wird der dunkle Modus mit <code>&lt;html data-theme="dark"&gt;</code>,
+      der helle mit <code>&lt;html data-theme="light"&gt;</code>.</p>
+  </section>
+
+</div>
+</body>
+</html>

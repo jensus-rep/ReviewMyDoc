@@ -36,6 +36,7 @@ public sealed class ComponentsDeliveryTests : IClassFixture<OwnerApplication>
     // The building blocks the frame loads. A page that asks for them and gets a
     // 404 looks broken in a way no test of the markup would notice.
     [Theory]
+    [InlineData("/components/theme/theme.css")]
     [InlineData("/components/button/button.css")]
     [InlineData("/components/field/field.css")]
     [InlineData("/components/rows/rows.css")]

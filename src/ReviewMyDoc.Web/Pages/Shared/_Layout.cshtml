@@ -5,9 +5,11 @@
 
     The stylesheets are loaded in the order they build on each other: the tokens
     first, because every building block and site.css reads their values, then
-    the building blocks the partials under Ui/ render, and site.css last, so the
-    application can set the values of a building block without a specificity
-    fight. The files are delivered from the repository folder components/ under
+    the theme, which writes the colour roles of the tokens over with the house
+    colours of this application and has to stand after them to win at equal
+    specificity, then the building blocks the partials under Ui/ render, and
+    site.css last, so the application can set the values of a building block
+    without a specificity fight. The files are delivered from the repository folder components/ under
     /components/ and exist exactly once; nothing of them lies in wwwroot.
 *@
 @using ReviewMyDoc.Web.Pages.Shared.Ui
@@ -23,6 +25,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ReviewMyDoc</title>
     <link rel="stylesheet" href="~/components/tokens/tokens.css" />
+    <link rel="stylesheet" href="~/components/theme/theme.css" />
     <link rel="stylesheet" href="~/components/button/button.css" />
     <link rel="stylesheet" href="~/components/field/field.css" />
     <link rel="stylesheet" href="~/components/rows/rows.css" />

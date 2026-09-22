@@ -101,8 +101,13 @@ Ein Baustein wird erst in eine Seite eingebaut, wenn seine `demo.html` steht. Ty
 Bausteinen: `strict`, keine Abhängigkeiten außer der DOM-Typisierung, Rechenlogik in eigenen
 Funktionen ohne DOM-Zugriff, damit sie mit `node --test` ohne Browser prüfbar ist.
 
-Design-Tokens kommen aus Atelier und sind die einzige Quelle für Farben, Schrift, Abstände und
-Radien. Kein Baustein und keine Seite verwendet Rohwerte.
+Design-Tokens kommen aus Atelier und sind die einzige Quelle für Schrift, Abstände, Radien und
+Bewegung. Die Farben dieser Anwendung stehen nicht darin: Der hier entstandene Baustein `theme`
+schreibt die sieben Farbrollen der Tokens neu und trägt das Erscheinungsbild von ReviewMyDoc, ein
+warmes glänzendes Weiß mit Graphit, einem Aubergineakzent und vier flachen Kunstfarben für
+Zustände. Er wird unmittelbar nach den Tokens geladen und vor allen übrigen Bausteinen. Kein
+Baustein und keine Seite verwendet Rohwerte; wer eine Farbe braucht, nimmt eine Rolle oder eine
+Kunstfarbe, und Farbe ist nie das einzige Merkmal eines Zustands.
 
 ## Code
 
