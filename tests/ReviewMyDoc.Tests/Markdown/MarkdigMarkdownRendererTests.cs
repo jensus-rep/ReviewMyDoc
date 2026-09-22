@@ -143,6 +143,40 @@ public sealed class MarkdigMarkdownRendererTests
         Assert.DoesNotContain("<img", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    // A data: address as a link and not as an image. The image above never gets
+    // as far as its address; this one does, and has to be stopped by the scheme
+    // check itself. Both ways are named in the done criteria of the task.
+    [Fact]
+    public void A_data_link_that_is_not_an_image_does_not_survive()
+    {
+        var html = _renderer.Render("[Bericht](data:text/html;base64,PHNjcmlwdD4=)");
+
+        Assert.DoesNotContain("data:", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The scheme written in mixed case. A browser reads a scheme without regard
+    // to case, so a check that does not would be no check at all.
+    [Fact]
+    public void A_javascript_link_in_mixed_case_does_not_survive()
+    {
+        var html = _renderer.Render("[klick mich](JaVaScRiPt:alert('x'))");
+
+        Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("alert", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The scheme hidden behind HTML entities. Markdown resolves them while it
+    // reads the address, so what the cleanup gets to see is the plain text
+    // again - but only if the cleanup runs after that step and not before.
+    [Fact]
+    public void A_javascript_link_written_with_entities_does_not_survive()
+    {
+        var html = _renderer.Render("[klick mich](&#106;avascript&#58;alert&#40;1&#41;)");
+
+        Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("alert", html, StringComparison.OrdinalIgnoreCase);
+    }
+
     // A control character hidden inside the scheme is a known way to slip a
     // dangerous address past a naive check that only looks for the literal text
     // "javascript:"; a browser skips control characters when it reads a scheme,
