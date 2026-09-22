@@ -520,7 +520,7 @@ public sealed class DirectoryObjectStore : IObjectStore
         }
 
         ValidateCharacters(path, parameterName);
-        ValidateDirectoryPartIsLowerCase(path, parameterName);
+        ValidatePathIsLowerCase(path, parameterName);
 
         foreach (var segment in path.Split('/'))
         {
@@ -534,7 +534,7 @@ public sealed class DirectoryObjectStore : IObjectStore
         ArgumentNullException.ThrowIfNull(prefix, parameterName);
 
         ValidateCharacters(prefix, parameterName);
-        ValidateDirectoryPartIsLowerCase(prefix, parameterName);
+        ValidatePathIsLowerCase(prefix, parameterName);
 
         // A prefix may end in the middle of a name and it may end with a
         // separator, so only its last part may be empty.
@@ -559,32 +559,21 @@ public sealed class DirectoryObjectStore : IObjectStore
         }
     }
 
-    /// <summary>
-    /// Refuses an upper case letter in the part of the path that names
-    /// directories.
-    /// </summary>
+    /// <summary>Refuses an upper case letter anywhere in a path.</summary>
     /// <remarks>
     /// Blob names tell case apart and a Windows file system does not, so a path
     /// that relied on case would mean two entries in one store and one in the
     /// other. <c>docs/Datenmodell.md</c> answers that by drawing every
     /// identifier from a lower case alphabet and having the store refuse
-    /// anything else. The check stops at the last separator because the
-    /// contract in <c>ObjectStoreContractTests</c> pins exactly that boundary:
-    /// it demands that <c>documents/D7Kq2fR/document.json</c> be refused, and
-    /// in the same class it stores a section under <c>sections/S_0zzz.md</c> in
-    /// order to show that a listing is ordered ordinally and not by culture. A
-    /// store that refused every upper case letter would fail that test. The
-    /// wording of <c>docs/Datenmodell.md</c> is wider than what the contract
-    /// allows, and that difference is reported with the task instead of being
-    /// settled here, because the contract is the yardstick both implementations
-    /// are measured by and must not be bent by one of them.
+    /// anything else. The rule covers the whole path, directories and the name
+    /// of the entry alike, because the entry names are drawn the same way the
+    /// directory names are.
     /// </remarks>
-    private static void ValidateDirectoryPartIsLowerCase(string value, string parameterName)
+    private static void ValidatePathIsLowerCase(string value, string parameterName)
     {
-        var lastSeparator = value.LastIndexOf('/');
-        for (var index = 0; index <= lastSeparator; index++)
+        foreach (var character in value)
         {
-            if (char.IsUpper(value[index]))
+            if (char.IsUpper(character))
             {
                 throw new ArgumentException(
                     "A path is lower case; identifiers are drawn from a lower case alphabet.",

@@ -212,24 +212,29 @@ public abstract class ObjectStoreContractTests
     // Listing is the only question the application asks across several entries,
     // and the interface promises ascending ordinal order so that neither the
     // callers nor the second implementation have to sort. The names are chosen
-    // so that ordinal and culture-aware order differ: ordinally the capital S
-    // comes first, under a culture-aware comparison it would come last.
+    // so that ordinal and culture-aware order differ, which is what makes this
+    // test able to catch a store that sorts with the wrong comparer: ordinally
+    // the hyphen (U+002D) comes before the digit and the digit before the
+    // underscore (U+005F), while a culture-aware comparison puts the underscore
+    // first and the digit last. Measured on this runtime, not assumed. Lower
+    // case throughout, because a path with a capital letter is refused; see the
+    // test further down.
     [Fact]
     public async Task Listing_a_prefix_returns_the_matching_paths_in_ascending_ordinal_order()
     {
         var store = CreateStore();
-        await CreateAsync(store, SectionPrefix + "s_3c4d.md", "dritter Abschnitt");
-        await CreateAsync(store, SectionPrefix + "S_0zzz.md", "erster Abschnitt");
-        await CreateAsync(store, SectionPrefix + "s_1a2b.md", "zweiter Abschnitt");
+        await CreateAsync(store, SectionPrefix + "s_0zzz.md", "dritter Abschnitt");
+        await CreateAsync(store, SectionPrefix + "s-9aaa.md", "erster Abschnitt");
+        await CreateAsync(store, SectionPrefix + "s1a2b.md", "zweiter Abschnitt");
 
         var paths = await store.ListAsync(SectionPrefix, Token);
 
         Assert.Equal(
             new[]
             {
-                SectionPrefix + "S_0zzz.md",
-                SectionPrefix + "s_1a2b.md",
-                SectionPrefix + "s_3c4d.md",
+                SectionPrefix + "s-9aaa.md",
+                SectionPrefix + "s1a2b.md",
+                SectionPrefix + "s_0zzz.md",
             },
             paths);
     }
@@ -477,11 +482,12 @@ public abstract class ObjectStoreContractTests
     // alphabet, so the case can never collide, and the store refuses a path
     // that breaks the rule instead of letting the two storages drift apart in
     // silence.
-    [Fact]
-    public async Task A_path_with_an_upper_case_letter_is_rejected()
+    [Theory]
+    [InlineData("documents/D7Kq2fR/document.json")]
+    [InlineData("documents/d7kq2fr/sections/S_1a2b.md")]
+    public async Task A_path_with_an_upper_case_letter_is_rejected(string upperCasePath)
     {
         var store = CreateStore();
-        const string upperCasePath = "documents/D7Kq2fR/document.json";
 
         await Assert.ThrowsAnyAsync<ArgumentException>(
             () => store.WriteAsync(upperCasePath, "Dokument", WriteCondition.MustNotExist, Token));
@@ -489,6 +495,32 @@ public abstract class ObjectStoreContractTests
             () => store.ReadAsync(upperCasePath, Token));
         await Assert.ThrowsAnyAsync<ArgumentException>(
             () => store.ListAsync("documents/D7Kq2fR/", Token));
+    }
+
+    // A path is built by the application, never by a visitor, so this is not a
+    // defence against an attacker but against a mistake that would be silent
+    // otherwise: in Azure these are ordinary blob names, on a file system they
+    // reach outside the root. A store that accepted them would behave
+    // differently in the two places, which is exactly what this class exists to
+    // prevent. The check has to happen before anything touches the storage, so
+    // every operation is held to it.
+    [Theory]
+    [InlineData("documents/../escape.json")]
+    [InlineData("../escape.json")]
+    [InlineData("documents/d7kq2fr/../../escape.json")]
+    [InlineData("/documents/d7kq2fr/document.json")]
+    public async Task A_path_that_leaves_the_store_is_rejected(string escapingPath)
+    {
+        var store = CreateStore();
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.WriteAsync(escapingPath, "fremder Inhalt", WriteCondition.Unconditional, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.ReadAsync(escapingPath, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.DeleteAsync(escapingPath, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+            () => store.AppendLineAsync(escapingPath, "eine Zeile", Token));
     }
 
     /// <summary>Writes an entry that has to be new and hands back its version.</summary>
