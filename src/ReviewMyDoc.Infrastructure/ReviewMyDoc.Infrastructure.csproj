@@ -20,6 +20,14 @@
       framework: this assembly is a class library and stays one.
     -->
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.4" />
+    <!--
+      Markdown to HTML for a section's text. Configured with DisableHtml() so
+      embedded markup never passes through as a tag, and the parsed tree is
+      cleaned again before rendering; see Markdown/MarkdigMarkdownRenderer.cs.
+      Referenced here and not in Core, so ReviewMyDoc.Core stays free of a
+      package reference, as docs/Konventionen.md demands.
+    -->
+    <PackageReference Include="Markdig" Version="1.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.12" />
     <!--
       Configuration and the service container, so that this assembly can say

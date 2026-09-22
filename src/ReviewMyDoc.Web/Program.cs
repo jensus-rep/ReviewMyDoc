@@ -4,6 +4,7 @@
 
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using ReviewMyDoc.Infrastructure.Markdown;
 using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
 using ReviewMyDoc.Web.Security;
@@ -27,6 +28,8 @@ builder.Services.AddRazorPages();
 // choice is made in the infrastructure assembly so that no Azure type has to be
 // named here.
 builder.Services.AddObjectStore(builder.Configuration);
+
+builder.Services.AddMarkdownRenderer();
 
 // The keys that encrypt every cookie and every antiforgery token. They go to the
 // same place the documents go, decided by the same setting, and they outlive a
