@@ -188,6 +188,9 @@ Radien. Kein Baustein und keine Seite verwendet Rohwerte.
 - Tasks, die denselben Bereich berühren (`Program.cs`, `appsettings.json`, gemeinsame Layouts),
   laufen nacheinander, nicht parallel. Die Abhängigkeiten in TaskPilot sind dafür die verbindliche
   Quelle.
+- Niemand beendet Prozesse nach Name. `taskkill /IM dotnet.exe` und Vergleichbares trifft jeden
+  Worktree auf der Maschine und jedes andere Projekt dazu, nicht nur den eigenen Lauf. Wer einen
+  Server startet, merkt sich dessen Prozesskennung und beendet genau diese.
 
 ## Übergabe
 
