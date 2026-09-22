@@ -642,6 +642,53 @@ public sealed class DocumentServiceTests : IDisposable
         Assert.Equal(before, await ReadEntryAsync($"documents/{document.Document.Id}/versions/1.json"));
     }
 
+    // A document straight from the page that creates one has no section yet, and
+    // the owner may well send it to review before writing the first one. An empty
+    // outline is a state and not a missing one, so it freezes like any other.
+    [Fact]
+    public async Task Freezing_a_document_without_a_section_freezes_an_empty_outline()
+    {
+        var created = await CreateDocumentAsync("Noch ohne Abschnitte");
+        _clock.UtcNow = Changed;
+
+        var frozen = await SucceedsAsync(_service.FreezeVersionAsync(created.Document.Id, created.ETag, Token));
+
+        var documentId = frozen.Document.Id.Value;
+        var content = await ReadEntryAsync($"documents/{documentId}/versions/1.json");
+        Assert.Equal(
+            $$"""
+            {
+              "documentId": "{{documentId}}",
+              "version": 1,
+              "title": "Noch ohne Abschnitte",
+              "sections": [],
+              "frozenAt": "2026-09-22T08:14:00Z"
+            }
+            """,
+            content);
+    }
+
+    // A section that was added but never written carries an empty text, and empty
+    // is a text like any other. Freezing it has to keep it as it is; reading it
+    // as "nothing there" would make the freeze fail on every fresh section.
+    [Fact]
+    public async Task Freezing_keeps_the_empty_text_of_a_section_nobody_has_written_yet()
+    {
+        var created = await CreateDocumentAsync("Gliederung steht, Text fehlt");
+        var withSection = await SucceedsAsync(
+            _service.AddSectionAsync(created.Document.Id, "Ausgangslage", created.ETag, Token));
+
+        var frozen = await SucceedsAsync(_service.FreezeVersionAsync(withSection.Document.Id, withSection.ETag, Token));
+
+        var content = await ReadEntryAsync($"documents/{frozen.Document.Id}/versions/1.json");
+        Assert.Contains("\"text\": \"\"", content, StringComparison.Ordinal);
+
+        // And the comparison agrees: an empty text that has not been touched is
+        // not a difference.
+        var comparison = await _service.FindChangedSectionsAsync(frozen.Document.Id, 1, Token);
+        Assert.Empty(Assert.IsType<VersionComparisonResult.Success>(comparison).ChangedSectionIds);
+    }
+
     // The comparison the review view and the editor will both read from: right
     // after freezing, today's text agrees everywhere with what was just frozen.
     [Fact]
