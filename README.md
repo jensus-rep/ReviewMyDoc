@@ -34,7 +34,7 @@ Deployment. Alle laufen vom Repositorywurzelverzeichnis aus.
 | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | `dotnet build -warnaserror`          | alle vier Projekte übersetzen, jede Warnung zählt als Fehler                                     |
 | `dotnet format --verify-no-changes`  | Formatierung und C#-Stil nach `.editorconfig`, ohne etwas zu ändern                              |
-| `dotnet test`                        | xUnit-Tests in `tests/ReviewMyDoc.Tests`: Unit-Tests für die Fachlogik in Core, Integrationstests über `WebApplicationFactory` |
+| `dotnet test`                        | xUnit-Tests in `tests/ReviewMyDoc.Tests`: heute die Projektgrenzen, mit der Fachlichkeit dann Unit-Tests für Core und Integrationstests über `WebApplicationFactory` |
 | `npm run typecheck`                  | `tsc --noEmit` über `components/**/*.ts` und das Build-Skript unter `scripts/`                  |
 | `npm test`                           | `node --test` über die Bausteintests: `components/**/*.test.mjs` und `components/**/*.test.ts`  |
 | `npm run build`                      | esbuild erzeugt aus jeder `components/<name>/<name>.ts` das ES-Modul `<name>.js` daneben         |
