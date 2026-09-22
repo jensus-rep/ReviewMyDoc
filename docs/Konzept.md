@@ -32,7 +32,10 @@ Abschnitten und eine laufende Versionsnummer. Das Dokument selbst trägt keinen 
 
 **Abschnitt.** Die Einheit, auf die sich alles bezieht: Zuweisung, Kommentar, Abnahme. Er hat eine
 stabile Kennung, eine Überschrift und seinen Text als Markdown. Die Kennung bleibt, wenn Abschnitte
-umsortiert oder umbenannt werden, damit Rückmeldungen nicht verrutschen.
+umsortiert oder umbenannt werden, damit Rückmeldungen nicht verrutschen. Sichtbar ist der Abschnitt
+beim Schreiben kaum: Der Eigentümer sieht einen durchgehenden Text, und die Abschnittsgrenzen sind
+ruhige Marken darin. Er entsteht meist dadurch, dass eine markierte Stelle zum Abschnitt gemacht
+wird, siehe Dokument anlegen und ausarbeiten.
 
 **Reviewauftrag.** Eine Person (Name und Mailadresse), eine Menge von Abschnittskennungen, eine
 Frist, eine Sichtbarkeitsstufe und ein Zustand. Er zeigt immer auf eine feste Dokumentversion, nie
@@ -49,10 +52,32 @@ gespeichert, und kann deshalb nicht falsch werden.
 
 ### Dokument anlegen und ausarbeiten
 
-Der Eigentümer legt ein Dokument an und gliedert es in Abschnitte. Jeder Abschnitt wird als Markdown
-geschrieben, mit Vorschau daneben. Die Formatierung ist bewusst begrenzt auf Überschrift, Fett,
-Kursiv, Listen, Tabelle, Zitat, Link und Code. Was nicht in dieser Liste steht, gehört nicht in ein
-Dokument, das von mehreren Leuten geprüft wird.
+Der Eigentümer legt ein Dokument an und schreibt darin, durchgehend, auf einer einzigen Fläche. Er
+gliedert nicht zuerst und füllt dann Kästen: Er schreibt, und die Gliederung entsteht aus dem Text.
+
+**Der Text formatiert sich beim Schreiben mit.** Eine Überschrift sieht aus wie eine Überschrift,
+Fettes ist fett, eine Liste ist eingerückt. Die Markdown-Zeichen bleiben sichtbar, aber
+zurückgenommen, damit niemand raten muss, was die Anwendung gerade aus seinem Text macht. Es gibt
+keine zweite Spalte mit einer Vorschau und keine dauernd sichtbare Werkzeugleiste: Werkzeuge
+erscheinen an der Markierung und verschwinden mit ihr. Die Formatierung ist bewusst begrenzt auf
+Überschrift, Fett, Kursiv, Listen, Tabelle, Zitat, Link und Code. Was nicht in dieser Liste steht,
+gehört nicht in ein Dokument, das von mehreren Leuten geprüft wird.
+
+**Aus der Markierung wird der Abschnitt.** Wer eine Stelle markiert, bekommt ein kleines Menü an
+der Markierung, und darin steht neben den Formatierungen der Weg ins Review. Wählt er ihn, wird die
+markierte Stelle zu einem eigenen Abschnitt: Der umgebende Abschnitt wird an den Rändern der
+Markierung geteilt, die markierte Mitte bekommt eine eigene Kennung und eine Überschrift, und was
+davor und dahinter stand, bleibt, was es war. Die Kennung des ursprünglichen Abschnitts bleibt beim
+ersten der drei Teile, damit vorhandene Rückmeldungen nicht verrutschen.
+
+Der Abschnitt bleibt also die Einheit von Ablage, Zuweisung und Rückmeldung; nur seine Geburt ist
+eine andere. Die Gliederungsseite bleibt als Nebenansicht bestehen, für Reihenfolge, Umbenennen und
+Löschen, und für den Überblick über ein langes Dokument.
+
+**Ohne JavaScript bleibt das Dokument benutzbar.** Die mitlaufende Formatierung und das Menü an der
+Markierung sind Zugaben. Ohne sie zeigt die Seite den Text formatiert an, und jeder Abschnitt
+bekommt ein gewöhnliches Formular zum Bearbeiten. Was nicht geht, ist das Teilen an einer
+Markierung; dafür gibt es den Weg über die Gliederungsseite.
 
 Die AI arbeitet immer auf genau einem Abschnitt und immer auf Zuruf, nie von selbst: entwerfen,
 umformulieren, kürzen, Gliederung vorschlagen, eingegangene Rückmeldungen zu einer Fassung
@@ -117,16 +142,19 @@ in die Antwort schreibt. Kein Abschnitt verlässt den Server, den der Empfänger
 
 ## Offene Entscheidungen
 
-Diese drei sind noch nicht entschieden und deshalb in keiner Task vorausgesetzt:
+Diese zwei sind noch nicht entschieden und deshalb in keiner Task vorausgesetzt:
 
 1. **Ausgabeformat.** Markdown und HTML fallen ohnehin an, PDF über den Druckdialog des Browsers
    ebenfalls. Ob es zusätzlich einen echten .docx-Export braucht, hängt daran, was am Ende mit dem
    Dokument passiert.
-2. **Mailversand.** Ein Reviewlink muss zur Person kommen. Vorschlag: SMTP über ein vorhandenes
-   Postfach, konfigurierbar, und daneben immer „Link kopieren“, damit die Anwendung auch ohne
-   eingerichteten Versand vollständig benutzbar ist.
-3. **Mehrere Eigentümer.** Der erste Wurf hat genau einen. Das Datenmodell trägt trotzdem von Anfang
+2. **Mehrere Eigentümer.** Der erste Wurf hat genau einen. Das Datenmodell trägt trotzdem von Anfang
    an eine Eigentümerkennung, damit ein späterer zweiter Eigentümer keine Migration auslöst.
+
+Entschieden am 22.09.2026 und deshalb keine offene Frage mehr: **Der Reviewlink geht nicht per
+Mail hinaus.** Die Anwendung zeigt ihn nach dem Erteilen des Auftrags, und der Eigentümer verschickt
+ihn selbst. Damit ist die Anwendung ohne eingerichtetes Postfach vollständig benutzbar, es gibt
+keine Zustellprobleme zu deuten und keinen weiteren Betriebsschlüssel für den, der sie später
+übernimmt. SMTP bleibt eine spätere Möglichkeit und darf den Entwurf nicht prägen.
 
 ## Nicht im ersten Wurf
 
