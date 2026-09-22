@@ -119,6 +119,11 @@ public sealed class MarkdigMarkdownRendererTests
         var html = _renderer.Render("[klick mich](javascript:alert('x'))");
 
         Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
+
+        // Not merely an address that leads nowhere: no anchor at all, and the
+        // text the author wrote still there.
+        Assert.DoesNotContain("<a", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("klick mich", html, StringComparison.Ordinal);
     }
 
     // The same attempt written as an autolink, Markdown's other link syntax.
@@ -163,6 +168,7 @@ public sealed class MarkdigMarkdownRendererTests
 
         Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("alert", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<a", html, StringComparison.OrdinalIgnoreCase);
     }
 
     // The scheme hidden behind HTML entities. Markdown resolves them while it
@@ -187,6 +193,18 @@ public sealed class MarkdigMarkdownRendererTests
         var html = _renderer.Render("[klick mich](java\tscript:alert('x'))");
 
         Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<a", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The text of a blocked link is not only kept, it keeps its shape: what was
+    // emphasised inside the link text is still emphasised without it.
+    [Fact]
+    public void The_text_of_a_blocked_link_keeps_its_emphasis()
+    {
+        var html = _renderer.Render("[ein **wichtiger** Hinweis](javascript:alert('x'))");
+
+        Assert.Contains("ein <strong>wichtiger</strong> Hinweis", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<a", html, StringComparison.OrdinalIgnoreCase);
     }
 
     // A relative address carries no scheme to abuse and is not the target of

@@ -176,22 +176,45 @@ public sealed class MarkdigMarkdownRenderer : ReviewMyDoc.Core.Markdown.IMarkdow
     }
 
     /// <summary>
-    /// Blanks the address of a link whose scheme is not on the allow list, and
-    /// marks every surviving link with <c>rel="noopener noreferrer"</c>.
+    /// Turns a link whose scheme is not on the allow list back into the text it
+    /// wraps, and marks every surviving link with
+    /// <c>rel="noopener noreferrer"</c>.
     /// </summary>
     private static void SanitizeLink(LinkInline link)
     {
         if (!IsAllowedUrl(link.Url))
         {
-            // No href at all rather than an empty one: the text the reviewer
-            // wrote stays visible, but there is nothing left to click that
-            // could run as javascript: or read back a data: payload.
-            link.Url = null;
+            Unlink(link);
 
             return;
         }
 
         link.GetAttributes().AddPropertyIfNotExist("rel", LinkRelation);
+    }
+
+    /// <summary>
+    /// Replaces a link with its own content: the text the author wrote stays
+    /// visible, the anchor around it is gone.
+    /// </summary>
+    /// <remarks>
+    /// Merely clearing <c>Url</c> would leave <c>&lt;a href=""&gt;</c> behind,
+    /// which still looks like a link and reloads the page when it is clicked.
+    /// Nothing dangerous, but nothing a reader can make sense of either. The
+    /// children move one after another so their order survives, and emphasis or
+    /// code inside the link text survives with them.
+    /// </remarks>
+    private static void Unlink(LinkInline link)
+    {
+        Inline previous = link;
+
+        foreach (var child in link.ToList())
+        {
+            child.Remove();
+            previous.InsertAfter(child);
+            previous = child;
+        }
+
+        link.Remove();
     }
 
     /// <summary>
