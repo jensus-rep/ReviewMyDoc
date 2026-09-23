@@ -7,8 +7,12 @@ Bausteinen, kein Framework. Jeder hat eine README und eine `demo.html`, die sich
 [docs/Konventionen.md](../docs/Konventionen.md), Abschnitt Struktur.
 
 Vorhanden sind `tokens`, `button`, `field`, `rows`, `busy-button`, `busy-region`, `progress-line`,
-`skeleton`, `loading-dots` und `dashboard`, alle aus Atelier übernommen, und `theme`, hier
-entstanden. `theme` ist kein Element der Oberfläche, sondern die Schicht mit den Hausfarben von
+`skeleton`, `loading-dots`, `dashboard` und `markdown-surface`, alle aus Atelier übernommen, und
+`theme`, hier entstanden. `markdown-surface` ist die Schreibfläche für Dokumente: ein
+Textfeld mit einer deckungsgleichen Schicht dahinter, die den Text beim Tippen auszeichnet, und
+einem Menü, das nur an der Markierung erscheint. Es ist der erste übernommene Baustein mit
+TypeScript, also der erste, für den `npm test` und `npm run build` hier wirklich etwas zu tun
+haben. `theme` ist kein Element der Oberfläche, sondern die Schicht mit den Hausfarben von
 ReviewMyDoc: Es schreibt die Farbrollen aus `tokens` neu und lässt alles andere daran unberührt.
 Deshalb wird es unmittelbar nach `tokens` geladen und vor allen übrigen Bausteinen, siehe
 [theme/README.md](theme/README.md).
@@ -17,7 +21,10 @@ Zwei Dinge fallen beim Lesen der übernommenen Bausteine auf, beide sind bekannt
 geändert, weil an einer Kopie nichts geändert wird außer der Herkunftszeile:
 
 - Die READMEs einiger Bausteine verweisen auf `docs/Design/…` und auf Mockups. Diese Pfade gibt es
-  nur in Atelier. Wohin sie zeigen, sagt die Herkunftszeile in Zeile eins derselben Datei.
+  nur in Atelier. Wohin sie zeigen, sagt die Herkunftszeile in Zeile eins derselben Datei. Aus
+  demselben Grund verweist `markdown-surface/README.md` auf `markdown-editor`, seinen Vorgänger, den es
+  hier nie gab: Er ist in Atelier geblieben, weil diese Anwendung Feld und Vorschau nicht
+  nebeneinander zeigt.
 - `button/demo.html` und `busy-button/demo.html` binden jeweils das CSS des anderen ein, um die
   Kombination zu zeigen. Die Bausteine selbst hängen nicht voneinander ab, nur diese beiden
   Vorführseiten.

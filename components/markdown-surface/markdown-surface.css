@@ -1,0 +1,77 @@
+/*!
+ * Markdown surface 1.0.0 · Atelier (Process 51)
+ * One text field with a second layer behind it that shows the same text marked up. Tools appear
+ * only at the selection. Without script the layer stays away and the field keeps its own colour,
+ * which is the state the markup ships in.
+ *
+ * Everything here that marks a piece of text has to leave it where it stands. The two layers are
+ * congruent only as long as every glyph keeps its advance width, so this file changes colour,
+ * opacity and background, and fakes weight with a shadow to the left and right of the glyph. It
+ * does not change font size, font family or font style, and it indents nothing: a text field
+ * carries one font for its whole content, so a heading that really grew would move the layer away
+ * from the caret. See the README, "Warum nichts groesser wird".
+ */
+:where(.markdown-surface) {
+  --markdown-surface-height: 28rem;
+  --markdown-surface-padding: var(--space-4);
+  --markdown-surface-radius: var(--radius-m);
+  --markdown-surface-font: var(--font-sans);
+  --markdown-surface-font-size: var(--font-size-text-app);
+  --markdown-surface-line-height: var(--line-height-text);
+  --markdown-surface-marker-opacity: .4;
+  --markdown-surface-weight: .018em;
+  --markdown-surface-menu-x: 0px;
+  --markdown-surface-menu-y: 0px;
+}
+.markdown-surface { position: relative; min-width: 0; color: var(--ink); font-family: var(--markdown-surface-font); font-size: var(--markdown-surface-font-size); line-height: var(--markdown-surface-line-height); }
+.markdown-surface__frame { position: relative; height: var(--markdown-surface-height); border: var(--hairline-width) solid var(--hairline); border-radius: var(--markdown-surface-radius); background: var(--bg); overflow: hidden; }
+
+/* The two layers share every property that decides where a character lands: the same box, the same
+   padding, the same font, the same wrapping, and a scrollbar gutter that is there in both, because
+   a scrollbar in one of them alone would make the lines break at different places. */
+.markdown-surface__layer,
+.markdown-surface__input { position: absolute; inset: 0; box-sizing: border-box; margin: 0; padding: var(--markdown-surface-padding); border: 0; font: inherit; font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit; tab-size: 4; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; scrollbar-gutter: stable; }
+.markdown-surface__layer { z-index: 0; background: transparent; color: var(--ink); overflow: hidden; pointer-events: none; user-select: none; display: none; }
+.markdown-surface__input { z-index: 1; background: var(--bg); color: var(--ink); caret-color: var(--ink); overflow: auto; resize: none; }
+.markdown-surface__input:focus { outline: none; }
+.markdown-surface__frame:focus-within { border-color: var(--blue); box-shadow: 0 0 0 var(--hairline-width) var(--blue); }
+
+/* Only with script does the field hand its colour over to the layer. Without it the field alone
+   remains, in its own ink, and stays fully usable. */
+.markdown-surface.is-ready .markdown-surface__layer { display: block; }
+.markdown-surface.is-ready .markdown-surface__input { background: transparent; color: transparent; }
+
+/* The selection stays the one of the browser, only see-through, so the marked up text shows
+   through it. The layer marks the same stretch as well, but draws nothing: that span exists to be
+   measured, and it is what tells the menu where to stand. */
+.markdown-surface.is-ready .markdown-surface__input::selection { background: color-mix(in oklab, var(--blue) 24%, transparent); color: transparent; }
+.markdown-surface__selection { background: none; }
+
+/* The Markdown punctuation stays readable and steps back; every other mark is a colour, a
+   background or the faked weight. */
+.markdown-surface__marker { opacity: var(--markdown-surface-marker-opacity); }
+.markdown-surface__heading { text-shadow: var(--markdown-surface-weight) 0 0 currentColor, calc(var(--markdown-surface-weight) * -1) 0 0 currentColor; }
+.markdown-surface__strong { text-shadow: var(--markdown-surface-weight) 0 0 currentColor, calc(var(--markdown-surface-weight) * -1) 0 0 currentColor; }
+.markdown-surface__emphasis { color: color-mix(in oklab, var(--ink) 72%, var(--blue)); }
+.markdown-surface__code { background: var(--bg-2); border-radius: var(--radius-s); }
+.markdown-surface__quote { color: var(--ink-2); }
+.markdown-surface__list.markdown-surface__marker { color: var(--blue); opacity: .8; }
+.markdown-surface__table.markdown-surface__marker { color: var(--blue); opacity: .55; }
+.markdown-surface__link { color: var(--blue); }
+.markdown-surface__url { color: var(--ink-2); }
+
+/* The menu. It stands where the component computed it, inside the frame, and it is gone as soon as
+   the selection is. Pressing it must not move the focus, which the component takes care of. */
+.markdown-surface__menu { position: absolute; z-index: 2; left: var(--markdown-surface-menu-x); top: var(--markdown-surface-menu-y); display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-button); background: var(--bg); box-shadow: var(--shadow-float); }
+.markdown-surface__menu[hidden] { display: none; }
+.markdown-surface__tool,
+.markdown-surface__action { padding: var(--space-2) var(--space-3); border: var(--hairline-width) solid transparent; border-radius: var(--radius-button); color: var(--ink-2); background: transparent; font: inherit; font-size: var(--font-size-label-app); white-space: nowrap; cursor: pointer; transition: background-color var(--motion-duration) var(--motion-ease), color var(--motion-duration) var(--motion-ease); }
+.markdown-surface__tool:hover,
+.markdown-surface__action:hover { color: var(--ink); background: var(--bg-2); }
+.markdown-surface__action { color: var(--blue); }
+.markdown-surface__split { width: var(--hairline-width); align-self: stretch; margin-inline: var(--space-1); background: var(--hairline); }
+
+.markdown-surface :focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+@media (max-width: 600px) { :where(.markdown-surface) { --markdown-surface-padding: var(--space-3); } }
+@media (prefers-reduced-motion: reduce) { .markdown-surface__tool,
+  .markdown-surface__action { transition: none; } }

@@ -1,0 +1,105 @@
+<!doctype html>
+<!-- Markdown surface 1.0.0: one field, a marked-up layer behind it, and a menu that follows the selection. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Markdown-Schreibfläche · Baustein</title>
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="markdown-surface.css">
+<style>
+  body {
+    margin: 0;
+    padding: var(--space-6);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+  .markdown-surface-demo__intro {
+    max-width: var(--measure-text);
+    color: var(--ink-2);
+    line-height: var(--line-height-text);
+  }
+  .markdown-surface-demo__note {
+    max-width: var(--measure-text);
+    margin-top: var(--space-3);
+    color: var(--ink-2);
+    font-size: var(--font-size-label-web);
+  }
+  .markdown-surface-demo__report {
+    max-width: var(--measure-text);
+    margin-top: var(--space-7);
+  }
+  .markdown-surface-demo__label {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-label-web);
+    font-weight: var(--font-weight-title);
+    color: var(--ink-2);
+  }
+  .markdown-surface-demo__output {
+    display: block;
+    padding: var(--space-4);
+    border: var(--hairline-width) solid var(--hairline);
+    border-radius: var(--radius-m);
+    background: var(--bg-2);
+    font-size: var(--font-size-text-web);
+  }
+</style>
+<script type="module" src="markdown-surface.js"></script>
+</head>
+<body>
+<p class="markdown-surface-demo__intro">Die Markdown-Fläche ist ein Textfeld, das seine Auszeichnung schon beim Tippen zeigt: eine zweite Ebene hinter dem Text malt Überschriften, Betonungen, Zitate und Codeblöcke farbig nach. Markieren Sie eine Stelle im Text - über der Markierung erscheint ein kleines Menü mit den acht Formaten und einem eigenen Eintrag für den Wirt.</p>
+<noscript><p class="markdown-surface-demo__note">Ohne JavaScript bleibt das Textfeld allein stehen und ist vollständig benutzbar; nur die Auszeichnung, das Menü und die Rückmeldung unten fallen aus.</p></noscript>
+<div class="markdown-surface" data-markdown-surface>
+  <div class="markdown-surface__frame">
+    <div class="markdown-surface__layer" data-markdown-surface-layer aria-hidden="true"></div>
+    <textarea class="markdown-surface__input" data-markdown-surface-input spellcheck="true" aria-label="Markdown-Text"># Gutachten zur Dokumentenprüfung
+
+## Feststellung zu Abschnitt 4
+
+Die Klausel weicht von der **Musterformulierung** ab, ist aber *inhaltlich* nachvollziehbar und verweist mit `§ 4 Abs. 2` auf das [Referenzdokument](https://example.org/referenzdokument).
+
+- Klausel mit dem Standard verglichen
+- Abweichung im Protokoll vermerkt
+- Rückfrage an die Autorin gestellt
+
+> Eine Abweichung ohne Begründung gilt als offener Punkt.
+
+| Kriterium | Bewertung |
+| --- | --- |
+| Vollständigkeit | erfüllt |
+| Konsistenz | offen |
+
+```
+Fundstelle: Vertrag, Anlage 3, Zeile 12
+```</textarea>
+  </div>
+  <div class="markdown-surface__menu" data-markdown-surface-menu hidden role="toolbar" aria-label="Formatierung">
+    <button type="button" class="markdown-surface__tool" data-markdown-format="heading" title="Überschrift">Überschrift</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="bold" title="Fett (Strg+B)">Fett</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="italic" title="Kursiv (Strg+I)">Kursiv</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="list" title="Liste">Liste</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="table" title="Tabelle">Tabelle</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="quote" title="Zitat">Zitat</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="link" title="Link (Strg+K)">Link</button>
+    <button type="button" class="markdown-surface__tool" data-markdown-format="code" title="Code">Code</button>
+    <span class="markdown-surface__split" aria-hidden="true"></span>
+    <button type="button" class="markdown-surface__action" data-markdown-surface-action="review">Ins Review geben</button>
+  </div>
+</div>
+<section class="markdown-surface-demo__report">
+  <p class="markdown-surface-demo__label" id="markdown-surface-demo-report-label">Rückmeldung an den Wirt</p>
+  <output class="markdown-surface-demo__output" id="markdown-surface-demo-report" aria-labelledby="markdown-surface-demo-report-label">Noch keine Markierung ins Review gegeben.</output>
+</section>
+<!-- The host's own listener: the component only reports the action, the page decides what "review" means. -->
+<script type="module">
+  const output = document.getElementById('markdown-surface-demo-report');
+  document.addEventListener('markdown-surface:action', (event) => {
+    const { action, text, selectionStart, selectionEnd } = event.detail;
+    const auszug = text.slice(selectionStart, selectionEnd);
+    const bezeichnung = action === 'review' ? 'Ins Review gegeben' : action;
+    output.textContent = `${bezeichnung}: Zeichen ${selectionStart} bis ${selectionEnd} - «${auszug}»`;
+  });
+</script>
+</body>
+</html>
