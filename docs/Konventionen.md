@@ -27,7 +27,8 @@ UI-Bibliothek, ohne CSS-Framework.
 - Antiforgery, Data Protection (Schlüssel im Blob Storage), Ratenbegrenzung und Security-Header wie
   in Atelier, ohne Abstriche.
 
-Für die AI gibt es genau eine Schnittstelle in Core und zwei Implementierungen in Infrastructure,
+AI gehört nach der MVP-Entscheidung vom 23.09.2026 nicht zum aktuellen Lieferumfang. Für die spätere
+Anbindung ist eine Schnittstelle in Core mit Implementierungen in Infrastructure vorgesehen,
 Anthropic und OpenAI, ausgewählt über `Ai:Provider`. Die Schnittstelle kennt nur Textaufgaben, keine
 Anbieterbegriffe. Kein Schlüssel verlässt den Server; der Browser spricht ausschließlich mit den
 eigenen Endpunkten.

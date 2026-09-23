@@ -156,6 +156,13 @@ keine Zustellprobleme zu deuten und keinen weiteren Betriebsschlüssel für den,
 
 ## Nicht im ersten Wurf
 
+MVP-Entscheidung vom 23.09.2026: AI-Unterstützung ist nicht Teil des MVP. Die spätere
+Anbindung bleibt als anbieterunabhängige Core-Schnittstelle mit Implementierungen in
+Infrastructure geplant; keine Anbieterabhängigkeit wird im Dokument- oder Reviewmodell eingeführt.
+Zum MVP gehören Kommentare, Änderungsvorschläge mit bewusster Übernahme/Ablehnung,
+Rückfragen mit Antwort über den bestehenden Link, beide Sichtbarkeitsstufen sowie die
+explizite Dokumentfreigabe. Nach Auftragsabnahme endet der Reviewerzugang.
+
 Gleichzeitiges Bearbeiten durch mehrere Personen, Kommentare auf Wortebene statt auf
 Abschnittsebene, Benachrichtigungen außer der Einladungsmail, Vorlagen und Textbausteine,
 Volltextsuche über alle Dokumente, mobile Bearbeitung (Lesen und Kommentieren auf dem Telefon

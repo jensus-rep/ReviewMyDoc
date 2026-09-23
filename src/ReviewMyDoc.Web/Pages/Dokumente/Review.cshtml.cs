@@ -9,7 +9,7 @@ using ReviewMyDoc.Core.Reviews;
 namespace ReviewMyDoc.Web.Pages.Dokumente;
 
 /// <summary>Prepare and follow up one review assignment.</summary>
-public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer renderer) : PageModel
+public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer renderer, IDocumentStore documents) : PageModel
 {
     /// <summary>The assignment and concurrency token.</summary>
     public StoredReview Stored { get; private set; } = null!;
@@ -23,6 +23,12 @@ public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer rendere
     [BindProperty] public string? Email { get; set; }
     /// <summary>The requested review deadline.</summary>
     [BindProperty] public DateTime? DueDate { get; set; }
+    /// <summary>Explicit sharing scope; excerpts are the safe default.</summary>
+    [BindProperty] public string Visibility { get; set; } = "AssignedSectionsOnly";
+    /// <summary>An answer survives an invalid or stale POST.</summary>
+    [BindProperty] public string? Answer { get; set; }
+    /// <summary>Current source text and version for deliberate suggestion acceptance.</summary>
+    public Dictionary<string, StoredSectionText?> Sources { get; } = [];
 
     /// <summary>Renders only sanitized Markdown.</summary>
     public string Render(string markdown) => renderer.Render(markdown);
@@ -41,9 +47,9 @@ public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer rendere
             return Page();
         }
         var due = new DateTimeOffset(DateTime.SpecifyKind(DueDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc));
-        var result = await reviews.IssueAsync(new DocumentIdentifier(documentId), reviewId, etag, Name, Email, due, ct);
+        var result = await reviews.IssueAsync(new DocumentIdentifier(documentId), reviewId, etag, Name, Email, due, ct, Visibility);
         if (result.Error is not null) { Message = result.Error; return Page(); }
-        IssuedLink = $"/review/{documentId}/{reviewId}#token={result.Token}";
+        IssuedLink = Url.Page("/Review/Index", null, new { documentId, reviewId }, Request.Scheme) + $"#token={result.Token}";
         return Redirect($"/dokumente/{documentId}/reviews/{reviewId}");
     }
 
@@ -57,11 +63,17 @@ public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer rendere
     }
 
     /// <summary>Resolves one response, accepts a review or withdraws its link.</summary>
-    public async Task<IActionResult> OnPostDecideAsync(string documentId, string reviewId, string etag, string action, string? passageId, CancellationToken ct)
+    public async Task<IActionResult> OnPostDecideAsync(string documentId, string reviewId, string etag, string action, string? passageId, CancellationToken ct, string? textETag = null)
     {
         if (!await LoadAsync(documentId, reviewId, ct)) { return NotFound(); }
-        var result = await reviews.DecideAsync(new DocumentIdentifier(documentId), reviewId, etag, action, passageId, ct);
-        if (result.Error is not null) { Message = result.Error; return Page(); }
+        var id = new DocumentIdentifier(documentId);
+        var result = action switch
+        {
+            "apply" => await reviews.ApplySuggestionAsync(id, reviewId, etag, passageId ?? "", textETag ?? "", ct),
+            "answer" or "reject" => await reviews.RespondAsync(id, reviewId, etag, passageId ?? "", action, Answer, ct),
+            _ => await reviews.DecideAsync(id, reviewId, etag, action, passageId, ct)
+        };
+        if (result.Error is not null) { await LoadAsync(documentId, reviewId, ct); Message = result.Error; Response.StatusCode = 409; return Page(); }
         return Redirect($"/dokumente/{documentId}/reviews/{reviewId}");
     }
 
@@ -72,6 +84,14 @@ public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer rendere
             var loaded = await reviews.LoadAsync(new DocumentIdentifier(documentId), reviewId, ct);
             if (loaded is null) { return false; }
             Stored = loaded;
+            var document = await documents.ReadAsync(new DocumentIdentifier(documentId), ct);
+            Sources.Clear();
+            foreach (var passage in loaded.Review.Passages)
+            {
+                var section = new SectionIdentifier(passage.SectionId);
+                Sources[passage.Id] = document?.Document.FindSection(section) is null ? null :
+                    await documents.ReadSectionTextAsync(new DocumentIdentifier(documentId), section, ct);
+            }
             return true;
         }
         catch (ArgumentException) { return false; }

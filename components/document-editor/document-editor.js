@@ -113,6 +113,8 @@ function init(root) {
     const surface = form.querySelector("[data-editor-surface]");
     const result = { form, surface, saved: markdown(surface), etag: form.dataset.textEtag ?? "", id: form.dataset.sectionId ?? "" };
     surface.contentEditable = "true";
+    surface.setAttribute("role", "textbox");
+    surface.setAttribute("aria-multiline", "true");
     surface.hidden = false;
     surface.spellcheck = true;
     form.querySelector("[data-editor-fallback]").hidden = true;

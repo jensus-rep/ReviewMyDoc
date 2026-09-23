@@ -24,6 +24,8 @@ public sealed class BearbeitenModel(IDocumentStore store, DocumentService docume
     public IReadOnlyList<EditorSection> Sections { get; private set; } = [];
     /// <summary>The collection resumed when this document is reopened.</summary>
     public StoredReview? Collection { get; private set; }
+    /// <summary>A form validation or conflict message.</summary>
+    public string? Message { get; private set; }
 
     /// <summary>A plain excerpt for the collection, without Markdown syntax.</summary>
     public string Preview(string markdown)
@@ -60,18 +62,58 @@ public sealed class BearbeitenModel(IDocumentStore store, DocumentService docume
         {
             var loaded = await store.ReadAsync(id!, ct);
             if (loaded is null) { return NotFound(); }
-            if (loaded.Document.Sections.Count != 0 || loaded.ETag.Value != documentETag) { return ConflictResult(); }
+            if (loaded.Document.Sections.Count != 0 || loaded.ETag.Value != documentETag) { return await SaveConflictAsync(documentId, sectionId, markdown, etag, ct); }
             var added = await documents.AddSectionAsync(id!, "Dokumenttext", loaded.ETag, ct);
-            if (added is not DocumentResult.Success success) { return ConflictResult(); }
+            if (added is not DocumentResult.Success success) { return await SaveConflictAsync(documentId, sectionId, markdown, etag, ct); }
             sectionId = success.Document.Sections[0].Id.Value;
             etag = (await store.ReadSectionTextAsync(id!, new SectionIdentifier(sectionId), ct))!.ETag.Value;
         }
         if (!TryId(sectionId, out _) || string.IsNullOrEmpty(etag)) { return BadRequest(); }
         var result = await editing.SaveAsync(id!, new SectionIdentifier(sectionId), markdown ?? "", new ETag(etag), ct);
-        if (result is not ObjectWriteResult.Written written) { return ConflictResult(); }
+        if (result is not ObjectWriteResult.Written written) { return await SaveConflictAsync(documentId, sectionId, markdown, etag, ct); }
         return Request.Headers["X-Requested-With"] == "fetch"
             ? new JsonResult(new { sectionId, etag = written.ETag.Value })
             : Redirect($"/dokumente/{documentId}");
+    }
+
+    /// <summary>Changes approval only after checking the current document and its assignments.</summary>
+    public async Task<IActionResult> OnPostApprovalAsync(string documentId, string etag, bool approve, CancellationToken ct)
+    {
+        if (!TryId(documentId, out var id)) { return NotFound(); }
+        var error = await reviews.SetDocumentApprovalAsync(id!, etag, approve, ct);
+        if (error is null) { return Redirect($"/dokumente/{documentId}"); }
+        var page = await OnGetAsync(documentId, ct);
+        Message = error;
+        Response.StatusCode = 409;
+        return page;
+    }
+
+    /// <summary>Collects a complete section using ordinary HTML forms without JavaScript.</summary>
+    public async Task<IActionResult> OnPostCollectSectionAsync(string documentId, string sectionId, string etag, CancellationToken ct)
+    {
+        if (!TryId(documentId, out var id) || !TryId(sectionId, out _)) { return NotFound(); }
+        var text = await store.ReadSectionTextAsync(id!, new SectionIdentifier(sectionId), ct);
+        if (text is null) { return NotFound(); }
+        var page = await OnGetAsync(documentId, ct);
+        if (page is not PageResult) { return page; }
+        var result = await reviews.CollectAsync(id!, new SectionIdentifier(sectionId), text.Content, etag,
+            Collection?.Review.Id, Collection?.ETag.Value, ct);
+        if (result.Error is not null) { Message = result.Error; Response.StatusCode = 409; return Page(); }
+        return Redirect($"/dokumente/{documentId}/reviews/{result.Stored!.Review.Id}");
+    }
+
+    private async Task<IActionResult> SaveConflictAsync(string documentId, string? sectionId, string? markdown, string? etag, CancellationToken ct)
+    {
+        if (Request.Headers["X-Requested-With"] == "fetch") { return ConflictResult(); }
+        var page = await OnGetAsync(documentId, ct);
+        if (page is not PageResult) { return page; }
+        var original = Sections.FirstOrDefault(s => s.Id == sectionId);
+        var preserved = new EditorSection(sectionId ?? "", original?.Heading ?? "Nicht gespeicherter Text", markdown ?? "",
+            renderer.Render(markdown ?? ""), etag ?? "");
+        Sections = original is null ? [.. Sections, preserved] : [.. Sections.Select(s => s.Id == sectionId ? preserved : s)];
+        Message = "Nicht gespeichert: Der Stand wurde geändert oder das Dokument ist freigegeben. Deine Eingabe bleibt unten erhalten. Öffne den aktuellen Stand in einem zweiten Tab und gleiche die Texte ab.";
+        Response.StatusCode = 409;
+        return Page();
     }
 
     /// <summary>Collects a passage from the saved version of its source section.</summary>

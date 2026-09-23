@@ -33,11 +33,15 @@ Code, Struktur, Tests und Zusammenarbeit ist [docs/Konventionen.md](docs/Konvent
 Die Dokumentenansicht ist eine direkt bearbeitbare Schreibfläche. Änderungen werden nach einer
 kurzen Schreibpause gespeichert. Markierten Text kann man sammeln oder direkt zum Review geben.
 Eine Sammlung wird einer Person mit Frist zugewiesen; der erzeugte Link wird anschließend selbst
-geteilt. Die Person sieht ausschließlich die Ausschnitte, gibt Kommentare ab und sendet das Review
-zurück. Die Startseite zeigt die Pipeline; dort lassen sich Rückmeldungen bearbeiten und Aufträge
-abschließen. Gliederung und Markdownformulare bleiben als Nebenansicht beziehungsweise als
-Fallback ohne JavaScript erreichbar. Word-Dateiimport und automatische Übernahme von
-Änderungsvorschlägen gehören nicht zu diesem Ablauf.
+geteilt. Der Eigentümer wählt zwischen Ausschnitten und dem ganzen eingefrorenen Dokument als
+Lesekontext. Rückmeldungen an zugewiesenen Passagen sind Kommentare, Änderungsvorschläge oder
+Rückfragen. Vorschläge werden ausdrücklich übernommen oder abgelehnt; Antworten auf Rückfragen
+erscheinen über denselben Link. Nach der Abnahme endet jeder Reviewerzugriff. Sind alle Aufträge
+geschlossen, kann das Dokument freigegeben und bei Bedarf ausdrücklich wieder geöffnet werden.
+Die Pipeline zeigt Fristen, offene Entscheidungen und Abschlüsse der letzten 30 Tage.
+Ohne JavaScript bleiben formatierter Text, Bearbeitungsformulare und das Sammeln ganzer Abschnitte
+verfügbar. AI-Unterstützung und Word-Dateiimport gehören nicht zum MVP.
+Die Aufteilung der Dienste und ihre Pflegebereiche stehen in [docs/Architektur.md](docs/Architektur.md).
 
 Diese Befehle laufen im Build-Job der Pipeline (`.github/workflows/build.yml`) bei jedem Push und
 jedem Pull Request; ohne grün kein Deployment. Alle laufen vom Repositorywurzelverzeichnis aus.

@@ -11,6 +11,7 @@
 {
     <h1>Einladung zum Mitlesen</h1>
     <p>Öffne den vollständigen persönlichen Reviewlink, den du erhalten hast.</p>
+    <noscript><p>Ohne JavaScript: Kopiere die 64 Zeichen nach <code>#token=</code> aus dem Link in das Feld unten. Der Code wird nur per Formular übermittelt.</p></noscript>
     <form method="post" asp-page-handler="Open" data-review-access>
         <label for="access-token">Zugangscode aus dem Reviewlink</label>
         <input id="access-token" name="token" type="password" autocomplete="off" required maxlength="64" />
@@ -23,6 +24,12 @@ else
     <p class="document-view__eyebrow">Für @review.ReviewerName · Rückmeldung bis @review.DueAt?.ToString("dd.MM.yyyy")</p>
     <h1>@review.Title</h1>
     <p>Diese @review.Passages.Count Passagen wurden dir zum Prüfen zugewiesen. Du liest den festgehaltenen Stand von Version @review.DocumentVersion.</p>
+    @if (Model.ContextDocument is { } context)
+    {
+        <details class="review-workspace__passage"><summary>Ganzes Dokument lesen · Version @context.Version</summary>
+        @foreach (var entry in context.Sections) { <h2>@entry.Heading</h2><div class="review-prose">@Html.Raw(Model.Render(entry.Text))</div> }
+        </details>
+    }
     @if (review.State is "Returned" or "Accepted")
     { <div class="review-workspace__notice"><h2>Danke fürs Mitdenken.</h2><p>Deine Rückmeldung wurde übermittelt.@(review.State == "Accepted" ? " Das Review wurde inzwischen abgeschlossen." : "")</p></div> }
     <form method="post" asp-page-handler="Return">
@@ -30,13 +37,24 @@ else
         @foreach (var passage in review.Passages)
         {
             <article class="review-workspace__passage">
+                @if (Model.ChangedPassageIds.Contains(passage.Id)) { <p class="review-workspace__notice">Der Quellabschnitt wurde inzwischen geändert oder entfernt. Dein Review bezieht sich weiterhin auf den unten gezeigten, eingefrorenen Stand.</p> }
                 <div class="review-prose">@Html.Raw(Model.Render(passage.Markdown))</div>
                 @if (review.State == "Sent")
                 {
+                    <label for="kind-@passage.Id">Art der Rückmeldung</label>
+                    <select id="kind-@passage.Id" name="Kinds[@passage.Id]">
+                        <option value="Comment" selected="@(Model.Kinds.GetValueOrDefault(passage.Id, "Comment") == "Comment")">Kommentar</option>
+                        <option value="Suggestion" selected="@(Model.Kinds.GetValueOrDefault(passage.Id) == "Suggestion")">Änderungsvorschlag</option>
+                        <option value="Question" selected="@(Model.Kinds.GetValueOrDefault(passage.Id) == "Question")">Rückfrage</option>
+                    </select>
                     <label for="feedback-@passage.Id">Deine Rückmeldung (optional)</label>
                     <textarea id="feedback-@passage.Id" name="Feedback[@passage.Id]" rows="4" maxlength="10000" placeholder="Was fällt dir auf? Was sollte klarer werden?">@Model.Feedback.GetValueOrDefault(passage.Id)</textarea>
+                    <details><summary>Ersatztext für einen Änderungsvorschlag</summary><label for="proposal-@passage.Id">Neue Fassung der gesamten Passage (Markdown möglich)</label><textarea id="proposal-@passage.Id" name="Proposals[@passage.Id]" rows="6" maxlength="50000">@Model.Proposals.GetValueOrDefault(passage.Id)</textarea><p>Wähle oben „Änderungsvorschlag“, damit dieser Text berücksichtigt wird.</p></details>
                 }
                 else if (!string.IsNullOrWhiteSpace(passage.Feedback)) { <div class="review-workspace__feedback"><h2>Deine Rückmeldung</h2><p>@passage.Feedback</p></div> }
+                @if (review.State != "Sent" && passage.ProposedMarkdown is not null) { <h3>Dein Vorschlag</h3><div class="review-prose">@Html.Raw(Model.Render(passage.ProposedMarkdown))</div> }
+                @if (passage.Answer is not null) { <div class="review-workspace__notice"><h3>Antwort auf deine Rückfrage</h3><p>@passage.Answer</p></div> }
+                @if (passage.Resolved) { <p>@(passage.Decision switch { "Applied" => "Vorschlag übernommen", "Rejected" => "Vorschlag abgelehnt", "Answered" => "Rückfrage beantwortet", _ => "Kommentar bearbeitet" })</p> }
             </article>
         }
         @if (review.State == "Sent")

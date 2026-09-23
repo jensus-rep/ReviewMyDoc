@@ -75,7 +75,7 @@ public sealed class ReviewWorkflowTests
             ["etag"] = issued.Stored!.ETag.Value,
             [$"Feedback[{passage.Id}]"] = "Bitte die Aussage konkretisieren.",
         }), Ct);
-        Assert.Equal(HttpStatusCode.OK, returned.StatusCode);
+        Assert.True(returned.StatusCode == HttpStatusCode.OK, await returned.Content.ReadAsStringAsync(Ct));
         var current = await service.LoadAsync(id, draft.Review.Id, Ct);
         Assert.Equal("Returned", current!.Review.State);
         Assert.Equal("Zurück", ReviewMyDoc.Web.Pages.IndexModel.Stage(current.Review));

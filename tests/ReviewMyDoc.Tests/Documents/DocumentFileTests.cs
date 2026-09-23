@@ -68,11 +68,9 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(new DateTimeOffset(2026, 9, 19, 10, 0, 0, TimeSpan.Zero), loaded.Document.CreatedAt);
     }
 
-    // The state is carried through untouched, which is only visible once the
-    // document has been written again: a service that lost it would turn every
-    // document it saves back into a draft.
+    // Approved documents require explicit reopening; legacy files obey the same guard.
     [Fact]
-    public async Task A_state_that_is_not_a_draft_survives_a_change()
+    public async Task An_approved_document_refuses_changes_until_reopened()
     {
         await WriteFileAsync("""
             {
@@ -89,14 +87,14 @@ public sealed class DocumentFileTests : IDisposable
         var loaded = Assert.IsType<DocumentResult.Success>(
             await _service.LoadDocumentAsync(new DocumentIdentifier(DocumentId), Token));
 
-        var renamed = Assert.IsType<DocumentResult.Success>(await _service.RenameDocumentAsync(
+        Assert.IsType<DocumentResult.Conflict>(await _service.RenameDocumentAsync(
             loaded.Document.Id,
             "Gutachten Musterstraße",
             loaded.ETag,
             Token));
 
-        Assert.Equal(DocumentState.Approved, renamed.Document.State);
-        Assert.Equal(4, renamed.Document.Version);
+        Assert.Equal(DocumentState.Approved, loaded.Document.State);
+        Assert.Equal(4, loaded.Document.Version);
         Assert.Contains("\"state\": \"Approved\"", await ReadFileAsync());
     }
 

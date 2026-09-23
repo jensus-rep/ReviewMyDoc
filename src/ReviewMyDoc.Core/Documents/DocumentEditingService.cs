@@ -12,7 +12,7 @@ public sealed class DocumentEditingService(IDocumentStore store, TimeProvider cl
         string text, ETag expectedText, CancellationToken cancellationToken)
     {
         var document = await store.ReadAsync(documentId, cancellationToken);
-        if (document?.Document.FindSection(sectionId) is null || text.Length > 500_000)
+        if (document?.Document.FindSection(sectionId) is null || document.Document.State == DocumentState.Approved || text.Length > 500_000)
         {
             return new ObjectWriteResult.Conflict();
         }

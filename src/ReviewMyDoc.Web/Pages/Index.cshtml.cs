@@ -8,7 +8,7 @@ using ReviewMyDoc.Core.Reviews;
 namespace ReviewMyDoc.Web.Pages;
 
 /// <summary>Page model of the start page.</summary>
-public sealed class IndexModel(DocumentService documents, ReviewService reviews) : PageModel
+public sealed class IndexModel(ReviewPipeline pipeline) : PageModel
 {
     /// <summary>All persisted assignments available to the owner.</summary>
     public IReadOnlyList<ReviewAssignment> Reviews { get; private set; } = [];
@@ -16,21 +16,13 @@ public sealed class IndexModel(DocumentService documents, ReviewService reviews)
     /// <summary>Loads the pipeline from its source aggregates.</summary>
     public async Task OnGetAsync(CancellationToken ct)
     {
-        var result = new List<ReviewAssignment>();
-        foreach (var document in await documents.ListDocumentsAsync(ct))
-        {
-            result.AddRange((await reviews.ListAsync(document.Id, ct)).Select(r => r.Review));
-        }
-        Reviews = result.OrderBy(r => r.DueAt).ToArray();
+        Reviews = await pipeline.LoadAsync(ct);
     }
 
     /// <summary>The stage follows the review and its unresolved comments.</summary>
-    public static string Stage(ReviewAssignment review) => review.State switch
-    {
-        "Sent" => "Draußen",
-        "Returned" when review.Passages.Any(p => !string.IsNullOrWhiteSpace(p.Feedback) && !p.Resolved) => "Zurück",
-        "Returned" => "Bei dir",
-        "Accepted" => "Erledigt",
-        _ => "Gesammelt",
-    };
+    public static string Stage(ReviewAssignment review) => ReviewPipeline.Stage(review);
+    /// <summary>Time remaining from the application clock.</summary>
+    public string Remaining(ReviewAssignment review) => pipeline.Remaining(review);
+    /// <summary>Overdue state from the application clock.</summary>
+    public bool IsOverdue(ReviewAssignment review) => pipeline.IsOverdue(review);
 }

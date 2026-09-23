@@ -10,7 +10,9 @@ bearbeitet. Der Baustein ersetzt die Markdown-Schicht für den dokumentorientier
 die Formularhandler der Dokumentenseite. `demo.html` zeigt die Schreibfläche ohne Server.
 Das gespeicherte Format bleibt Markdown; ausgeliefertes HTML kommt ausschließlich aus dem
 bereinigenden Serverrenderer. Eingefügtes HTML wird auf Textelemente reduziert, Bilder und
-aktive Inhalte werden entfernt. Das ursprüngliche Textformular bleibt ohne JavaScript verfügbar.
+aktive Inhalte werden entfernt. Ohne JavaScript ist der Text bereits formatiert lesbar;
+das Textformular und die Sammlung ganzer Abschnitte bleiben verfügbar. Konfliktantworten behalten
+die Eingabe im Formular. Freigegebene Dokumente aktivieren den Editor erst nach Wiederöffnung.
 
 Änderungen werden nach einer Schreibpause gespeichert. Speichervorgänge laufen nacheinander,
 tragen das gelesene ETag und melden Konflikte, ohne die lokale Eingabe zu ersetzen. Vor dem

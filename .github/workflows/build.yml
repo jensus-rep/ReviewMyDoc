@@ -56,7 +56,20 @@ jobs:
       - name: Formatierung prüfen
         run: dotnet format --verify-no-changes
 
-      - name: Tests
+      - name: Blob-Emulator starten
+        run: |
+          npm install --prefix "$RUNNER_TEMP/azurite-tools" --no-save azurite@3.35.0
+          node "$RUNNER_TEMP/azurite-tools/node_modules/azurite/dist/src/blob/main.js" --blobHost 127.0.0.1 --skipApiVersionCheck --silent --location "$RUNNER_TEMP/azurite-data" > "$RUNNER_TEMP/azurite.log" 2>&1 &
+          for attempt in {1..30}; do
+            if curl --silent --output /dev/null http://127.0.0.1:10000; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/azurite.log"
+          exit 1
+
+      - name: Tests einschließlich Blob-Vertrag
+        env:
+          REVIEWMYDOC_TEST_BLOB_CONNECTIONSTRING: UseDevelopmentStorage=true
         run: dotnet test --no-restore
 
       - name: Frontend-Abhängigkeiten installieren

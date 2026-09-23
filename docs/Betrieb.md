@@ -447,8 +447,27 @@ entfernt dieses Fragment aus der Browserhistorie und löst es per antiforgery-ge
 Der Server speichert nur den Hash. Die Sitzung liegt in einem HttpOnly-Cookie, das auf genau den
 Auftrag begrenzt und mit Data Protection geschützt ist.
 
-Der Zugang endet 14 Tage nach der gewählten Rückmeldefrist oder sofort nach einem Widerruf. Jede
-Anfrage prüft den aktuellen Auftrag; ein bereits gesetztes Cookie umgeht den Widerruf nicht.
-Empfänger sehen ausschließlich die gesammelten Ausschnitte. Rückmeldungen werden gemeinsam
-zurückgegeben, vom Eigentümer bearbeitet und anschließend abgeschlossen. Die Pipeline wird aus
-den gespeicherten Aufträgen berechnet. Für diesen Ablauf sind keine weiteren Einstellungen nötig.
+Der Zugang endet 14 Tage nach der gewählten Rückmeldefrist oder sofort nach Widerruf oder Abnahme.
+Jede Anfrage prüft den aktuellen Auftrag; ein bereits gesetztes Cookie umgeht die Sperre nicht.
+Standardmäßig sehen Empfänger nur gesammelte Ausschnitte. Bei ausdrücklich gewähltem
+`WholeDocument` dürfen sie zusätzlich die ganze eingefrorene Fassung lesen. Rückmeldungen bleiben
+auf zugewiesene Passagen beschränkt. Kommentare, Vorschläge und Rückfragen werden gemeinsam
+zurückgegeben. Antworten erscheinen über den bestehenden Zugang bis zur Abnahme.
+
+Ohne JavaScript ist der Link vollständig kopierbar. Der Empfänger trägt die 64 Zeichen hinter
+`#token=` ins Zugangsformular ein. Der Eigentümer kann ganze Abschnitte per Formular sammeln.
+Bei Speicherkonflikten bleibt die Eingabe in einer HTML-Seite erhalten; ein Link öffnet den
+aktuellen Stand zum Abgleich. Ein freigegebenes Dokument ist bis zum ausdrücklichen Wiederöffnen
+schreibgeschützt. Für diese Funktionen sind keine weiteren Einstellungen oder AI-Schlüssel nötig.
+
+Eine unterbrochene Vorschlagsübernahme wird in der Auftragsansicht mit „Übernahme fortsetzen“
+abgeschlossen. Der Dienst erkennt bereits geschriebenen Zieltext anhand seines Hashes.
+
+### Blob-Vertragstests lokal
+
+Mit Azurite 3.35.0 lassen sich die 28 Blob-Vertragstests auch ohne Azure-Konto ausführen:
+`npm exec --yes --package=azurite@3.35.0 -- azurite-blob --blobHost 127.0.0.1 --skipApiVersionCheck`.
+Im Testprozess `REVIEWMYDOC_TEST_BLOB_CONNECTIONSTRING=UseDevelopmentStorage=true` setzen.
+Der Emulator verwendet Port 10000; die Anwendung bleibt auf 5071. Jeder Test legt einen eigenen
+Container an und räumt ihn auf. Dies prüft das Blob-Protokoll, ersetzt aber keinen Nachweis der
+Managed Identity und Rollenvergabe im späteren Azure-Betrieb.

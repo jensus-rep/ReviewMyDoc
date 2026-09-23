@@ -29,8 +29,8 @@
                     <p class="document-view__eyebrow">@review.ReviewerName</p>
                     <h3><a href="/dokumente/@review.DocumentId/reviews/@review.Id">@review.Title</a></h3>
                     <p>@review.Passages.Count Passagen · @review.DueAt?.ToString("dd.MM.yyyy")</p>
-                    @if (review.State == "Sent" && review.DueAt < DateTimeOffset.UtcNow) { <p class="review-pipeline__overdue">Frist überschritten</p> }
-                    @if (stage == "Bei dir") { <p>Bereit zum Abschließen</p> }
+                    @if (review.State == "Sent") { <p class="@(Model.IsOverdue(review) ? "review-pipeline__overdue" : "")">@Model.Remaining(review)</p> }
+                    @if (stage == "Bei dir") { <p>@(review.Passages.Any(ReviewMyDoc.Core.Reviews.ReviewService.IsOpen) ? "Rückfrage wartet auf deine Antwort" : "Bereit zum Abschließen")</p> }
                 </article>
             }
             @if (items.Length == 0)

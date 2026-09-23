@@ -1,6 +1,7 @@
 @page "/dokumente/{documentId}/reviews/{reviewId}"
 @* One owner-facing review: collected excerpts, recipient, then actual responses. *@
 @model ReviewModel
+@using ReviewMyDoc.Core.Reviews
 @{
     var review = Model.Stored.Review;
     ViewData["Title"] = review.State == "Draft" ? "Review vorbereiten" : "Reviewauftrag";
@@ -31,6 +32,11 @@
             <article class="review-workspace__passage">
                 <p class="document-view__eyebrow">@passage.Heading</p>
                 <div class="review-prose">@Html.Raw(Model.Render(passage.Markdown))</div>
+                @if (review.State != "Draft" && (!Model.Sources.TryGetValue(passage.Id, out var source) || source is null))
+                { <p class="review-workspace__notice">Der Quellabschnitt wurde entfernt. Diese Rückmeldung bleibt erhalten.</p> }
+                else if (review.State != "Draft" && ReviewService.Hash(Model.Sources[passage.Id]!.Content) != passage.SourceHash)
+                { <p class="review-workspace__notice">Der aktuelle Abschnitt wurde seit dem Review verändert. Prüfe vor der Übernahme den aktuellen Text.</p>
+                  <details><summary>Aktuellen Abschnitt ansehen</summary><div class="review-prose">@Html.Raw(Model.Render(Model.Sources[passage.Id]!.Content))</div></details> }
                 @if (review.State == "Draft")
                 {
                     <form method="post" asp-page-handler="Remove">
@@ -39,16 +45,29 @@
                         <button class="button button--secondary" type="submit">Aus Sammlung entfernen</button>
                     </form>
                 }
-                @if (!string.IsNullOrWhiteSpace(passage.Feedback))
+                @if (!string.IsNullOrWhiteSpace(passage.Feedback) || passage.FeedbackKind is "Suggestion" or "Question")
                 {
                     <div class="review-workspace__feedback"><h3>Rückmeldung von @review.ReviewerName</h3><p>@passage.Feedback</p>
-                    @if (passage.Resolved) { <p>✓ Bearbeitet</p> }
+                    <p>@(passage.FeedbackKind switch { "Suggestion" => "Änderungsvorschlag", "Question" => "Rückfrage", _ => "Kommentar" }) · @passage.FeedbackAt?.ToString("dd.MM.yyyy HH:mm")</p>
+                    @if (passage.FeedbackKind == "Suggestion")
+                    { <div class="review-comparison"><section><h4>Bisherige Passage</h4><div class="review-prose">@Html.Raw(Model.Render(passage.Markdown))</div></section><section><h4>Vorschlag</h4><div class="review-prose">@Html.Raw(Model.Render(passage.ProposedMarkdown ?? ""))</div></section></div> }
+                    @if (passage.Resolved) { <p>✓ @(passage.Decision switch { "Applied" => "Übernommen", "Rejected" => "Abgelehnt", "Answered" => "Beantwortet", _ => "Bearbeitet" }) · @passage.DecidedAt?.ToString("dd.MM.yyyy HH:mm")</p>
+                        @if (passage.Answer is not null) { <p>Deine Antwort: @passage.Answer</p> }
+                    }
                     else if (review.State == "Returned")
                     {
                         <form method="post" asp-page-handler="Decide">
                             <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
                             <input type="hidden" name="passageId" value="@passage.Id" />
-                            <button class="button button--secondary" type="submit" name="action" value="resolve">Als bearbeitet markieren</button>
+                            @if (passage.FeedbackKind == "Question")
+                            { <label for="answer-@passage.Id">Deine Antwort</label><textarea id="answer-@passage.Id" name="Answer" rows="4" required maxlength="10000">@Model.Answer</textarea><button class="button button--primary" name="action" value="answer">Antwort senden</button> }
+                            else if (passage.FeedbackKind == "Suggestion")
+                            {
+                                <input type="hidden" name="textETag" value="@Model.Sources.GetValueOrDefault(passage.Id)?.ETag.Value" />
+                                <button class="button button--primary" name="action" value="apply" disabled="@(Model.Sources.GetValueOrDefault(passage.Id) is null)">@(passage.Decision == "Applying" ? "Übernahme fortsetzen" : "Vorschlag übernehmen")</button>
+                                <button class="button button--secondary" name="action" value="reject" disabled="@(passage.Decision == "Applying")">Ablehnen</button>
+                            }
+                            else { <button class="button button--secondary" type="submit" name="action" value="resolve">Als bearbeitet markieren</button> }
                         </form>
                     }
                     </div>
@@ -62,25 +81,30 @@
         @if (review.State == "Draft")
         {
             <h2>Wer soll mitlesen?</h2>
-            <p>Die Person erhält nur die gesammelten Passagen und kann ohne Konto antworten.</p>
+            <p>Wähle, was die Person lesen darf. Rückmeldungen sind nur an den zugewiesenen Passagen möglich.</p>
             <form method="post" asp-page-handler="Issue">
                 <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
                 <label for="recipient">Name</label><input id="recipient" asp-for="Name" required maxlength="150" autocomplete="name" />
                 <label for="email">E-Mailadresse (optional)</label><input id="email" asp-for="Email" type="email" maxlength="254" autocomplete="email" />
                 <label for="due">Rückmeldung bis</label><input id="due" asp-for="DueDate" type="date" required />
+                <label for="visibility">Sichtbarkeit</label><select id="visibility" asp-for="Visibility"><option value="AssignedSectionsOnly">Nur zugewiesene Passagen</option><option value="WholeDocument">Ganzes Dokument als Kontext</option></select>
                 <button class="button button--primary" type="submit" disabled="@(review.Passages.Count == 0)">Reviewlink erstellen</button>
             </form>
+            <details><summary>Sammlung verwerfen</summary><p>Die gesammelten Passagen werden nicht mehr zugewiesen. Dein Dokument bleibt unverändert.</p><form method="post" asp-page-handler="Decide"><input type="hidden" name="etag" value="@Model.Stored.ETag.Value" /><button class="button button--secondary" name="action" value="revoke">Sammlung verwerfen</button></form></details>
         }
         else
         {
             <h2>@(review.State switch { "Sent" => "Wartet auf Rückmeldung", "Returned" => "Die Rückmeldung ist da", "Accepted" => "Review abgeschlossen", _ => "Auftrag widerrufen" })</h2>
             <p>@review.ReviewerName · Frist: @review.DueAt?.ToString("dd.MM.yyyy")</p>
             <p>Geprüfter Stand: Version @review.DocumentVersion. Spätere Änderungen am Dokument verändern diesen Auftrag nicht.</p>
+            <p>@(review.Visibility == "WholeDocument" ? "Das ganze eingefrorene Dokument ist lesbar." : "Nur die zugewiesenen Passagen sind lesbar.")</p>
             @if (review.State == "Returned")
             {
+                @if (review.Passages.Any(ReviewService.IsOpen)) { <p role="status">Noch @review.Passages.Count(ReviewService.IsOpen) Rückmeldungen offen. Bitte Kommentare bearbeiten, Vorschläge entscheiden und Rückfragen beantworten.</p> }
                 <form method="post" asp-page-handler="Decide">
                     <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
-                    <button class="button button--primary" name="action" value="accept" disabled="@(review.Passages.Any(p => !string.IsNullOrWhiteSpace(p.Feedback) && !p.Resolved))">Review abschließen</button>
+                    <p>Mit der Abnahme endet der Zugriff über den Reviewlink, auch in bereits geöffneten Sitzungen.</p>
+                    <button class="button button--primary" name="action" value="accept" disabled="@(review.Passages.Any(ReviewService.IsOpen))">Review abschließen</button>
                 </form>
             }
             @if (review.State is "Sent" or "Returned")

@@ -9,7 +9,8 @@ using ReviewMyDoc.Core.Storage;
 namespace ReviewMyDoc.Core.Reviews;
 
 /// <summary>The complete collected-passage review lifecycle.</summary>
-public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents, DocumentService documentService, TimeProvider clock)
+public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents, DocumentService documentService, TimeProvider clock,
+    DocumentEditingService editing)
 {
     /// <summary>The same conflict message is used for every stale write.</summary>
     public const string Conflict = "Inzwischen geändert. Bitte neu laden; deine Eingabe wurde nicht überschrieben.";
@@ -32,7 +33,7 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
         var document = await documents.ReadAsync(documentId, ct);
         var section = document?.Document.FindSection(sectionId);
         var text = section is null ? null : await documents.ReadSectionTextAsync(documentId, sectionId, ct);
-        if (document is null || section is null || text is null || text.ETag.Value != textETag) { return new(Error: Conflict); }
+        if (document is null || document.Document.State == DocumentState.Approved || section is null || text is null || text.ETag.Value != textETag) { return new(Error: Conflict); }
 
         var existing = draftId is null ? null : await reviews.ReadAsync(documentId, draftId, ct);
         if (draftId is not null && (existing is null || existing.ETag.Value != draftETag || existing.Review.State != "Draft"))
@@ -58,9 +59,9 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
 
     /// <summary>Freezes a version and issues a review link for the collected excerpts.</summary>
     public async Task<ReviewResult> IssueAsync(DocumentIdentifier documentId, string reviewId, string etag,
-        string name, string? email, DateTimeOffset dueAt, CancellationToken ct)
+        string name, string? email, DateTimeOffset dueAt, CancellationToken ct, string visibility = "AssignedSectionsOnly")
     {
-        if (string.IsNullOrWhiteSpace(name) || name.Length > 150 || (email?.Length ?? 0) > 254 ||
+        if (visibility is not ("AssignedSectionsOnly" or "WholeDocument") || string.IsNullOrWhiteSpace(name) || name.Length > 150 || (email?.Length ?? 0) > 254 ||
             (!string.IsNullOrWhiteSpace(email) && !MailAddress.TryCreate(email, out _)) ||
             dueAt <= clock.GetUtcNow() || dueAt > clock.GetUtcNow().AddYears(1))
         {
@@ -70,7 +71,7 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
         var stored = await reviews.ReadAsync(documentId, reviewId, ct);
         if (stored is null || stored.ETag.Value != etag || stored.Review.State != "Draft" || stored.Review.Passages.Count == 0) { return new(Error: Conflict); }
         var doc = await documents.ReadAsync(documentId, ct);
-        if (doc is null) { return new(Error: Conflict); }
+        if (doc is null || doc.Document.State == DocumentState.Approved) { return new(Error: Conflict); }
         foreach (var passage in stored.Review.Passages)
         {
             var sectionId = new SectionIdentifier(passage.SectionId);
@@ -97,8 +98,13 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
             Title = version.Title,
             DueAt = dueAt,
             TokenHash = Hash(token),
-            TokenExpiresAt = dueAt.AddDays(14)
+            TokenExpiresAt = dueAt.AddDays(14),
+            Visibility = visibility
         };
+        var frozenDocument = await documents.ReadAsync(documentId, ct);
+        if (frozenDocument is null || frozenDocument.Document.State == DocumentState.Approved ||
+            await documents.WriteAsync(frozenDocument.Document.WithState(DocumentState.InReview, clock.GetUtcNow()),
+                WriteCondition.MustMatch(frozenDocument.ETag), ct) is not ObjectWriteResult.Written) { return new(Error: Conflict); }
         var result = await WriteAsync(changed, stored, ct);
         return result.Error is null ? result with { Token = token } : result;
     }
@@ -107,47 +113,94 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
     public async Task<StoredReview?> AccessAsync(DocumentIdentifier documentId, string reviewId, string tokenHash, CancellationToken ct)
     {
         var stored = await reviews.ReadAsync(documentId, reviewId, ct);
-        if (stored is null || stored.Review.State is "Draft" or "Revoked" || stored.Review.TokenExpiresAt <= clock.GetUtcNow() ||
+        if (stored is null || stored.Review.State is not ("Sent" or "Returned") || stored.Review.TokenExpiresAt is null || stored.Review.TokenExpiresAt <= clock.GetUtcNow() ||
             stored.Review.TokenHash is not { } expected || tokenHash.Length != expected.Length ||
             !CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(tokenHash), Encoding.ASCII.GetBytes(expected))) { return null; }
-        return stored;
+        // Recovery data may contain a complete private source section. It must
+        // never cross the capability boundary, even temporarily during application.
+        return stored with
+        {
+            Review = stored.Review with
+            {
+                Passages = [.. stored.Review.Passages.Select(p =>
+            p with { ApplicationText = null, ApplicationETag = null, ApplicationHash = null })]
+            }
+        };
+    }
+
+    /// <summary>Loads additional frozen context only after capability and visibility checks.</summary>
+    public async Task<ReviewReading?> ReadForReviewerAsync(DocumentIdentifier documentId, string reviewId, string tokenHash, CancellationToken ct)
+    {
+        var stored = await AccessAsync(documentId, reviewId, tokenHash, ct);
+        if (stored is null) { return null; }
+        var version = stored.Review.Visibility == "WholeDocument"
+            ? await documents.ReadVersionAsync(documentId, stored.Review.DocumentVersion, ct) : null;
+        var changed = new List<string>();
+        var current = await documents.ReadAsync(documentId, ct);
+        foreach (var passage in stored.Review.Passages)
+        {
+            var sectionId = new SectionIdentifier(passage.SectionId);
+            var text = current?.Document.FindSection(sectionId) is null ? null : await documents.ReadSectionTextAsync(documentId, sectionId, ct);
+            if (text is null || Hash(text.Content) != passage.SourceHash) { changed.Add(passage.Id); }
+        }
+        return new(stored, version, changed);
     }
 
     /// <summary>Returns a review once, rejecting feedback on any unassigned passage.</summary>
     public async Task<ReviewResult> ReturnAsync(DocumentIdentifier documentId, string reviewId, string tokenHash, string etag,
         IReadOnlyDictionary<string, string> feedback, CancellationToken ct)
+        => await ReturnFeedbackAsync(documentId, reviewId, tokenHash, etag,
+            feedback.ToDictionary(p => p.Key, p => new ReviewFeedback(p.Value)), ct);
+
+    /// <summary>Validates typed feedback against assigned passages, never whole-document context.</summary>
+    public async Task<ReviewResult> ReturnFeedbackAsync(DocumentIdentifier documentId, string reviewId, string tokenHash, string etag,
+        IReadOnlyDictionary<string, ReviewFeedback> feedback, CancellationToken ct)
     {
         var stored = await AccessAsync(documentId, reviewId, tokenHash, ct);
         if (stored is null || stored.ETag.Value != etag || stored.Review.State != "Sent") { return new(Error: Conflict); }
-        if (feedback.Any(f => f.Value.Length > 10_000 || stored.Review.Passages.All(p => p.Id != f.Key)))
+        if (feedback.Any(f => f.Value.Text.Length > 10_000 || (f.Value.ProposedMarkdown?.Length ?? 0) > 50_000 ||
+            f.Value.Kind is not ("Comment" or "Suggestion" or "Question") ||
+            (f.Value.Kind == "Question" && string.IsNullOrWhiteSpace(f.Value.Text)) ||
+            (f.Value.Kind == "Suggestion" && string.IsNullOrWhiteSpace(f.Value.ProposedMarkdown)) ||
+            stored.Review.Passages.All(p => p.Id != f.Key)))
         {
             return new(Error: "Die Rückmeldung gehört nicht zu diesem Auftrag oder ist zu lang.");
         }
-        var passages = stored.Review.Passages.Select(p => p with { Feedback = feedback.GetValueOrDefault(p.Id)?.Trim(), Resolved = false }).ToArray();
+        var passages = stored.Review.Passages.Select(p =>
+        {
+            var input = feedback.GetValueOrDefault(p.Id) ?? new ReviewFeedback("");
+            return p with
+            {
+                Feedback = input.Text.Trim(),
+                FeedbackKind = input.Kind,
+                ProposedMarkdown = input.Kind == "Suggestion" ? input.ProposedMarkdown : null,
+                FeedbackAt = clock.GetUtcNow(),
+                Resolved = false
+            };
+        }).ToArray();
         return await WriteAsync(stored.Review with { Passages = passages, State = "Returned", ReturnedAt = clock.GetUtcNow() }, stored, ct);
     }
 
-    /// <summary>Resolves feedback, accepts a completed review, or revokes its capability.</summary>
-    public async Task<ReviewResult> DecideAsync(DocumentIdentifier documentId, string reviewId, string etag,
-        string action, string? passageId, CancellationToken ct)
-    {
-        var stored = await reviews.ReadAsync(documentId, reviewId, ct);
-        if (stored is null || stored.ETag.Value != etag) { return new(Error: Conflict); }
-        var review = stored.Review;
-        ReviewAssignment? changed = action switch
-        {
-            "resolve" when review.State == "Returned" && review.Passages.Any(p => p.Id == passageId) =>
-                review with { Passages = [.. review.Passages.Select(p => p.Id == passageId ? p with { Resolved = true } : p)] },
-            "accept" when review.State == "Returned" && review.Passages.All(p => string.IsNullOrWhiteSpace(p.Feedback) || p.Resolved) => review with { State = "Accepted" },
-            "revoke" when review.State is "Sent" or "Returned" => review with { State = "Revoked", TokenHash = null },
-            _ => null,
-        };
-        return changed is null ? new(Error: "Bitte zuerst alle Rückmeldungen bearbeiten.") : await WriteAsync(changed, stored, ct);
-    }
+    /// <summary>Whether feedback still needs an explicit owner decision.</summary>
+    public static bool IsOpen(ReviewPassage passage) => !passage.Resolved &&
+        (!string.IsNullOrWhiteSpace(passage.Feedback) || passage.FeedbackKind is "Suggestion" or "Question");
 
+    /// <summary>Resolves a comment, closes an assignment or revokes access.</summary>
+    public Task<ReviewResult> DecideAsync(DocumentIdentifier documentId, string reviewId, string etag, string action, string? passageId, CancellationToken ct) =>
+        new ReviewDecisionService(reviews, documents, editing, clock).DecideAsync(documentId, reviewId, etag, action, passageId, ct);
+    /// <summary>Answers a question or rejects a suggestion.</summary>
+    public Task<ReviewResult> RespondAsync(DocumentIdentifier documentId, string reviewId, string etag, string passageId, string action, string? answer, CancellationToken ct) =>
+        new ReviewDecisionService(reviews, documents, editing, clock).RespondAsync(documentId, reviewId, etag, passageId, action, answer, ct);
+    /// <summary>Applies a suggestion using the text version reviewed by the owner.</summary>
+    public Task<ReviewResult> ApplySuggestionAsync(DocumentIdentifier documentId, string reviewId, string etag, string passageId, string textETag, CancellationToken ct) =>
+        new ReviewDecisionService(reviews, documents, editing, clock).ApplySuggestionAsync(documentId, reviewId, etag, passageId, textETag, ct);
+    /// <summary>Releases or explicitly reopens the document.</summary>
+    public Task<string?> SetDocumentApprovalAsync(DocumentIdentifier documentId, string etag, bool approve, CancellationToken ct) =>
+        new DocumentApprovalService(reviews, documents, clock).SetDocumentApprovalAsync(documentId, etag, approve, ct);
     private async Task<ReviewResult> WriteAsync(ReviewAssignment review, StoredReview? before, CancellationToken ct)
     {
         var written = await reviews.WriteAsync(review, before is null ? WriteCondition.MustNotExist : WriteCondition.MustMatch(before.ETag), ct);
         return written is ObjectWriteResult.Written success ? new(new StoredReview(review, success.ETag)) : new(Error: Conflict);
     }
+
 }

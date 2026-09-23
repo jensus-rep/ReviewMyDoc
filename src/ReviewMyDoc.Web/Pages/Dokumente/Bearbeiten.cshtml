@@ -2,23 +2,25 @@
 @* The document is the workspace. Review controls sit beside it and appear at a selection. *@
 @using ReviewMyDoc.Web.Pages.Dokumente
 @model BearbeitenModel
+@using ReviewMyDoc.Core.Documents
 @{
     ViewData["Title"] = Model.Document.Document.Title;
     var document = Model.Document.Document;
     var sections = Model.Sections.Count > 0 ? Model.Sections : new[] { new EditorSection("", "Dokumenttext", "", "", "") };
 }
 <link rel="stylesheet" href="~/components/document-editor/document-editor.css" asp-append-version="true" />
-<div class="writing-workspace" data-document-editor data-document-etag="@Model.Document.ETag.Value"
+<div class="writing-workspace" data-document-editor="@(document.State == DocumentState.Approved ? null : "")" data-document-etag="@Model.Document.ETag.Value"
      data-draft-id="@Model.Collection?.Review.Id" data-draft-etag="@Model.Collection?.ETag.Value">
     <header class="writing-workspace__header">
         <a href="/dokumente">← Dokumente</a>
-        <span role="status" aria-live="polite" data-save-status>Alle Änderungen gespeichert</span>
+        <span role="status" aria-live="polite" data-save-status>@(Model.Message is null ? "Alle Änderungen gespeichert" : "Eingabe bitte prüfen")</span>
         <nav aria-label="Dokumentaktionen">
             <button class="button button--secondary" type="button" data-save-all hidden>Speichern</button>
             <a href="/dokumente/@document.Id.Value/gliederung">Gliederung</a>
             <a href="/">Pipeline</a>
         </nav>
     </header>
+    @if (Model.Message is not null) { <div class="review-workspace__notice" role="alert"><p>@Model.Message</p><a href="/dokumente/@document.Id.Value" target="_blank" rel="noopener">Aktuellen Stand in neuem Tab öffnen</a></div> }
     <div class="writing-workspace__layout">
         <article class="writing-workspace__paper">
             <p class="writing-workspace__eyebrow">Dein Dokument</p>
@@ -38,13 +40,18 @@
                     <input type="hidden" name="etag" value="@entry.ETag" />
                     <input type="hidden" name="documentETag" value="@Model.Document.ETag.Value" />
                     @if (entry.Heading != "Dokumenttext") { <h2 class="document-editor__section-heading">@entry.Heading</h2> }
-                    <div class="document-editor__surface" data-editor-surface hidden role="textbox" aria-multiline="true" aria-label="@entry.Heading bearbeiten" data-placeholder="Schreib einfach los. Markiere später eine Passage, um sie prüfen zu lassen.">@Html.Raw(entry.Html)</div>
+                    <div class="document-editor__surface" data-editor-surface aria-label="@entry.Heading" data-placeholder="Schreib einfach los. Markiere später eine Passage, um sie prüfen zu lassen.">@Html.Raw(entry.Html)</div>
+                    @if (document.State != DocumentState.Approved)
+                    {
                     <div data-editor-fallback>
                         <label for="text-@entry.Id">@entry.Heading bearbeiten</label>
-                        <textarea id="text-@entry.Id" name="markdown" rows="16">@entry.Markdown</textarea>
+                        <textarea id="text-@entry.Id" name="markdown" rows="16" maxlength="500000">@entry.Markdown</textarea>
                         <button class="button button--primary" type="submit">Text speichern</button>
                     </div>
+                    }
                 </form>
+                @if (document.State != DocumentState.Approved && entry.Id.Length > 0)
+                { <noscript><form method="post" asp-page-handler="CollectSection"><input type="hidden" name="sectionId" value="@entry.Id" /><input type="hidden" name="etag" value="@entry.ETag" /><button class="button button--secondary">Diesen Abschnitt zum Review sammeln</button></form></noscript> }
             }
         </article>
         <aside class="writing-workspace__review" aria-label="Review vorbereiten">
@@ -58,7 +65,10 @@
             </ol>
             <a class="button button--primary" data-collection-link href="@(Model.Collection is null ? null : $"/dokumente/{document.Id.Value}/reviews/{Model.Collection.Review.Id}")" hidden="@(Model.Collection is null)">Sammlung zuweisen →</a>
             <p><a href="/">Aufträge &amp; Rückmeldungen ansehen</a></p>
-            <p class="writing-workspace__hint">Du entscheidest, was geteilt wird. Empfänger sehen nur die zugewiesenen Passagen.</p>
+            <p class="writing-workspace__hint">Beim Zuweisen bestimmst du, ob nur Passagen oder das ganze Dokument lesbar sind.</p>
+            <h2>Dokumentfreigabe</h2>
+            <p>@(document.State == DocumentState.Approved ? "Freigegeben. Vor weiteren Änderungen bitte wieder öffnen." : "Nach Abnahme aller Aufträge kannst du das Dokument ausdrücklich freigeben.")</p>
+            <form method="post" asp-page-handler="Approval"><input type="hidden" name="etag" value="@Model.Document.ETag.Value" /><input type="hidden" name="approve" value="@(document.State != DocumentState.Approved ? "true" : "false")" /><button class="button button--secondary">@(document.State == DocumentState.Approved ? "Zur Bearbeitung öffnen" : "Dokument freigeben")</button></form>
         </aside>
     </div>
 </div>

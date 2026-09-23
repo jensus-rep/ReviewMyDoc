@@ -169,6 +169,20 @@ gehasht.
 
 ### Ergänzung: Markierungen sammeln und gemeinsam prüfen (23.09.2026)
 
+MVP-Erweiterung: Aufträge tragen `visibility` (`AssignedSectionsOnly` als Standard oder
+`WholeDocument`) und `acceptedAt`. Nur bei `WholeDocument` liefert der Dienst die eingefrorene
+Dokumentversion zusätzlich aus. Rückmeldungen bleiben kompatibel eingebettet: `feedbackKind`
+(`Comment`, `Suggestion`, `Question`), `proposedMarkdown`, `answer`, `decision`, `feedbackAt`
+und `decidedAt` ergänzen `feedback` und `resolved`. Vorschläge ersetzen ausschließlich den
+eindeutig gefundenen Ausschnitt im aktuellen Abschnitt, mit dessen beim Laden gesehenem ETag.
+Bei mehrdeutiger Stelle wird nichts geschrieben. `Applying` plus `applicationText`,
+`applicationETag` und `applicationHash` hält einen begonnenen Übernahmevorgang wiederaufnehmbar
+fest. Solange er offen ist, kann der Auftrag weder entschieden noch abgenommen werden.
+Nach erfolgreicher Übernahme wird die Entscheidung endgültig; Arbeitsdaten werden entfernt.
+Nach Abnahme, Widerruf oder Ablauf ist jeder Empfängerzugriff gesperrt, auch bestehende Cookies.
+Freigabe erfordert mindestens einen abgenommenen Auftrag und keine offenen Aufträge oder
+Sammlungen. Änderungen an freigegebenen Dokumenten erfordern vorher explizites Wiederöffnen.
+
 Die Schreibansicht bearbeitet die vorhandenen Abschnittstexte direkt; jeder Text wird mit seinem
 eigenen ETag gespeichert. Markierungen teilen den Text nicht mehr automatisch auf. Stattdessen
 enthält ein Reviewauftrag `passages`: ausgewählte Markdownausschnitte mit eigener Kennung,
@@ -178,16 +192,18 @@ beim Sammeln unverändert.
 
 Ein Auftrag beginnt als `Draft` und dient als dauerhaft gespeicherte Sammlung. Beim Erteilen werden
 die Quelltexte gegen ihre Hashes geprüft und die Dokumentversion eingefroren. Veränderte Quellen
-müssen erneut markiert werden. Der Empfänger erhält ausschließlich die gespeicherten Ausschnitte.
+müssen erneut markiert werden. Standardmäßig erhält der Empfänger nur die gespeicherten Ausschnitte;
+mit `WholeDocument` zusätzlich die ganze eingefrorene Fassung, niemals den aktuellen Quelltext.
 Name, optionale Mailadresse und Frist werden beim Erteilen ergänzt. Der Link wird selbst geteilt;
 es wird keine Mail verschickt. Das Zugangstoken steht im URL-Fragment, wird per POST eingelöst
 und durch eine geschützte, auf genau diesen Auftrag begrenzte Sitzung ersetzt. Gespeichert wird
-weiterhin nur sein Hash; Widerruf und Ablauf werden bei jedem Zugriff geprüft.
+weiterhin nur sein Hash; Abnahme, Widerruf und Ablauf werden bei jedem Zugriff geprüft.
 
 Für diesen ersten vollständigen Ablauf liegen die Kommentare als `feedback` direkt am jeweiligen
 Ausschnitt im Auftrag, zusammen mit `resolved`. Genau eine Person gibt den Auftrag gesammelt
 zurück; danach entscheidet der Eigentümer die Rückmeldungen. Das gemeinsame ETag schützt auch
-diese Übergabe. Separate Feedbackdateien und Änderungsvorschläge bleiben eine spätere Erweiterung.
+diese Übergabe. Separate Feedbackdateien bleiben eine spätere Erweiterung; die zusätzlichen
+Rückmeldungsarten verwenden die oben dokumentierten Felder im selben Auftrag.
 Die Zustände sind `Draft`, `Sent`, `Returned`, `Accepted`, `Revoked`. Abnahme ist erst möglich,
 wenn alle vorhandenen Kommentare entschieden sind. Die Pipeline wird aus diesen Aufträgen
 berechnet; sie speichert keine zusätzliche Zustandskopie.

@@ -36,6 +36,9 @@ namespace ReviewMyDoc.Core.Documents;
 /// </remarks>
 public sealed class Document
 {
+    /// <summary>Changes the lifecycle without mutating the outline or text.</summary>
+    public Document WithState(DocumentState state, DateTimeOffset now) =>
+        new(Id, OwnerId, Title, state, Version, Sections, CreatedAt, now);
     /// <summary>Builds a document from its parts, as a file read or a change produces them.</summary>
     /// <param name="id">The identifier of the document.</param>
     /// <param name="ownerId">Who the document belongs to.</param>

@@ -55,6 +55,7 @@ builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentEditingService>();
 builder.Services.AddSingleton<ReviewStore>();
 builder.Services.AddSingleton<ReviewService>();
+builder.Services.AddSingleton<ReviewPipeline>();
 
 // Markdown to safe HTML, the one translation a section's text takes on its way
 // to a page; the renderer lives in the infrastructure assembly because Markdig

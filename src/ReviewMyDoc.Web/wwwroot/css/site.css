@@ -861,7 +861,8 @@ All colours follow the shared theme, including the system dark preference. */
   margin-block: var(--space-5) var(--space-2);
 }
 
-.review-workspace input:not([type="hidden"]), .review-reader input:not([type="hidden"]), .review-reader textarea {
+.review-workspace input:not([type="hidden"]), .review-reader input:not([type="hidden"]), .review-reader textarea,
+.review-workspace textarea, .review-workspace select, .review-reader select {
   box-sizing: border-box;
   width: 100%;
   border: var(--hairline-width) solid var(--hairline);
@@ -876,6 +877,23 @@ All colours follow the shared theme, including the system dark preference. */
 .review-reader {
   max-width: 52em;
   margin-inline: auto;
+}
+
+.review-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.review-comparison > section {
+  padding: var(--space-4);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+@media (max-width: 48em) {
+  .review-comparison { grid-template-columns: minmax(0, 1fr); }
 }
 
 .review-workspace__panel details {
