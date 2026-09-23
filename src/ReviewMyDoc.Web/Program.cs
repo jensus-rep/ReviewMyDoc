@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
 using ReviewMyDoc.Core.Documents;
+using ReviewMyDoc.Core.Reviews;
 using ReviewMyDoc.Infrastructure.Markdown;
 using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
@@ -51,6 +52,9 @@ builder.Services.AddObjectStore(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IDocumentStore, DocumentStore>();
 builder.Services.AddSingleton<DocumentService>();
+builder.Services.AddSingleton<DocumentEditingService>();
+builder.Services.AddSingleton<ReviewStore>();
+builder.Services.AddSingleton<ReviewService>();
 
 // Markdown to safe HTML, the one translation a section's text takes on its way
 // to a page; the renderer lives in the infrastructure assembly because Markdig

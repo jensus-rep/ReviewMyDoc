@@ -1,4 +1,4 @@
-// Page model of the outline of one document at /dokumente/{documentId}: list
+// Page model of the outline of one document at /dokumente/{documentId}/gliederung: list
 // the sections, and create, rename, reorder and delete them. It is a thin
 // layer over DocumentService, which already carries every domain operation
 // and the optimistic-locking rule of docs/Datenmodell.md - this page only
@@ -11,7 +11,7 @@ using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Web.Pages.Dokumente;
 
-/// <summary>Model of the page at <c>/dokumente/{documentId}</c>.</summary>
+/// <summary>Model of the page at <c>/dokumente/{documentId}/gliederung</c>.</summary>
 public sealed class GliederungModel : PageModel
 {
     /// <summary>What the page says when a heading is left empty.</summary>
@@ -322,7 +322,7 @@ public sealed class GliederungModel : PageModel
     {
         if (result is DocumentResult.Success)
         {
-            return Redirect($"/dokumente/{id.Value}");
+            return Redirect($"/dokumente/{id.Value}/gliederung");
         }
 
         if (result is DocumentResult.DocumentNotFound)

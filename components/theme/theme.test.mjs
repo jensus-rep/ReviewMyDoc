@@ -62,7 +62,7 @@ const COLOR_ROLES = {
 };
 
 const ART = ['vermilion', 'chrome', 'malachite', 'plum'];
-const GLOSS = ['--surface', '--surface-sheen', '--surface-edge', '--surface-shadow'];
+const GLOSS = ['--surface', '--surface-sheen', '--surface-edge', '--surface-shadow', '--paper-shadow', '--well-shadow'];
 
 test('every colour role is redefined in all three blocks', () => {
   for (const [name, [hell, dunkel]] of Object.entries(COLOR_ROLES)) {

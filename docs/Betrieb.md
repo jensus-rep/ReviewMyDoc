@@ -297,7 +297,7 @@ offenzuhalten.
 | Name | Was er schützt | Grenzwert | Was zählt |
 | --- | --- | --- | --- |
 | `login` | Die Passwortanmeldung des Eigentümers. Es gibt genau ein Konto und keine Kontosperre, also ist dieser Limiter das Einzige zwischen dem Passworthash und einem Wörterbuch. | 10 Versuche pro Minute | nur `POST`; die Seite zu lesen kostet nichts |
-| `review-link` | Das Einlösen eines Reviewlinks. Der Token in der Adresse ist der ganze Nachweis, also ist Raten der einzige Weg hinein. | 20 Aufrufe pro Minute | jede Methode, denn eingelöst wird mit `GET` |
+| `review-link` | Das Einlösen eines Reviewlinks. Der Token in der Adresse ist der ganze Nachweis, also ist Raten der einzige Weg hinein. | 20 Aufrufe pro Minute | Einlösen per `POST` |
 | `ai` | Die AI-Endpunkte. Dieser Limiter schützt kein Geheimnis, sondern eine Rechnung: jeder Aufruf geht an einen externen Anbieter und wird bezahlt. | 20 Aufrufe pro Minute | jede Methode |
 
 `review-link` ist absichtlich großzügiger als `login`. Ein Reviewer öffnet den Link, lädt ihn neu,
@@ -348,8 +348,8 @@ geprüft gegen einen Hash aus der Konfiguration, und danach ein Cookie mit der R
   Sitzungscookie: wer den Browser schließt, ist abgemeldet.
 - **Jede Seite verlangt die Rolle `owner`, und zwar als Vorgabe, nicht als Liste.** Wer später eine
   Seite hinzufügt, findet sie geschützt vor. Offen ist nur, was ausdrücklich `[AllowAnonymous]`
-  trägt: heute die Anmeldeseite und die Fehlerseite, später die Reviewansicht unter
-  `/review/{token}`, die sich mit ihrem Token ausweist statt mit einer Anmeldung. Der Test
+  trägt: heute die Anmeldeseite und die Fehlerseite, die Reviewansicht unter
+  `/review/{documentId}/{reviewId}`, die sich mit einem persönlichen Link ausweist statt mit einer Anmeldung. Der Test
   `AuthorizationDefaultTests` führt diese Ausnahmen namentlich und schlägt fehl, sobald eine
   hinzukommt, die dort nicht steht.
 - Stimmt das Passwort nicht, antwortet die Seite mit einem einzigen Satz, der nicht verrät, was
@@ -436,3 +436,19 @@ die Data-Protection-Schlüssel aus; dann ist jede Sitzung und jedes offene Formu
 
 **Passwort ändern:** denselben Befehl noch einmal laufen lassen und den neuen Hash setzen. Es gibt
 nichts weiter zu tun, weil es nichts gibt, wo ein altes Passwort noch stünde.
+
+## Reviewlinks im Schreibworkflow
+
+Eine markierte Passage kann gesammelt und später zusammen mit weiteren Passagen einer Person
+zugewiesen werden. Beim Erteilen wird ein persönlicher Link angezeigt. Er wird einmalig angezeigt
+und vom Eigentümer selbst weitergegeben; es ist kein Maildienst nötig und die Anwendung verschickt
+keine Nachrichten. Der Link enthält sein Geheimnis im Fragment nach `#token=`. Das Frontend
+entfernt dieses Fragment aus der Browserhistorie und löst es per antiforgery-geschütztem POST ein.
+Der Server speichert nur den Hash. Die Sitzung liegt in einem HttpOnly-Cookie, das auf genau den
+Auftrag begrenzt und mit Data Protection geschützt ist.
+
+Der Zugang endet 14 Tage nach der gewählten Rückmeldefrist oder sofort nach einem Widerruf. Jede
+Anfrage prüft den aktuellen Auftrag; ein bereits gesetztes Cookie umgeht den Widerruf nicht.
+Empfänger sehen ausschließlich die gesammelten Ausschnitte. Rückmeldungen werden gemeinsam
+zurückgegeben, vom Eigentümer bearbeitet und anschließend abgeschlossen. Die Pipeline wird aus
+den gespeicherten Aufträgen berechnet. Für diesen Ablauf sind keine weiteren Einstellungen nötig.

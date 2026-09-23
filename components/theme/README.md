@@ -56,6 +56,9 @@ und keine zweite Farbe, damit eine große Fläche ruhig bleibt und nur ihre Ober
 | `--surface-edge`   | die Lichtkante, ein innerer Schatten an der Oberkante         |
 | `--surface-shadow` | der Schatten unter der Fläche, zwei Lagen: Kontakt und Streu  |
 
+Zusätzlich hebt `--paper-shadow` das Dokumentblatt stärker vom Hintergrund ab;
+`--well-shadow` vertieft die Pipeline-Spalten dezent. Beide folgen dem hellen und dunklen Modus.
+
 Die vier Zeilen zusammen sind die Klasse `.surface`, das einzige Stück Aussehen, das dieser
 Baustein selbst mitbringt:
 

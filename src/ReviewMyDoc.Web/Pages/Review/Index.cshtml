@@ -1,0 +1,47 @@
+@page "/review/{documentId}/{reviewId}"
+@* The recipient receives quotation HTML only, never hidden source sections. *@
+@model ReviewMyDoc.Web.Pages.Review.IndexModel
+@{
+    Layout = "_ReviewLayout";
+    ViewData["Title"] = "Dein Review";
+}
+<div class="review-reader">
+@if (Model.Message is not null) { <p class="review-workspace__notice" role="alert">@Model.Message</p> }
+@if (Model.Stored is not { } stored)
+{
+    <h1>Einladung zum Mitlesen</h1>
+    <p>Öffne den vollständigen persönlichen Reviewlink, den du erhalten hast.</p>
+    <form method="post" asp-page-handler="Open" data-review-access>
+        <label for="access-token">Zugangscode aus dem Reviewlink</label>
+        <input id="access-token" name="token" type="password" autocomplete="off" required maxlength="64" />
+        <button class="button button--primary" type="submit">Review öffnen</button>
+    </form>
+}
+else
+{
+    var review = stored.Review;
+    <p class="document-view__eyebrow">Für @review.ReviewerName · Rückmeldung bis @review.DueAt?.ToString("dd.MM.yyyy")</p>
+    <h1>@review.Title</h1>
+    <p>Diese @review.Passages.Count Passagen wurden dir zum Prüfen zugewiesen. Du liest den festgehaltenen Stand von Version @review.DocumentVersion.</p>
+    @if (review.State is "Returned" or "Accepted")
+    { <div class="review-workspace__notice"><h2>Danke fürs Mitdenken.</h2><p>Deine Rückmeldung wurde übermittelt.@(review.State == "Accepted" ? " Das Review wurde inzwischen abgeschlossen." : "")</p></div> }
+    <form method="post" asp-page-handler="Return">
+        <input type="hidden" name="etag" value="@stored.ETag.Value" />
+        @foreach (var passage in review.Passages)
+        {
+            <article class="review-workspace__passage">
+                <div class="review-prose">@Html.Raw(Model.Render(passage.Markdown))</div>
+                @if (review.State == "Sent")
+                {
+                    <label for="feedback-@passage.Id">Deine Rückmeldung (optional)</label>
+                    <textarea id="feedback-@passage.Id" name="Feedback[@passage.Id]" rows="4" maxlength="10000" placeholder="Was fällt dir auf? Was sollte klarer werden?">@Model.Feedback.GetValueOrDefault(passage.Id)</textarea>
+                }
+                else if (!string.IsNullOrWhiteSpace(passage.Feedback)) { <div class="review-workspace__feedback"><h2>Deine Rückmeldung</h2><p>@passage.Feedback</p></div> }
+            </article>
+        }
+        @if (review.State == "Sent")
+        { <p>Mit dem Absenden gibst du alle Passagen gemeinsam zurück, auch wenn du keine Anmerkungen hast.</p><button class="button button--primary" type="submit">Review zurückgeben</button> }
+    </form>
+}
+</div>
+@section Scripts { <script type="module" src="~/components/document-editor/document-editor.js" asp-append-version="true"></script> }

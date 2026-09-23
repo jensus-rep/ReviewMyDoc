@@ -17,6 +17,11 @@ ReviewMyDoc: Es schreibt die Farbrollen aus `tokens` neu und lässt alles andere
 Deshalb wird es unmittelbar nach `tokens` geladen und vor allen übrigen Bausteinen, siehe
 [theme/README.md](theme/README.md).
 
+Die Dokumentenansicht verwendet inzwischen den hier entstandenen
+[document-editor](document-editor/README.md): direkt formatierte Textbearbeitung, Speichern und
+Reviewaktionen auf Markierungen. `markdown-surface` bleibt als unveränderte Atelier-Komponente
+vorhanden, wird aber nicht für den neuen dokumentorientierten Ablauf verwendet.
+
 Zwei Dinge fallen beim Lesen der übernommenen Bausteine auf, beide sind bekannt und bewusst nicht
 geändert, weil an einer Kopie nichts geändert wird außer der Herkunftszeile:
 

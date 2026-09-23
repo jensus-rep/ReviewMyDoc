@@ -55,24 +55,21 @@ gespeichert, und kann deshalb nicht falsch werden.
 Der Eigentümer legt ein Dokument an und schreibt darin, durchgehend, auf einer einzigen Fläche. Er
 gliedert nicht zuerst und füllt dann Kästen: Er schreibt, und die Gliederung entsteht aus dem Text.
 
-**Der Text formatiert sich beim Schreiben mit.** Eine Überschrift sieht aus wie eine Überschrift,
-Fettes ist fett, eine Liste ist eingerückt. Die Markdown-Zeichen bleiben sichtbar, aber
-zurückgenommen, damit niemand raten muss, was die Anwendung gerade aus seinem Text macht. Es gibt
+**Der Text wird direkt formatiert bearbeitet.** Eine Überschrift sieht aus wie eine Überschrift,
+Fettes ist fett, eine Liste ist eingerückt. Markdown bleibt das Speicherformat; seine Zeichen
+werden beim Schreiben nicht angezeigt. Es gibt
 keine zweite Spalte mit einer Vorschau und keine dauernd sichtbare Werkzeugleiste: Werkzeuge
 erscheinen an der Markierung und verschwinden mit ihr. Die Formatierung ist bewusst begrenzt auf
 Überschrift, Fett, Kursiv, Listen, Tabelle, Zitat, Link und Code. Was nicht in dieser Liste steht,
 gehört nicht in ein Dokument, das von mehreren Leuten geprüft wird.
 
-**Aus der Markierung wird der Abschnitt.** Wer eine Stelle markiert, bekommt ein kleines Menü an
-der Markierung, und darin steht neben den Formatierungen der Weg ins Review. Wählt er ihn, wird die
-markierte Stelle zu einem eigenen Abschnitt: Der umgebende Abschnitt wird an den Rändern der
-Markierung geteilt, die markierte Mitte bekommt eine eigene Kennung und eine Überschrift, und was
-davor und dahinter stand, bleibt, was es war. Die Kennung des ursprünglichen Abschnitts bleibt beim
-ersten der drei Teile, damit vorhandene Rückmeldungen nicht verrutschen.
-
-Der Abschnitt bleibt also die Einheit von Ablage, Zuweisung und Rückmeldung; nur seine Geburt ist
-eine andere. Die Gliederungsseite bleibt als Nebenansicht bestehen, für Reihenfolge, Umbenennen und
-Löschen, und für den Überblick über ein langes Dokument.
+**Aus der Markierung wird eine Reviewpassage.** Wer eine Stelle markiert, sieht die Werkzeuge und
+die Aktionen „Sammeln“ und „Zum Review“. Sammeln legt einen Ausschnitt dauerhaft in einem
+Auftragsentwurf ab. „Zum Review“ sammelt ebenfalls und öffnet direkt die Zuweisung. Mehrere
+Passagen können gemeinsam einer Person zugewiesen werden. Die Gliederung und der Textfluss
+bleiben dabei unverändert. Der Auftrag hält Ausschnitt, Quellabschnitt und Quellstand fest.
+Vor dem Erteilen wird geprüft, dass der Quelltext noch passt. Die Gliederungsseite bleibt als
+Nebenansicht für Reihenfolge, Umbenennen und Löschen bestehen.
 
 **Ohne JavaScript bleibt das Dokument benutzbar.** Die mitlaufende Formatierung und das Menü an der
 Markierung sind Zugaben. Ohne sie zeigt die Seite den Text formatiert an, und jeder Abschnitt
@@ -92,7 +89,8 @@ Der Eigentümer wählt Abschnitte, eine Person und eine Frist. Beim Versenden pa
 2. Ein Zugangstoken wird erzeugt, gehasht gespeichert und im Link versendet.
 3. Der Auftrag geht in den Zustand versendet.
 
-Die Person bekommt eine Mail mit Link. Der Link ist der Zugang; ein Konto braucht sie nicht.
+Die Anwendung zeigt einen persönlichen Link, den der Eigentümer selbst weitergibt. Der Link ist
+der Zugang; ein Konto braucht die Person nicht. Es wird keine Mail automatisch verschickt.
 
 ### Reviewer arbeitet
 

@@ -1,0 +1,32 @@
+/* Document editor 1.0.0. Prose remains the visual centre; the native editing
+   host brings selection, spelling and undo, with no textbox frame. */
+:where(.document-editor) {
+  --document-editor-font-size: var(--font-size-text-web);
+  --document-editor-line-height: 1.8;
+}
+.document-editor { margin: 0; }
+.document-editor__surface {
+  min-height: 8em;
+  font-family: var(--font-sans);
+  font-size: var(--document-editor-font-size);
+  line-height: var(--document-editor-line-height);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  outline: none;
+  padding-block: var(--space-4);
+}
+.document-editor__surface:focus-visible { border-inline-start: var(--hairline-width) solid var(--blue); padding-inline-start: var(--space-3); }
+.document-editor__surface:empty::before { content: attr(data-placeholder); color: var(--ink-2); pointer-events: none; }
+.document-editor__surface h1 { font-size: var(--font-size-page-title-web); }
+.document-editor__surface h2 { font-size: var(--font-size-section-title-web); }
+.document-editor__surface blockquote { border-inline-start: var(--space-1) solid var(--hairline); padding-inline-start: var(--space-5); margin-inline: 0; color: var(--ink-2); }
+.document-editor__surface table { border-collapse: collapse; width: 100%; }
+.document-editor__surface td, .document-editor__surface th { border: var(--hairline-width) solid var(--hairline); padding: var(--space-3); }
+.document-editor__surface pre { overflow-x: auto; padding: var(--space-4); background: var(--bg-2); border-radius: var(--radius-s); }
+.document-editor__tools { position: fixed; top: var(--document-editor-menu-y, var(--space-3)); left: var(--document-editor-menu-x, var(--space-3)); box-sizing: border-box; max-width: calc(100vw - var(--space-6)); z-index: 2; display: flex; flex-wrap: wrap; gap: var(--space-1); padding: var(--space-2); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-m); background: var(--surface); box-shadow: var(--shadow-float); }
+.document-editor__tools[hidden], .document-editor [hidden] { display: none; }
+.document-editor__tools button { border: 0; border-radius: var(--radius-s); padding: var(--space-3); background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
+.document-editor__tools button:hover { background: var(--bg-2); }
+.document-editor__tools button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); }
+.document-editor__tools button[data-assign] { background: var(--blue); color: var(--bg); }
+.document-editor textarea { box-sizing: border-box; width: 100%; font: inherit; padding: var(--space-4); }

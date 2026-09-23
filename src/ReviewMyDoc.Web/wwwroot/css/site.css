@@ -19,7 +19,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: radial-gradient(ellipse at top left, var(--art-chrome-quiet), transparent 65%), var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--font-size-text-app);
@@ -73,13 +73,11 @@
   transform: none;
 }
 
-/* The head is the one band of the frame that lies above the paper, so it carries
-   the sheen and the light edge of the theme. No shadow: it sits on the hairline
-   and not above the content. */
+/* A light edge and a soft contact shadow lift the navigation above the desk. */
 .app__header {
   background: var(--surface-sheen);
   border-block-end: var(--hairline-width) solid var(--hairline);
-  box-shadow: var(--surface-edge);
+  box-shadow: var(--surface-edge), var(--surface-shadow);
 }
 
 /* Head and content stand in the same column, so the brand sits above the first
@@ -97,16 +95,13 @@
 .app__bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   padding-block: var(--space-4);
 }
 
-/* The name of the application with its mark: a filled square in dark blue
-   colour, sharp cornered, in the size of the type around it. It is the one
-   ornament of the frame and it is drawn and not loaded, so it needs no file and
-   follows the mode by itself. */
+/* The generated document mark complements the accessible text wordmark. */
 .app__brand {
   display: inline-flex;
   align-items: center;
@@ -118,20 +113,22 @@
   text-decoration: none;
 }
 
-.app__brand::before {
-  content: "";
-  width: 0.7em;
-  height: 0.7em;
-  background: var(--blue);
+.app__logo {
+  width: var(--space-8);
+  height: var(--space-8);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .app__nav {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-5);
+  gap: var(--space-1);
 }
 
 .app__nav-link {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-s);
   color: var(--ink-2);
   font-size: var(--font-size-text-app);
   text-decoration: none;
@@ -144,9 +141,10 @@
   }
 }
 
-/* The page one stands on carries the text colour and an underline. The colour
-   alone would be the only characteristic, and it is a weak one here. */
+/* Shape and underline identify the current page alongside its colour. */
 .app__nav-link[aria-current="page"] {
+  background: var(--surface);
+  box-shadow: var(--surface-edge), var(--surface-shadow);
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 0.15em;
@@ -367,4 +365,650 @@
    distance .karte gives every other gap of its own content. */
 .gliederung__neu {
   margin-block-start: var(--space-7);
+}
+
+/* Document pages use a reading surface with quiet, opt-in editing controls.
+All colours follow the shared theme, including the system dark preference. */
+.app:has(.document-view, .document-library) {
+  --app-width: 80em;
+}
+
+.document-view__back {
+  display: inline-block;
+  margin-block-end: var(--space-7);
+  font-size: var(--font-size-label-web);
+}
+
+.document-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin-block-end: var(--space-9);
+}
+
+.app__main .document-view__header h1 {
+  font-size: clamp(var(--font-size-page-title-app), 4vw, var(--font-size-page-title-web));
+  letter-spacing: var(--letter-spacing-page-title-web);
+  margin-block-end: var(--space-4);
+  overflow-wrap: anywhere;
+}
+
+.document-view__header > div {
+  min-width: 0;
+  flex: 1 1 24em;
+}
+
+.document-view__header p, .document-library__count {
+  color: var(--ink-2);
+}
+
+.app__main .document-view__eyebrow {
+  font-size: var(--font-size-label-app);
+  font-weight: var(--font-weight-title);
+  color: var(--blue);
+  margin-block-end: var(--space-3);
+}
+
+.document-view__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--font-size-label-web);
+}
+
+.document-view__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--art-chrome-quiet);
+  color: var(--blue);
+}
+
+.document-view__status::before {
+  content: '';
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.document-view__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: var(--space-9);
+  align-items: start;
+}
+
+.document-view__sidebar {
+  position: sticky;
+  top: var(--space-7);
+  max-height: calc(100dvh - var(--space-10));
+  overflow-y: auto;
+}
+
+.app__main .document-view__sidebar h2 {
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-label-web);
+}
+
+.document-view__sidebar p {
+  color: var(--ink-2);
+}
+
+.document-view__sidebar ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.document-view__sidebar li + li {
+  margin-block-start: var(--space-2);
+}
+
+.app__main .document-view__sidebar a {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-s);
+  color: var(--ink-2);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.document-view__sidebar a:hover, .document-view__sidebar a:focus-visible {
+  background: var(--bg-2);
+}
+
+.document-view__sidebar a span {
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+}
+
+.document-view__paper {
+  min-width: 0;
+  padding: var(--space-9);
+  background: var(--surface);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+
+.document-view__paper-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-block-end: var(--space-7);
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+  border-block-end: var(--hairline-width) solid var(--hairline);
+}
+
+.document-view .gliederung__abschnitt {
+  display: block;
+  padding-block: var(--space-7);
+  scroll-margin-block-start: var(--space-7);
+}
+
+.document-view .gliederung__abschnitte > .gliederung__abschnitt:first-child {
+  padding-block-start: var(--space-7);
+}
+
+.document-view .gliederung__abschnitte > .gliederung__abschnitt:last-child {
+  padding-block-end: var(--space-7);
+}
+
+.document-view__section-heading {
+  display: flex;
+  gap: var(--space-5);
+  align-items: baseline;
+}
+
+.app__main .document-view__section-heading h2 {
+  margin: 0;
+  font-size: var(--font-size-section-title-web);
+  line-height: var(--line-height-text);
+  overflow-wrap: anywhere;
+}
+
+.document-view .gliederung__nummer {
+  color: var(--blue);
+  font-size: var(--font-size-label-web);
+}
+
+.document-view__edit {
+  margin-block-start: var(--space-4);
+}
+
+.document-view__edit summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+  padding-block: var(--space-2);
+}
+
+.document-view__edit summary:hover {
+  color: var(--blue);
+}
+
+.document-view__edit summary:focus-visible {
+  outline: calc(2 * var(--hairline-width)) solid var(--blue);
+  outline-offset: var(--space-1);
+}
+
+.document-view__edit-content {
+  padding: var(--space-5);
+  margin-block-start: var(--space-3);
+  background: var(--bg);
+  border-radius: var(--radius-s);
+}
+
+.document-view .gliederung__aktionen {
+  margin-block-start: var(--space-4);
+}
+
+.document-view .gliederung__bestaetigung {
+  margin-block-start: var(--space-5);
+  padding: var(--space-5);
+  background: var(--art-chrome-quiet);
+  border-radius: var(--radius-s);
+}
+
+.document-view .gliederung__neu {
+  padding-block-start: var(--space-7);
+  margin-block-start: var(--space-5);
+  border-block-start: var(--hairline-width) solid var(--hairline);
+  scroll-margin-block-start: var(--space-7);
+}
+
+.app__main .document-view .gliederung__neu h2 {
+  margin-block-start: 0;
+  font-size: var(--font-size-text-web);
+}
+
+.gliederung__neu > p {
+  color: var(--ink-2);
+}
+
+.document-view__empty {
+  padding-block: var(--space-10);
+  text-align: center;
+}
+
+.document-view__empty p {
+  margin-inline: auto;
+  color: var(--ink-2);
+}
+
+.document-view__empty-mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--space-10);
+  height: var(--space-10);
+  background: var(--art-chrome-quiet);
+  color: var(--blue);
+  border-radius: var(--radius-m);
+  font-size: var(--font-size-page-title-web);
+}
+
+.app__main .document-view__empty h2 {
+  font-size: var(--font-size-section-title-web);
+}
+
+.document-view__sr-only {
+  position: absolute;
+  width: var(--hairline-width);
+  height: var(--hairline-width);
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.document-library .rows {
+  display: grid;
+  gap: var(--space-4);
+  border-block-end: 0;
+  --rows-title-size: var(--font-size-text-web);
+  --rows-text-size: var(--font-size-label-web);
+  --rows-action-size: var(--font-size-label-web);
+}
+
+.document-library .rows__item {
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  padding: var(--space-7);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  transition: border-color var(--motion-duration) var(--motion-ease);
+  overflow-wrap: anywhere;
+}
+
+.document-library .rows__item:hover, .document-library .rows__item:focus-within {
+  border-color: var(--blue);
+}
+
+.document-library__count {
+  font-size: var(--font-size-label-app);
+}
+
+@media (max-width: 48em) {
+  .document-view__layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .document-view__sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  .document-view__sidebar ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .document-view__sidebar li + li {
+    margin: 0;
+  }
+
+  .document-view__sidebar a {
+    background: var(--bg-2);
+  }
+
+  .document-view__paper, .document-library .rows__item {
+    padding: var(--space-5);
+  }
+
+  .document-view__header {
+    margin-block-end: var(--space-7);
+  }
+
+}
+
+/* The writing workspace presents one paper surface with review work beside it. */
+.app:has(.writing-workspace, .review-workspace, .review-pipeline) {
+  --app-width: 92em;
+}
+
+.writing-workspace [hidden] {
+  display: none;
+}
+
+.writing-workspace__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-block-end: var(--space-7);
+}
+
+.writing-workspace__header nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.writing-workspace__header [role="status"] {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+  max-width: 38em;
+}
+
+.writing-workspace__layout, .review-workspace__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(16em, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.writing-workspace__paper {
+  min-height: 65em;
+  min-width: 0;
+  padding: var(--space-10) var(--space-11);
+  border: var(--hairline-width) solid var(--hairline);
+  background: var(--surface);
+  border-radius: var(--radius-s);
+  box-shadow: var(--surface-edge), var(--paper-shadow);
+}
+
+.app__main .writing-workspace__paper > h1 {
+  font-size: var(--font-size-page-title-web);
+  letter-spacing: var(--letter-spacing-page-title-web);
+  margin-block-end: var(--space-8);
+  overflow-wrap: anywhere;
+}
+
+.writing-workspace__eyebrow {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+}
+
+.app__main .document-editor__surface h1 {
+  font-size: var(--font-size-page-title-web);
+}
+
+.app__main .document-editor__surface h2, .app__main .document-editor__section-heading {
+  font-size: var(--font-size-section-title-web);
+  margin-block: var(--space-6) var(--space-4);
+}
+
+.app__main .document-editor__surface p {
+  max-width: none;
+  margin-block: 0 var(--space-5);
+}
+
+.writing-workspace__review, .review-workspace__panel {
+  border: var(--hairline-width) solid var(--hairline);
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  position: sticky;
+  top: var(--space-7);
+  padding: var(--space-6);
+  background: var(--surface-sheen);
+  border-radius: var(--radius-m);
+}
+
+.app__main .writing-workspace__review h2, .app__main .review-workspace__panel h2 {
+  margin-block-start: 0;
+  font-size: var(--font-size-text-web);
+}
+
+.writing-workspace__review > p, .review-workspace__panel > p {
+  color: var(--ink-2);
+}
+
+.writing-workspace__count {
+  border-block-start: var(--hairline-width) solid var(--hairline);
+  padding-block-start: var(--space-5);
+}
+
+.writing-workspace__collection {
+  padding-inline-start: var(--space-5);
+  max-height: 24em;
+  overflow-y: auto;
+}
+
+.writing-workspace__collection li {
+  padding-block: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.writing-workspace__review .button {
+  margin-block-end: var(--space-5);
+}
+
+.writing-workspace__hint {
+  font-size: var(--font-size-label-app);
+}
+
+.review-workspace > a {
+  display: inline-block;
+  margin-block-end: var(--space-6);
+}
+
+.review-workspace__passage {
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  padding: var(--space-7);
+  margin-block-end: var(--space-5);
+  background: var(--surface);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-m);
+  overflow-wrap: anywhere;
+}
+
+.review-prose {
+  font-size: var(--font-size-text-web);
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.review-prose table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.review-prose td, .review-prose th {
+  border: var(--hairline-width) solid var(--hairline);
+  padding: var(--space-3);
+}
+
+.review-prose blockquote {
+  border-inline-start: var(--space-1) solid var(--hairline);
+  padding-inline-start: var(--space-4);
+  margin-inline: 0;
+}
+
+.review-workspace__feedback, .review-workspace__notice {
+  padding: var(--space-5);
+  margin-block: var(--space-5);
+  border-radius: var(--radius-s);
+  background: var(--art-chrome-quiet);
+}
+
+.review-workspace__feedback p {
+  white-space: pre-wrap;
+}
+
+.review-workspace label, .review-reader label {
+  display: block;
+  margin-block: var(--space-5) var(--space-2);
+}
+
+.review-workspace input:not([type="hidden"]), .review-reader input:not([type="hidden"]), .review-reader textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-s);
+  padding: var(--space-3);
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  margin-block-end: var(--space-4);
+}
+
+.review-reader {
+  max-width: 52em;
+  margin-inline: auto;
+}
+
+.review-workspace__panel details {
+  margin-block-start: var(--space-5);
+}
+
+.review-workspace__panel summary {
+  cursor: pointer;
+}
+
+.review-pipeline__columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin-block: var(--space-7);
+}
+
+.review-pipeline__column {
+  border: var(--hairline-width) solid var(--hairline);
+  box-shadow: var(--well-shadow);
+  min-height: 22em;
+  background: var(--bg-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-5);
+}
+
+.app__main .review-pipeline__column > h2 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-text-web);
+}
+
+.review-pipeline__column h2 span {
+  color: var(--ink-2);
+}
+
+.review-pipeline__card {
+  border: var(--hairline-width) solid var(--hairline);
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  padding: var(--space-5);
+  margin-block-end: var(--space-4);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.review-pipeline__card h3 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-text-web);
+}
+
+.review-pipeline__card p {
+  font-size: var(--font-size-label-app);
+  color: var(--ink-2);
+}
+
+.review-pipeline__empty {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-web);
+}
+
+.review-pipeline__drafts {
+  padding: var(--space-5);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+
+.app__main .review-pipeline__drafts h2 {
+  margin-block-start: 0;
+}
+
+.review-pipeline__drafts a {
+  display: block;
+  padding-block: var(--space-2);
+}
+
+.review-pipeline__overdue {
+  font-weight: var(--font-weight-title);
+  text-decoration: underline;
+}
+
+@media (max-width: 64em) {
+  .writing-workspace__paper {
+    padding: var(--space-8);
+  }
+
+  .review-pipeline__columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+@media (max-width: 48em) {
+  .writing-workspace__layout, .review-workspace__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .writing-workspace__review, .review-workspace__panel {
+    position: static;
+  }
+
+  .writing-workspace__paper {
+    padding: var(--space-6);
+    min-height: 35em;
+  }
+
+  .app__main .writing-workspace__paper > h1 {
+    font-size: var(--font-size-section-title-web);
+  }
+
+  .review-pipeline__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}
+
+@media print {
+  .app {
+    background: var(--surface);
+  }
+  .app__header, .app__footer, .writing-workspace__header, .writing-workspace__review, .document-editor__tools {
+    display: none;
+  }
+
+  .writing-workspace__layout {
+    display: block;
+  }
+
+  .writing-workspace__paper {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
 }

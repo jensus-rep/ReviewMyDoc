@@ -1,4 +1,4 @@
-@page "/dokumente/{documentId}"
+@page "/dokumente/{documentId}/gliederung"
 @*
     The outline of one document: its sections, with a form to append one, and
     for each section a form to rename it, a pair of buttons to move it and a
@@ -28,8 +28,16 @@
     var addButton = new ButtonModel("Abschnitt hinzufügen");
 }
 
-<h1>@Model.Title</h1>
-<p>@Model.StateLabel</p>
+<div class="document-view">
+<a class="document-view__back" href="/dokumente">← Alle Dokumente</a>
+<header class="document-view__header">
+    <div>
+        <p class="document-view__eyebrow">Dein Dokument</p>
+        <h1>@Model.Title</h1>
+        <p class="document-view__meta"><span class="document-view__status">@Model.StateLabel</span><span>@Model.Sections.Count @(Model.Sections.Count == 1 ? "Abschnitt" : "Abschnitte")</span></p>
+    </div>
+    <a class="button button--secondary" href="#neuer-abschnitt">+ Abschnitt hinzufügen</a>
+</header>
 
 @if (Model.Message is not null)
 {
@@ -38,10 +46,33 @@
     <p class="gliederung__meldung" role="alert">@Model.Message</p>
 }
 
-<div class="surface karte">
+<div class="document-view__layout">
+<aside class="document-view__sidebar">
+    <nav aria-label="Inhaltsverzeichnis">
+        <h2>In diesem Dokument</h2>
+        @if (Model.Sections.Count == 0)
+        {
+            <p>Deine Gliederung entsteht hier, Abschnitt für Abschnitt.</p>
+        }
+        <ol>
+            @foreach (var entry in Model.Sections)
+            {
+                <li><a href="#abschnitt-@entry.Id.Value"><span>@entry.Order.ToString("D2")</span>@entry.Heading</a></li>
+            }
+        </ol>
+    </nav>
+</aside>
+<div class="document-view__paper">
+<div class="document-view__paper-heading"><span>Gliederung</span><span>Deine Gedanken. Klar strukturiert.</span></div>
     @if (Model.Sections.Count == 0)
     {
-        <p>Dieses Dokument hat noch keine Abschnitte.</p>
+        <div class="document-view__empty">
+            <span class="document-view__empty-mark" aria-hidden="true">¶</span>
+            <h2>Platz für deine Gedanken</h2>
+            <p>Dieses Dokument hat noch keine Abschnitte.</p>
+            <p>Beginne mit einer Überschrift und gib deinem Dokument eine Struktur.</p>
+            <a href="#neuer-abschnitt">Ersten Abschnitt anlegen →</a>
+        </div>
     }
     else
     {
@@ -81,13 +112,13 @@
                 var deleteLink = new ButtonModel("Löschen")
                 {
                     Variant = ButtonVariant.Secondary,
-                    Href = $"/dokumente/{Model.DocumentId}?confirmDelete={entry.Id.Value}",
+                    Href = $"/dokumente/{Model.DocumentId}/gliederung?confirmDelete={entry.Id.Value}",
                     AriaLabel = $"„{entry.Heading}“ löschen",
                 };
                 var cancelLink = new ButtonModel("Abbrechen")
                 {
                     Variant = ButtonVariant.Secondary,
-                    Href = $"/dokumente/{Model.DocumentId}",
+                    Href = $"/dokumente/{Model.DocumentId}/gliederung",
                     AriaLabel = $"Löschen von „{entry.Heading}“ abbrechen",
                 };
                 var confirmButton = new ButtonModel("Endgültig löschen")
@@ -95,8 +126,11 @@
                     AriaLabel = $"„{entry.Heading}“ endgültig löschen",
                 };
 
-                <li class="gliederung__abschnitt">
-                    <span class="gliederung__nummer">@entry.Order</span>
+                <li class="gliederung__abschnitt" id="abschnitt-@entry.Id.Value">
+                    <div class="document-view__section-heading">
+                        <span class="gliederung__nummer">@entry.Order.ToString("D2")</span>
+                        <h2>@entry.Heading</h2>
+                    </div>
 
                     @if (confirmingDelete)
                     {
@@ -114,6 +148,9 @@
                     }
                     else
                     {
+                        <details class="document-view__edit" open="@(renaming ? true : (bool?)null)">
+                        <summary>Abschnitt bearbeiten<span class="document-view__sr-only">: @entry.Heading</span></summary>
+                        <div class="document-view__edit-content">
                         <form method="post" asp-page-handler="RenameSection" class="gliederung__umbenennen">
                             <input type="hidden" name="RenameSectionId" value="@entry.Id.Value" />
                             <input type="hidden" name="ETagValue" value="@Model.ETag" />
@@ -142,17 +179,22 @@
                             </form>
                             <partial name="Ui/_Button" model="deleteLink" />
                         </div>
+                        </div>
+                        </details>
                     }
                 </li>
             }
         </ol>
     }
-</div>
-
-<div class="surface karte karte--schmal gliederung__neu">
+<div class="gliederung__neu" id="neuer-abschnitt">
+    <h2>Ein neuer Abschnitt</h2>
+    <p>Was möchtest du als Nächstes festhalten?</p>
     <form method="post" asp-page-handler="AddSection">
         <input type="hidden" name="ETagValue" value="@Model.ETag" />
         <partial name="Ui/_Field" model="newHeadingField" />
         <partial name="Ui/_Button" model="addButton" />
     </form>
+</div>
+</div>
+</div>
 </div>

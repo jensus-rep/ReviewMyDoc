@@ -167,6 +167,31 @@ gehasht.
 
 ## Lokal und in Azure
 
+### Ergänzung: Markierungen sammeln und gemeinsam prüfen (23.09.2026)
+
+Die Schreibansicht bearbeitet die vorhandenen Abschnittstexte direkt; jeder Text wird mit seinem
+eigenen ETag gespeichert. Markierungen teilen den Text nicht mehr automatisch auf. Stattdessen
+enthält ein Reviewauftrag `passages`: ausgewählte Markdownausschnitte mit eigener Kennung,
+`sectionId` und `sourceHash` des zugehörigen Abschnittstextes. Das sind Werte im Auftrag, keine
+zusätzlichen Aggregate. So bleiben Absatzfluss, Abschnittskennungen und vorhandene Rückmeldungen
+beim Sammeln unverändert.
+
+Ein Auftrag beginnt als `Draft` und dient als dauerhaft gespeicherte Sammlung. Beim Erteilen werden
+die Quelltexte gegen ihre Hashes geprüft und die Dokumentversion eingefroren. Veränderte Quellen
+müssen erneut markiert werden. Der Empfänger erhält ausschließlich die gespeicherten Ausschnitte.
+Name, optionale Mailadresse und Frist werden beim Erteilen ergänzt. Der Link wird selbst geteilt;
+es wird keine Mail verschickt. Das Zugangstoken steht im URL-Fragment, wird per POST eingelöst
+und durch eine geschützte, auf genau diesen Auftrag begrenzte Sitzung ersetzt. Gespeichert wird
+weiterhin nur sein Hash; Widerruf und Ablauf werden bei jedem Zugriff geprüft.
+
+Für diesen ersten vollständigen Ablauf liegen die Kommentare als `feedback` direkt am jeweiligen
+Ausschnitt im Auftrag, zusammen mit `resolved`. Genau eine Person gibt den Auftrag gesammelt
+zurück; danach entscheidet der Eigentümer die Rückmeldungen. Das gemeinsame ETag schützt auch
+diese Übergabe. Separate Feedbackdateien und Änderungsvorschläge bleiben eine spätere Erweiterung.
+Die Zustände sind `Draft`, `Sent`, `Returned`, `Accepted`, `Revoked`. Abnahme ist erst möglich,
+wenn alle vorhandenen Kommentare entschieden sind. Die Pipeline wird aus diesen Aufträgen
+berechnet; sie speichert keine zusätzliche Zustandskopie.
+
 Erwartete Ausgänge sind Ergebniswerte, keine Ausnahmen: ein fehlender Eintrag und eine nicht
 erfüllte Bedingung sind normale Antworten, die die Oberfläche in eine Meldung übersetzt. Alles, was
 niemand einplanen kann, also eine abgerissene Verbindung, ein fehlendes Recht, eine kaputte

@@ -1,0 +1,95 @@
+@page "/dokumente/{documentId}/reviews/{reviewId}"
+@* One owner-facing review: collected excerpts, recipient, then actual responses. *@
+@model ReviewModel
+@{
+    var review = Model.Stored.Review;
+    ViewData["Title"] = review.State == "Draft" ? "Review vorbereiten" : "Reviewauftrag";
+}
+<div class="review-workspace">
+    <a href="/dokumente/@review.DocumentId">← Zurück zum Dokument</a>
+    <header class="document-view__header">
+        <div><p class="document-view__eyebrow">@review.Title</p><h1>@ViewData["Title"]</h1>
+        <p>@review.Passages.Count Passagen · @(review.State == "Draft" ? "Noch nicht geteilt" : review.ReviewerName)</p></div>
+        <a href="/">Zur Pipeline →</a>
+    </header>
+    @if (Model.Message is not null) { <p class="review-workspace__notice" role="alert">@Model.Message</p> }
+    @if (Model.IssuedLink is { } link)
+    {
+        <div class="review-workspace__notice" role="status">
+            <h2>Dein Reviewlink ist bereit</h2>
+            <p>Teile diesen Link mit @review.ReviewerName. Es wurde keine E-Mail verschickt. Sichere den Link jetzt; er wird nur einmal angezeigt.</p>
+            <label for="review-link">Persönlicher Reviewlink</label>
+            <input id="review-link" data-share-link value="@link" readonly />
+            <button class="button button--primary" type="button" data-copy-link>Link kopieren</button>
+            <span data-copy-status aria-live="polite"></span>
+        </div>
+    }
+    <div class="review-workspace__layout">
+        <div>
+        @foreach (var passage in review.Passages)
+        {
+            <article class="review-workspace__passage">
+                <p class="document-view__eyebrow">@passage.Heading</p>
+                <div class="review-prose">@Html.Raw(Model.Render(passage.Markdown))</div>
+                @if (review.State == "Draft")
+                {
+                    <form method="post" asp-page-handler="Remove">
+                        <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
+                        <input type="hidden" name="passageId" value="@passage.Id" />
+                        <button class="button button--secondary" type="submit">Aus Sammlung entfernen</button>
+                    </form>
+                }
+                @if (!string.IsNullOrWhiteSpace(passage.Feedback))
+                {
+                    <div class="review-workspace__feedback"><h3>Rückmeldung von @review.ReviewerName</h3><p>@passage.Feedback</p>
+                    @if (passage.Resolved) { <p>✓ Bearbeitet</p> }
+                    else if (review.State == "Returned")
+                    {
+                        <form method="post" asp-page-handler="Decide">
+                            <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
+                            <input type="hidden" name="passageId" value="@passage.Id" />
+                            <button class="button button--secondary" type="submit" name="action" value="resolve">Als bearbeitet markieren</button>
+                        </form>
+                    }
+                    </div>
+                }
+                else if (review.State is "Returned" or "Accepted") { <p>Ohne Anmerkung zurückgegeben.</p> }
+            </article>
+        }
+        @if (review.Passages.Count == 0) { <p>Die Sammlung ist leer. Markiere im Dokument eine Passage, um sie hinzuzufügen.</p> }
+        </div>
+        <aside class="review-workspace__panel">
+        @if (review.State == "Draft")
+        {
+            <h2>Wer soll mitlesen?</h2>
+            <p>Die Person erhält nur die gesammelten Passagen und kann ohne Konto antworten.</p>
+            <form method="post" asp-page-handler="Issue">
+                <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
+                <label for="recipient">Name</label><input id="recipient" asp-for="Name" required maxlength="150" autocomplete="name" />
+                <label for="email">E-Mailadresse (optional)</label><input id="email" asp-for="Email" type="email" maxlength="254" autocomplete="email" />
+                <label for="due">Rückmeldung bis</label><input id="due" asp-for="DueDate" type="date" required />
+                <button class="button button--primary" type="submit" disabled="@(review.Passages.Count == 0)">Reviewlink erstellen</button>
+            </form>
+        }
+        else
+        {
+            <h2>@(review.State switch { "Sent" => "Wartet auf Rückmeldung", "Returned" => "Die Rückmeldung ist da", "Accepted" => "Review abgeschlossen", _ => "Auftrag widerrufen" })</h2>
+            <p>@review.ReviewerName · Frist: @review.DueAt?.ToString("dd.MM.yyyy")</p>
+            <p>Geprüfter Stand: Version @review.DocumentVersion. Spätere Änderungen am Dokument verändern diesen Auftrag nicht.</p>
+            @if (review.State == "Returned")
+            {
+                <form method="post" asp-page-handler="Decide">
+                    <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
+                    <button class="button button--primary" name="action" value="accept" disabled="@(review.Passages.Any(p => !string.IsNullOrWhiteSpace(p.Feedback) && !p.Resolved))">Review abschließen</button>
+                </form>
+            }
+            @if (review.State is "Sent" or "Returned")
+            {
+                <details><summary>Auftrag widerrufen</summary><p>Der Reviewlink wird ungültig. Vorhandene Rückmeldungen bleiben erhalten.</p>
+                <form method="post" asp-page-handler="Decide"><input type="hidden" name="etag" value="@Model.Stored.ETag.Value" /><button class="button button--secondary" name="action" value="revoke">Jetzt widerrufen</button></form></details>
+            }
+        }
+        </aside>
+    </div>
+</div>
+@section Scripts { <script type="module" src="~/components/document-editor/document-editor.js" asp-append-version="true"></script> }

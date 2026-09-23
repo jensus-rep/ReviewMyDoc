@@ -36,12 +36,11 @@ public sealed class AuthorizationDefaultTests
     /// nothing else.
     /// </para>
     /// <para>
-    /// The review view under <c>/review/{token}</c> of Epic 2 will be the third
-    /// entry. It proves itself with the token in the address instead of with a
-    /// sign-in, and whoever adds it adds it here, in this list, with its reason.
+    /// The review view redeems a capability by POST and verifies a scoped
+    /// session before delivering any assigned content. It needs no owner login.
     /// </para>
     /// </remarks>
-    private static readonly string[] PagesWithoutOwner = ["/Anmeldung", "/Error"];
+    private static readonly string[] PagesWithoutOwner = ["/Anmeldung", "/Error", "/Review/Index"];
 
     // The rule itself. A fallback policy applies to every endpoint that carries
     // no authorization of its own, which is what makes it a default instead of

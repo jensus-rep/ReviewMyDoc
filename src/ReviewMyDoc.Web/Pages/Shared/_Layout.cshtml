@@ -24,6 +24,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ReviewMyDoc</title>
+    <link rel="icon" type="image/png" href="~/images/reviewmydoc-logo.png" asp-append-version="true" />
     <link rel="stylesheet" href="~/components/tokens/tokens.css" />
     <link rel="stylesheet" href="~/components/theme/theme.css" />
     <link rel="stylesheet" href="~/components/button/button.css" />
@@ -35,7 +36,7 @@
     <a class="app__skip" href="#inhalt">Zum Inhalt springen</a>
     <header class="app__header">
         <div class="app__bar">
-            <a class="app__brand" href="/">ReviewMyDoc</a>
+            <a class="app__brand" href="/"><img class="app__logo" src="~/images/reviewmydoc-logo.png" asp-append-version="true" alt="" width="40" height="40" />ReviewMyDoc</a>
             <nav class="app__nav" aria-label="Hauptnavigation">
                 <a class="app__nav-link" href="/" aria-current="@(currentPage == "/Index" ? "page" : null)">Übersicht</a>
                 <a class="app__nav-link" href="/dokumente" aria-current="@(currentPage == "/Dokumente/Index" ? "page" : null)">Dokumente</a>

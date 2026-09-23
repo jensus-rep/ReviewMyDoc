@@ -1,4 +1,4 @@
-// Checks the outline of a document at /dokumente/{documentId}: creating,
+// Checks the outline of a document at /dokumente/{documentId}/gliederung: creating,
 // renaming, reordering and deleting a section, the confirmation the deletion
 // asks for before it happens, the conflict message when the document changed
 // underneath the form, and the two things every page of this application has
@@ -27,7 +27,7 @@ public sealed class GliederungTests
         using var application = new OwnerApplication();
         using var client = await application.CreateOwnerClientAsync();
 
-        var response = await client.GetAsync($"/dokumente/{documentId}", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"/dokumente/{documentId}/gliederung", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -41,7 +41,7 @@ public sealed class GliederungTests
         using var client = await application.CreateOwnerClientAsync();
         var documentId = await CreateDocumentWithSectionAsync(application, "Ausgangslage");
 
-        var response = await client.GetAsync($"/dokumente/{documentId}", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"/dokumente/{documentId}/gliederung", TestContext.Current.CancellationToken);
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -69,7 +69,7 @@ public sealed class GliederungTests
         using var client = await application.CreateOwnerClientAsync();
         var documentId = await CreateDocumentWithSectionAsync(application, "Ausgangslage");
 
-        var html = await client.GetStringAsync($"/dokumente/{documentId}", TestContext.Current.CancellationToken);
+        var html = await client.GetStringAsync($"/dokumente/{documentId}/gliederung", TestContext.Current.CancellationToken);
 
         Assert.Contains("aria-label=\"Überschrift von „Ausgangslage“ speichern\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-label=\"„Ausgangslage“ nach oben verschieben\"", html, StringComparison.Ordinal);
@@ -85,11 +85,11 @@ public sealed class GliederungTests
         using var application = new OwnerApplication();
         using var client = await CreateSignedInClientAsync(application, followRedirects: false);
         var documentId = await CreateDocumentAsync(application);
-        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}");
+        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}/gliederung");
 
         var response = await PostAsync(
             client,
-            $"/dokumente/{documentId}?handler=AddSection",
+            $"/dokumente/{documentId}/gliederung?handler=AddSection",
             token,
             [new KeyValuePair<string, string>("NewHeading", "Ausgangslage"), new("ETagValue", eTag)]);
 
@@ -109,11 +109,11 @@ public sealed class GliederungTests
         using var application = new OwnerApplication();
         using var client = await application.CreateOwnerClientAsync();
         var documentId = await CreateDocumentAsync(application);
-        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}");
+        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}/gliederung");
 
         var response = await PostAsync(
             client,
-            $"/dokumente/{documentId}?handler=AddSection",
+            $"/dokumente/{documentId}/gliederung?handler=AddSection",
             token,
             [new KeyValuePair<string, string>("NewHeading", "   "), new("ETagValue", eTag)]);
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -134,11 +134,11 @@ public sealed class GliederungTests
         var loaded = Assert.IsType<DocumentResult.Success>(
             await documents.LoadDocumentAsync(new DocumentIdentifier(documentId), TestContext.Current.CancellationToken));
         var sectionId = Assert.Single(loaded.Document.Sections).Id.Value;
-        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}");
+        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}/gliederung");
 
         var response = await PostAsync(
             client,
-            $"/dokumente/{documentId}?handler=RenameSection",
+            $"/dokumente/{documentId}/gliederung?handler=RenameSection",
             token,
             [
                 new KeyValuePair<string, string>("RenameSectionId", sectionId),
@@ -163,11 +163,11 @@ public sealed class GliederungTests
         var documents = application.Services.GetRequiredService<DocumentService>();
         var (documentId, firstId, secondId) = await CreateDocumentWithTwoSectionsAsync(application, "Erste", "Zweite");
         var id = new DocumentIdentifier(documentId);
-        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}");
+        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}/gliederung");
 
         var response = await PostAsync(
             client,
-            $"/dokumente/{documentId}?handler=MoveUp",
+            $"/dokumente/{documentId}/gliederung?handler=MoveUp",
             token,
             [
                 new KeyValuePair<string, string>("SectionId", secondId),
@@ -198,7 +198,7 @@ public sealed class GliederungTests
         var sectionId = Assert.Single(loaded.Document.Sections).Id.Value;
 
         var response = await client.GetAsync(
-            $"/dokumente/{documentId}?confirmDelete={sectionId}",
+            $"/dokumente/{documentId}/gliederung?confirmDelete={sectionId}",
             TestContext.Current.CancellationToken);
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
@@ -223,11 +223,11 @@ public sealed class GliederungTests
         var loaded = Assert.IsType<DocumentResult.Success>(
             await documents.LoadDocumentAsync(new DocumentIdentifier(documentId), TestContext.Current.CancellationToken));
         var sectionId = Assert.Single(loaded.Document.Sections).Id.Value;
-        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}?confirmDelete={sectionId}");
+        var (token, eTag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}/gliederung?confirmDelete={sectionId}");
 
         var response = await PostAsync(
             client,
-            $"/dokumente/{documentId}?handler=ConfirmDelete",
+            $"/dokumente/{documentId}/gliederung?handler=ConfirmDelete",
             token,
             [new KeyValuePair<string, string>("SectionId", sectionId), new("ETagValue", eTag)]);
 
@@ -249,7 +249,7 @@ public sealed class GliederungTests
         var documents = application.Services.GetRequiredService<DocumentService>();
         var documentId = await CreateDocumentAsync(application);
         var id = new DocumentIdentifier(documentId);
-        var (token, staleETag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}");
+        var (token, staleETag) = await LoadFormContextAsync(client, $"/dokumente/{documentId}/gliederung");
 
         // Another tab changes the document after this page was loaded.
         var current = Assert.IsType<DocumentResult.Success>(
@@ -258,7 +258,7 @@ public sealed class GliederungTests
 
         var response = await PostAsync(
             client,
-            $"/dokumente/{documentId}?handler=AddSection",
+            $"/dokumente/{documentId}/gliederung?handler=AddSection",
             token,
             [new KeyValuePair<string, string>("NewHeading", "Mein Vorschlag"), new("ETagValue", staleETag)]);
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -279,7 +279,7 @@ public sealed class GliederungTests
             [new KeyValuePair<string, string>("NewHeading", "Ausgangslage"), new("ETagValue", "irgendein-wert")]);
 
         var response = await client.PostAsync(
-            $"/dokumente/{documentId}?handler=AddSection",
+            $"/dokumente/{documentId}/gliederung?handler=AddSection",
             form,
             TestContext.Current.CancellationToken);
 

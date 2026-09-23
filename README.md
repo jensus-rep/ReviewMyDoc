@@ -30,6 +30,15 @@ Code, Struktur, Tests und Zusammenarbeit ist [docs/Konventionen.md](docs/Konvent
 
 ## Prüfbefehle
 
+Die Dokumentenansicht ist eine direkt bearbeitbare Schreibfläche. Änderungen werden nach einer
+kurzen Schreibpause gespeichert. Markierten Text kann man sammeln oder direkt zum Review geben.
+Eine Sammlung wird einer Person mit Frist zugewiesen; der erzeugte Link wird anschließend selbst
+geteilt. Die Person sieht ausschließlich die Ausschnitte, gibt Kommentare ab und sendet das Review
+zurück. Die Startseite zeigt die Pipeline; dort lassen sich Rückmeldungen bearbeiten und Aufträge
+abschließen. Gliederung und Markdownformulare bleiben als Nebenansicht beziehungsweise als
+Fallback ohne JavaScript erreichbar. Word-Dateiimport und automatische Übernahme von
+Änderungsvorschlägen gehören nicht zu diesem Ablauf.
+
 Diese Befehle laufen im Build-Job der Pipeline (`.github/workflows/build.yml`) bei jedem Push und
 jedem Pull Request; ohne grün kein Deployment. Alle laufen vom Repositorywurzelverzeichnis aus.
 

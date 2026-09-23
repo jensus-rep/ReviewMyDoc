@@ -1,8 +1,42 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Start";
+    ViewData["Title"] = "Pipeline";
 }
 
-<h1>ReviewMyDoc</h1>
-<p>Die Anwendung steht. Inhalte folgen mit den Stories aus Epic 2.</p>
+<div class="review-pipeline">
+    <header class="document-view__header">
+        <div><p class="document-view__eyebrow">ReviewMyDoc</p><h1>Alles im Blick.</h1><p>Was ist draußen? Was kommt zurück? Und was wartet auf dich?</p></div>
+        <a class="button button--primary" href="/dokumente/anlegen">Neues Dokument</a>
+    </header>
+    @if (Model.Reviews.Any(r => r.State == "Draft"))
+    {
+        <section class="review-pipeline__drafts" aria-label="Gesammelte Passagen">
+            <h2>Bereit zum Zuweisen</h2>
+            @foreach (var draft in Model.Reviews.Where(r => r.State == "Draft"))
+            { <a href="/dokumente/@draft.DocumentId/reviews/@draft.Id">@draft.Title · @draft.Passages.Count gesammelte Passagen →</a> }
+        </section>
+    }
+    <div class="review-pipeline__columns">
+    @foreach (var stage in new[] { "Draußen", "Zurück", "Bei dir", "Erledigt" })
+    {
+        var items = Model.Reviews.Where(r => r.State != "Revoked" && IndexModel.Stage(r) == stage).ToArray();
+        <section class="review-pipeline__column">
+            <h2>@stage <span>@items.Length</span></h2>
+            @foreach (var review in items)
+            {
+                <article class="review-pipeline__card">
+                    <p class="document-view__eyebrow">@review.ReviewerName</p>
+                    <h3><a href="/dokumente/@review.DocumentId/reviews/@review.Id">@review.Title</a></h3>
+                    <p>@review.Passages.Count Passagen · @review.DueAt?.ToString("dd.MM.yyyy")</p>
+                    @if (review.State == "Sent" && review.DueAt < DateTimeOffset.UtcNow) { <p class="review-pipeline__overdue">Frist überschritten</p> }
+                    @if (stage == "Bei dir") { <p>Bereit zum Abschließen</p> }
+                </article>
+            }
+            @if (items.Length == 0)
+            { <p class="review-pipeline__empty">@(stage switch { "Draußen" => "Hier erscheinen deine erteilten Reviews.", "Zurück" => "Neue Rückmeldungen findest du hier.", "Bei dir" => "Hier wartet die abschließende Abnahme.", _ => "Abgeschlossene Reviews bleiben hier im Blick." })</p> }
+        </section>
+    }
+    </div>
+    <p><a href="/dokumente">Zu deinen Dokumenten →</a></p>
+</div>

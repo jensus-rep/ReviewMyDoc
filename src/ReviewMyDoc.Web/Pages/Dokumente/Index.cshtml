@@ -15,11 +15,24 @@
     var neu = new ButtonModel("Neues Dokument") { Href = "/dokumente/anlegen" };
 }
 
-<h1>Dokumente</h1>
+<div class="document-library">
+<header class="document-view__header">
+    <div>
+        <p class="document-view__eyebrow">Dein Arbeitsbereich</p>
+        <h1>Dokumente</h1>
+        <p>Gedanken sammeln. Inhalte entwickeln. Gemeinsam weiterdenken.</p>
+    </div>
+    @if (Model.Rows.Items.Count > 0)
+    {
+        <partial name="Ui/_Button" model="neu" />
+    }
+</header>
 
 @if (Model.Rows.Items.Count == 0)
 {
-    <div class="surface karte">
+    <div class="document-view__paper document-view__empty">
+        <span class="document-view__empty-mark" aria-hidden="true">¶</span>
+        <h2>Dein nächstes Dokument beginnt hier</h2>
         <p>Es gibt noch keine Dokumente.</p>
         <p>Leg dein erstes Dokument an, um mit dem Schreiben zu beginnen.</p>
         <partial name="Ui/_Button" model="neu" />
@@ -27,9 +40,7 @@
 }
 else
 {
-    <div class="dokumente__neu">
-        <partial name="Ui/_Button" model="neu" />
-    </div>
-
+    <p class="document-library__count">@Model.Rows.Items.Count @(Model.Rows.Items.Count == 1 ? "Dokument" : "Dokumente") · Zuletzt geändert zuerst</p>
     <partial name="Ui/_Rows" model="Model.Rows" />
 }
+</div>

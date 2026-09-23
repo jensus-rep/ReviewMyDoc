@@ -27,6 +27,8 @@
      lies above the paper. The sheen is a gradient and not a second colour, so a
      large surface stays quiet while its top edge catches the light. */
   --surface: #ffffff;
+  --paper-shadow: 0 2px 4px rgba(18, 58, 95, 0.06), 0 24px 64px -20px rgba(18, 58, 95, 0.25);
+  --well-shadow: inset 0 2px 5px rgba(18, 58, 95, 0.04);
   --surface-sheen: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   --surface-edge: inset 0 var(--hairline-width) 0 rgba(255, 255, 255, 0.9);
   --surface-shadow:
@@ -62,6 +64,8 @@
     --color-red: #b4d2e9;
 
     --surface: #313840;
+    --paper-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 24px 64px -20px rgba(0, 0, 0, 0.65);
+    --well-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.18);
     --surface-sheen: linear-gradient(180deg, #353d46 0%, #2d333a 100%);
     --surface-edge: inset 0 var(--hairline-width) 0 rgba(255, 255, 255, 0.06);
     --surface-shadow:
@@ -93,6 +97,8 @@
   --color-red: #b4d2e9;
 
   --surface: #313840;
+  --paper-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 24px 64px -20px rgba(0, 0, 0, 0.65);
+  --well-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.18);
   --surface-sheen: linear-gradient(180deg, #353d46 0%, #2d333a 100%);
   --surface-edge: inset 0 var(--hairline-width) 0 rgba(255, 255, 255, 0.06);
   --surface-shadow:
