@@ -1,43 +1,99 @@
 @page
 @model IndexModel
+@using ReviewMyDoc.Core.Reviews
 @{
     ViewData["Title"] = "Pipeline";
+    var drafts = Model.Reviews.Where(review => review.State == "Draft").ToArray();
+    var activeCount = Model.Reviews.Count(review => review.State is "Sent" or "Returned");
+    var attentionCount = Model.Reviews.Count(review => review.State == "Returned" && IndexModel.Stage(review) == "Bei dir");
+    var overdueCount = Model.Reviews.Count(Model.IsOverdue);
+    var stages = new[]
+    {
+        new { Key = "sent", Number = "01", Name = "Draußen", Description = "Rückmeldung ausstehend", Empty = "Erteilte Reviews erscheinen hier." },
+        new { Key = "returned", Number = "02", Name = "Zurück", Description = "Feedback eingegangen", Empty = "Neue Rückmeldungen erscheinen hier." },
+        new { Key = "action", Number = "03", Name = "Bei dir", Description = "Antwort oder Abschluss", Empty = "Hier wartet gerade nichts auf dich." },
+        new { Key = "done", Number = "04", Name = "Erledigt", Description = "Review abgeschlossen", Empty = "Abgeschlossene Reviews bleiben hier sichtbar." }
+    };
 }
 
 <div class="review-pipeline">
-    <header class="document-view__header">
-        <div><p class="document-view__eyebrow">ReviewMyDoc</p><h1>Alles im Blick.</h1><p>Was ist draußen? Was kommt zurück? Und was wartet auf dich?</p></div>
+    <header class="review-pipeline__hero">
+        <div>
+            <p class="review-pipeline__eyebrow">Deine Übersicht</p>
+            <h1>Alles im Blick.</h1>
+            <p>Verfolge deine Reviews vom ersten Auftrag bis zum Abschluss.</p>
+        </div>
         <a class="button button--primary" href="/dokumente/anlegen">Neues Dokument</a>
     </header>
-    @if (Model.Reviews.Any(r => r.State == "Draft"))
+
+    <section class="review-pipeline__snapshot" aria-label="Status auf einen Blick">
+        <div class="review-pipeline__metric"><strong>@activeCount</strong><span>Aktive Reviews</span></div>
+        <div class="review-pipeline__metric"><strong>@attentionCount</strong><span>Bei dir</span></div>
+        <div class="review-pipeline__metric"><strong>@overdueCount</strong><span>Frist überschritten</span></div>
+    </section>
+
+    @if (drafts.Length > 0)
     {
-        <section class="review-pipeline__drafts" aria-label="Gesammelte Passagen">
-            <h2>Review-Sets vorbereiten</h2>
-            @foreach (var draft in Model.Reviews.Where(r => r.State == "Draft"))
-            { <a href="/dokumente/@draft.DocumentId/reviews/@draft.Id">@draft.SetName · @draft.Title · @draft.Passages.Count Passagen · @(draft.CollectionClosedAt is null ? "Sammlung offen" : "Sammlung abgeschlossen") →</a> }
+        <section class="review-pipeline__drafts" aria-labelledby="pipeline-drafts-title">
+            <header class="review-pipeline__section-heading">
+                <div><p class="review-pipeline__eyebrow">Vorbereitung</p><h2 id="pipeline-drafts-title">Review-Sets</h2></div>
+                <span class="review-pipeline__section-count">@drafts.Length</span>
+            </header>
+            <div class="review-pipeline__draft-list">
+                @foreach (var draft in drafts)
+                {
+                    <a class="review-pipeline__draft" href="/dokumente/@draft.DocumentId/reviews/@draft.Id">
+                        <span class="review-pipeline__draft-symbol" aria-hidden="true">✦</span>
+                        <span class="review-pipeline__draft-body">
+                            <strong>@draft.SetName</strong><span>@draft.Title</span>
+                            <small>@draft.Passages.Count @(draft.Passages.Count == 1 ? "Passage" : "Passagen") · @(draft.CollectionClosedAt is null ? "Sammlung offen" : "Bereit zum Zuweisen")</small>
+                        </span>
+                        <span class="review-pipeline__card-arrow" aria-hidden="true">↗</span>
+                    </a>
+                }
+            </div>
         </section>
     }
-    <div class="review-pipeline__columns">
-    @foreach (var stage in new[] { "Draußen", "Zurück", "Bei dir", "Erledigt" })
-    {
-        var items = Model.Reviews.Where(r => r.State != "Revoked" && IndexModel.Stage(r) == stage).ToArray();
-        <section class="review-pipeline__column">
-            <h2>@stage <span>@items.Length</span></h2>
-            @foreach (var review in items)
-            {
-                <article class="review-pipeline__card">
-                    <p class="document-view__eyebrow">@review.ReviewerName</p>
-                    <h3><a href="/dokumente/@review.DocumentId/reviews/@review.Id">@review.SetName</a></h3>
-                    <p>@review.Title</p>
-                    <p>@review.Passages.Count Passagen · @review.DueAt?.ToString("dd.MM.yyyy")</p>
-                    @if (review.State == "Sent") { <p class="@(Model.IsOverdue(review) ? "review-pipeline__overdue" : "")">@Model.Remaining(review)</p> }
-                    @if (stage == "Bei dir") { <p>@(review.Passages.Any(ReviewMyDoc.Core.Reviews.ReviewService.IsOpen) ? "Rückfrage wartet auf deine Antwort" : "Bereit zum Abschließen")</p> }
-                </article>
-            }
-            @if (items.Length == 0)
-            { <p class="review-pipeline__empty">@(stage switch { "Draußen" => "Hier erscheinen deine erteilten Reviews.", "Zurück" => "Neue Rückmeldungen findest du hier.", "Bei dir" => "Hier wartet die abschließende Abnahme.", _ => "Abgeschlossene Reviews bleiben hier im Blick." })</p> }
-        </section>
-    }
-    </div>
-    <p><a href="/dokumente">Zu deinen Dokumenten →</a></p>
+
+    <section class="review-pipeline__board" aria-labelledby="pipeline-board-title">
+        <header class="review-pipeline__section-heading">
+            <div><p class="review-pipeline__eyebrow">Verlauf</p><h2 id="pipeline-board-title">Deine Review-Pipeline</h2></div>
+            <a href="/dokumente">Alle Dokumente <span aria-hidden="true">↗</span></a>
+        </header>
+        <div class="review-pipeline__columns">
+        @foreach (var stage in stages)
+        {
+            var items = Model.Reviews.Where(review => IndexModel.Stage(review) == stage.Name).ToArray();
+            <section class="review-pipeline__column review-pipeline__column--@stage.Key" aria-labelledby="stage-@stage.Key">
+                <header class="review-pipeline__column-heading">
+                    <span class="review-pipeline__step" aria-hidden="true">@stage.Number</span>
+                    <div><h3 id="stage-@stage.Key">@stage.Name</h3><p>@stage.Description</p></div>
+                    <span class="review-pipeline__column-count" aria-label="@(items.Length == 1 ? "1 Review" : $"{items.Length} Reviews")">@items.Length</span>
+                </header>
+                <div class="review-pipeline__card-list">
+                @foreach (var review in items)
+                {
+                    <a class="review-pipeline__card" href="/dokumente/@review.DocumentId/reviews/@review.Id">
+                        <span class="review-pipeline__card-person">@review.ReviewerName</span>
+                        <h4 class="review-pipeline__card-title">@review.SetName</h4>
+                        <span class="review-pipeline__card-document">@review.Title</span>
+                        <span class="review-pipeline__card-meta">
+                            <span>@review.Passages.Count @(review.Passages.Count == 1 ? "Passage" : "Passagen")</span>
+                            @if (review.DueAt is not null)
+                            { <span>Frist @review.DueAt.Value.ToString("dd.MM.yyyy")</span> }
+                        </span>
+                        @if (review.State == "Sent")
+                        { <span class="review-pipeline__card-status @(Model.IsOverdue(review) ? "review-pipeline__card-status--overdue" : "")">@Model.Remaining(review)</span> }
+                        else if (stage.Key == "action")
+                        { <span class="review-pipeline__card-status">@(review.Passages.Any(ReviewService.IsOpen) ? "Rückfrage beantworten" : "Bereit zum Abschließen")</span> }
+                        <span class="review-pipeline__card-arrow" aria-hidden="true">↗</span>
+                    </a>
+                }
+                @if (items.Length == 0)
+                { <p class="review-pipeline__empty">@stage.Empty</p> }
+                </div>
+            </section>
+        }
+        </div>
+    </section>
 </div>
