@@ -119,10 +119,11 @@ function markdown(node) {
 }
 
 // components/document-editor/review-collection.js
-function reviewCollection(root, post) {
+function reviewCollection(root, post, onCollect) {
   const panel = root.querySelector("[data-review-panel]");
   const badges = root.querySelector("[data-review-badges]");
   const selector = root.querySelector("[data-review-select]");
+  const choices = root.querySelector("[data-review-choices]");
   const collectButton = root.querySelector("[data-collect]");
   const list = root.querySelector("[data-collection-list]");
   const link = root.querySelector("[data-collection-link]");
@@ -182,10 +183,35 @@ function reviewCollection(root, post) {
       button.addEventListener("click", () => select(entry.id));
       return button;
     }));
-    selector.replaceChildren(...open.length ? open.map((entry) => new Option(entry.name, entry.id)) : [new Option("Zuerst ein Review-Set anlegen", "")]);
-    selector.value = active;
-    selector.disabled = busy || !open.length;
+    const primary = open.slice(0, 3);
+    choices.replaceChildren(...primary.map((entry) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "document-editor__set-choice";
+      button.dataset.reviewTarget = entry.id;
+      button.setAttribute("aria-label", `Markierung zu ${entry.name} hinzuf\xFCgen`);
+      const dot = document.createElement("span");
+      dot.className = "document-editor__set-choice-dot";
+      dot.setAttribute("aria-hidden", "true");
+      const name = document.createElement("span");
+      name.className = "document-editor__set-choice-name";
+      name.textContent = entry.name;
+      const count = document.createElement("span");
+      count.className = "document-editor__set-choice-count";
+      count.textContent = String(entry.passages.length);
+      button.title = entry.passages.at(-1)?.preview ?? entry.name;
+      button.append(dot, name, count);
+      button.disabled = busy;
+      button.addEventListener("click", () => onCollect(entry.id));
+      return button;
+    }));
+    const additional = open.slice(3);
+    selector.replaceChildren(new Option("Weitere Sets", ""), ...additional.map((entry) => new Option(entry.name, entry.id)));
+    selector.hidden = additional.length === 0;
+    selector.value = additional.some((entry) => entry.id === active) ? active : "";
+    selector.disabled = busy || !additional.length;
     collectButton.disabled = busy || !open.length;
+    collectButton.setAttribute("aria-label", collection ? `Markierung zu ${collection.name} hinzuf\xFCgen` : "Zuerst ein Review-Set anlegen");
     root.querySelector("[data-closed-count]").textContent = String(closed.length);
     root.querySelector("[data-closed-sets-panel]").hidden = closed.length === 0;
     root.querySelector("[data-closed-sets]").replaceChildren(...closed.map((entry) => {
@@ -236,7 +262,9 @@ function reviewCollection(root, post) {
       setBusy(false);
     }
   }
-  selector.addEventListener("change", () => select(selector.value));
+  selector.addEventListener("change", () => {
+    if (selector.value) onCollect(selector.value);
+  });
   create.addEventListener("submit", (event) => {
     event.preventDefault();
     if (busy || !create.reportValidity()) return;
@@ -289,7 +317,9 @@ function safePaste(html) {
   return source.body.innerHTML;
 }
 function init(root) {
-  const collection = reviewCollection(root, post);
+  const collection = reviewCollection(root, post, (targetId) => {
+    void collect(targetId);
+  });
   const status = root.querySelector("[data-save-status]");
   const toolbar = root.querySelector("[data-editor-tools]");
   const saveButton = root.querySelector("[data-save-all]");
@@ -456,8 +486,12 @@ function init(root) {
     document.execCommand(command === "h2" ? "formatBlock" : command, false, command === "h2" ? "h2" : void 0);
     changed();
   }));
-  async function collect() {
-    if (!selected || collecting || collection.isBusy() || !collection.current()) return;
+  async function collect(targetId) {
+    if (!selected || collecting || collection.isBusy()) return;
+    if (targetId) collection.select(targetId);
+    const selectedTarget = collection.current();
+    if (!selectedTarget || targetId && selectedTarget.id !== targetId) return;
+    let target = selectedTarget;
     const parts = [];
     for (const editor of editors) {
       if (!selected.intersectsNode(editor.surface)) continue;
@@ -482,12 +516,13 @@ function init(root) {
           sectionId: part.editor.id,
           etag: part.editor.etag,
           markdown: part.text,
-          draftId: root.dataset.draftId ?? "",
-          draftETag: root.dataset.draftEtag ?? ""
+          draftId: target.id,
+          draftETag: target.etag
         });
+        target = result;
         collection.update(result);
       }
-      const message = `${parts.length === 1 ? "Passage" : "Passagen"} in ${collection.title()} gesammelt.`;
+      const message = `${parts.length === 1 ? "Passage" : "Passagen"} in ${target.name} gesammelt.`;
       report(message);
       root.querySelector("[data-collection-status]").textContent = message;
       toolbar.hidden = true;

@@ -31,7 +31,8 @@
                 <button type="button" data-format="italic" aria-label="Kursiv (Strg+I)"><em>I</em></button>
                 <button type="button" data-format="h2">Überschrift</button>
                 <button type="button" data-format="insertUnorderedList">Liste</button>
-                <select data-review-select aria-label="Review-Set für Markierung"></select>
+                <div class="document-editor__set-choices" data-review-choices role="group" aria-label="Review-Set für Markierung"></div>
+                <select data-review-select aria-label="Weitere Review-Sets" hidden></select>
                 <button type="button" data-collect>Zum Set hinzufügen</button>
             </div>
             @foreach (var entry in sections)

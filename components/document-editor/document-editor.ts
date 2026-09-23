@@ -21,7 +21,7 @@ function safePaste(html: string): string {
 interface Editor { form: HTMLFormElement; surface: HTMLElement; saved: string; etag: string; id: string }
 
 function init(root: HTMLElement): void {
-  const collection = reviewCollection(root, post);
+  const collection = reviewCollection(root, post, targetId => { void collect(targetId); });
   const status = root.querySelector<HTMLElement>('[data-save-status]')!;
   const toolbar = root.querySelector<HTMLElement>('[data-editor-tools]')!;
   const saveButton = root.querySelector<HTMLButtonElement>('[data-save-all]')!;
@@ -156,8 +156,12 @@ function init(root: HTMLElement): void {
     changed();
   }));
 
-  async function collect(): Promise<void> {
-    if (!selected || collecting || collection.isBusy() || !collection.current()) return;
+  async function collect(targetId?: string): Promise<void> {
+    if (!selected || collecting || collection.isBusy()) return;
+    if (targetId) collection.select(targetId);
+    const selectedTarget = collection.current();
+    if (!selectedTarget || (targetId && selectedTarget.id !== targetId)) return;
+    let target: Collection = selectedTarget;
     const parts: { editor: Editor; text: string; source: string }[] = [];
     for (const editor of editors) {
       if (!selected.intersectsNode(editor.surface)) continue;
@@ -179,10 +183,11 @@ function init(root: HTMLElement): void {
           throw new Error('Der Text wurde während des Sammelns geändert. Bitte die Passage erneut markieren.');
         }
         const result = await post<Collection>('Collect', { sectionId: part.editor.id, etag: part.editor.etag, markdown: part.text,
-          draftId: root.dataset.draftId ?? '', draftETag: root.dataset.draftEtag ?? '' });
+          draftId: target.id, draftETag: target.etag });
+        target = result;
         collection.update(result);
       }
-      const message = `${parts.length === 1 ? 'Passage' : 'Passagen'} in ${collection.title()} gesammelt.`;
+      const message = `${parts.length === 1 ? 'Passage' : 'Passagen'} in ${target.name} gesammelt.`;
       report(message);
       root.querySelector<HTMLElement>('[data-collection-status]')!.textContent = message;
       toolbar.hidden = true;

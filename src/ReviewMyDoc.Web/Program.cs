@@ -7,6 +7,7 @@ using System.Text.Unicode;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
+using ReviewMyDoc.Web;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Reviews;
 using ReviewMyDoc.Infrastructure.Markdown;
@@ -25,6 +26,14 @@ if (PasswordHashCommand.TryRun(args, out var commandExitCode))
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+var componentsFolder = FindComponentsFolder(builder.Environment.ContentRootPath);
+var webRootFiles = builder.Environment.WebRootFileProvider;
+// The file version tag helper reads WebRootFileProvider. Give it a view of
+// /components/ while the public static-file middleware keeps its restricted
+// provider and content types below.
+builder.Environment.WebRootFileProvider = new CompositeFileProvider(
+    webRootFiles, new ComponentVersionFileProvider(componentsFolder));
 
 builder.Services.AddRazorPages();
 
@@ -97,7 +106,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions { FileProvider = webRootFiles });
 
 // The building blocks are delivered from the repository folder components/
 // under /components/, with a file provider of their own. That way tokens and
@@ -123,7 +132,7 @@ var componentTypes = new FileExtensionContentTypeProvider(
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(FindComponentsFolder(app.Environment.ContentRootPath)),
+    FileProvider = new PhysicalFileProvider(componentsFolder),
     RequestPath = "/components",
     ContentTypeProvider = componentTypes,
     ServeUnknownFileTypes = false,

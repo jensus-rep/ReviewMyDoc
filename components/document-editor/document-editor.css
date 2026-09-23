@@ -15,7 +15,7 @@
   outline: none;
   padding-block: var(--space-4);
 }
-.document-editor__surface:focus-visible { border-inline-start: var(--hairline-width) solid var(--blue); padding-inline-start: var(--space-3); }
+.document-editor__surface:focus-visible { box-shadow: inset calc(var(--hairline-width) * 2) 0 0 var(--blue); }
 .document-editor__surface:empty::before { content: attr(data-placeholder); color: var(--ink-2); pointer-events: none; }
 .document-editor__surface h1 { font-size: var(--font-size-page-title-web); }
 .document-editor__surface h2 { font-size: var(--font-size-section-title-web); }
@@ -42,6 +42,15 @@
 .document-editor__review[aria-busy="true"], .document-editor__review button:disabled { cursor: progress; }
 .document-editor__collection-status:empty { display: none; }
 .document-editor__tools select { max-width: min(18em, 70vw); min-width: 0; border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); background: var(--surface); color: var(--ink); padding: var(--space-2); font: inherit; }
+.document-editor__tools select[hidden] { display: none; }
+.document-editor__set-choices { display: flex; flex-wrap: wrap; gap: var(--space-1); max-width: 100%; }
+.document-editor__tools .document-editor__set-choice { display: inline-flex; align-items: center; gap: var(--space-2); max-width: 10rem; min-width: 0; padding: var(--space-2); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); background: var(--surface); font-size: var(--font-size-label-app); }
+.document-editor__set-choice:nth-child(1) { --review-set-hue: 205; }
+.document-editor__set-choice:nth-child(2) { --review-set-hue: 318; }
+.document-editor__set-choice:nth-child(3) { --review-set-hue: 71; }
+.document-editor__set-choice-dot { flex: none; width: var(--space-2); height: var(--space-2); border-radius: 50%; background: hsl(var(--review-set-hue, 205) 65% 48%); }
+.document-editor__set-choice-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.document-editor__set-choice-count { flex: none; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .document-editor__review-badge { max-width: 100%; overflow-wrap: anywhere; text-align: start; }
 .document-editor__review-badges { flex-direction: column; align-items: stretch; }
 .document-editor__set-count { display: block; font-size: var(--font-size-label-app); color: var(--ink-2); margin-block-start: var(--space-2); }

@@ -9,10 +9,11 @@ export interface Collection {
 }
 type Post = <T>(handler: string, fields: Record<string, string>) => Promise<T>;
 
-export function reviewCollection(root: HTMLElement, post: Post) {
+export function reviewCollection(root: HTMLElement, post: Post, onCollect: (targetId: string) => void) {
   const panel = root.querySelector<HTMLElement>('[data-review-panel]')!;
   const badges = root.querySelector<HTMLElement>('[data-review-badges]')!;
   const selector = root.querySelector<HTMLSelectElement>('[data-review-select]')!;
+  const choices = root.querySelector<HTMLElement>('[data-review-choices]')!;
   const collectButton = root.querySelector<HTMLButtonElement>('[data-collect]')!;
   const list = root.querySelector<HTMLElement>('[data-collection-list]')!;
   const link = root.querySelector<HTMLAnchorElement>('[data-collection-link]')!;
@@ -67,9 +68,30 @@ export function reviewCollection(root: HTMLElement, post: Post) {
       button.setAttribute('aria-controls', 'review-collection'); button.disabled = busy;
       button.addEventListener('click', () => select(entry.id)); return button;
     }));
-    selector.replaceChildren(...(open.length ? open.map(entry => new Option(entry.name, entry.id)) : [new Option('Zuerst ein Review-Set anlegen', '')]));
-    selector.value = active; selector.disabled = busy || !open.length;
+    const primary = open.slice(0, 3);
+    choices.replaceChildren(...primary.map(entry => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'document-editor__set-choice';
+      button.dataset.reviewTarget = entry.id;
+      button.setAttribute('aria-label', `Markierung zu ${entry.name} hinzufügen`);
+      const dot = document.createElement('span'); dot.className = 'document-editor__set-choice-dot'; dot.setAttribute('aria-hidden', 'true');
+      const name = document.createElement('span'); name.className = 'document-editor__set-choice-name'; name.textContent = entry.name;
+      const count = document.createElement('span'); count.className = 'document-editor__set-choice-count';
+      count.textContent = String(entry.passages.length);
+      button.title = entry.passages.at(-1)?.preview ?? entry.name;
+      button.append(dot, name, count);
+      button.disabled = busy;
+      button.addEventListener('click', () => onCollect(entry.id));
+      return button;
+    }));
+    const additional = open.slice(3);
+    selector.replaceChildren(new Option('Weitere Sets', ''), ...additional.map(entry => new Option(entry.name, entry.id)));
+    selector.hidden = additional.length === 0;
+    selector.value = additional.some(entry => entry.id === active) ? active : '';
+    selector.disabled = busy || !additional.length;
     collectButton.disabled = busy || !open.length;
+    collectButton.setAttribute('aria-label', collection ? `Markierung zu ${collection.name} hinzufügen` : 'Zuerst ein Review-Set anlegen');
     root.querySelector('[data-closed-count]')!.textContent = String(closed.length);
     root.querySelector<HTMLElement>('[data-closed-sets-panel]')!.hidden = closed.length === 0;
     root.querySelector('[data-closed-sets]')!.replaceChildren(...closed.map(entry => {
@@ -102,7 +124,7 @@ export function reviewCollection(root: HTMLElement, post: Post) {
     } catch (error) { failure(error); }
     finally { setBusy(false); }
   }
-  selector.addEventListener('change', () => select(selector.value));
+  selector.addEventListener('change', () => { if (selector.value) onCollect(selector.value); });
   create.addEventListener('submit', event => {
     event.preventDefault();
     if (busy || !create.reportValidity()) return;

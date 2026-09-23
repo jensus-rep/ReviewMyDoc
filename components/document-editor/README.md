@@ -22,7 +22,9 @@ Sammeln wird gespeichert; bei einem Fehler bleibt die Auswahl erhalten. Beim Ver
 ungespeicherten Änderungen warnt der Browser. Gesammelte Passagen liegen auf dem Server.
 
 Review-Sets werden zuerst mit einem Namen angelegt und sofort gespeichert, auch ohne Passagen.
-Die Auswahlleiste an einer Markierung enthält die offenen Sets und „Zum Set hinzufügen“.
+Die Auswahlleiste an einer Markierung zeigt bis zu drei offene Sets als kompakte, farbig
+markierte Schaltflächen. Ein Klick fügt die Passage direkt dem gewählten Set hinzu; weitere
+Sets sind über „Weitere Sets“ erreichbar. „Zum Set hinzufügen“ bleibt für das aktive Set verfügbar.
 Eine Markierung kann auch auf die Ablagefläche oder einen Set-Badge gezogen werden. Dabei wird
 der Text kopiert. Klick und Tastatur bleiben als Alternative verfügbar. Nur „Person zuweisen“
 öffnet die Zuweisungsseite. Während des Sammelns bleibt die Zielsammlung gesperrt; ein
