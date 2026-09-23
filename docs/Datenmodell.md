@@ -169,6 +169,15 @@ gehasht.
 
 ### Ergänzung: Markierungen sammeln und gemeinsam prüfen (23.09.2026)
 
+Benannte Review-Sets werden bereits ohne Passagen als `Draft` gespeichert. `setName` enthält
+ihren Namen (1 bis 80 Zeichen, Standard für ältere Einträge: `Review-Set`).
+`collectionClosedAt` ist zunächst `null`; ein Zeitpunkt schließt die Sammlung für neue Passagen.
+Das ist keine Reviewabnahme: Ein geschlossenes Set bleibt zuweisbar und kann vor der Zuweisung
+wieder zum Sammeln geöffnet werden. Die Markierungsauswahl enthält ausschließlich `Draft`
+mit `collectionClosedAt == null`. Zuweisung und Rückmeldung behalten ihre bisherigen Zustände.
+Anlegen, Schließen, Öffnen und Hinzufügen prüfen Dokumentfreigabe beziehungsweise Auftrags-ETag;
+ein altes Browserfenster kann einem geschlossenen Set keine Passagen mehr hinzufügen.
+
 MVP-Erweiterung: Aufträge tragen `visibility` (`AssignedSectionsOnly` als Standard oder
 `WholeDocument`) und `acceptedAt`. Nur bei `WholeDocument` liefert der Dienst die eingefrorene
 Dokumentversion zusätzlich aus. Rückmeldungen bleiben kompatibel eingebettet: `feedbackKind`

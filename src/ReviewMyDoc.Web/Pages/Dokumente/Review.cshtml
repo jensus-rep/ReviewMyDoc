@@ -9,7 +9,7 @@
 <div class="review-workspace">
     <a href="/dokumente/@review.DocumentId">← Zurück zum Dokument</a>
     <header class="document-view__header">
-        <div><p class="document-view__eyebrow">@review.Title</p><h1>@ViewData["Title"]</h1>
+        <div><p class="document-view__eyebrow">@review.Title</p><h1>@review.SetName</h1>
         <p>@review.Passages.Count Passagen · @(review.State == "Draft" ? "Noch nicht geteilt" : review.ReviewerName)</p></div>
         <a href="/">Zur Pipeline →</a>
     </header>
@@ -37,7 +37,7 @@
                 else if (review.State != "Draft" && ReviewService.Hash(Model.Sources[passage.Id]!.Content) != passage.SourceHash)
                 { <p class="review-workspace__notice">Der aktuelle Abschnitt wurde seit dem Review verändert. Prüfe vor der Übernahme den aktuellen Text.</p>
                   <details><summary>Aktuellen Abschnitt ansehen</summary><div class="review-prose">@Html.Raw(Model.Render(Model.Sources[passage.Id]!.Content))</div></details> }
-                @if (review.State == "Draft")
+                @if (review.State == "Draft" && review.CollectionClosedAt is null)
                 {
                     <form method="post" asp-page-handler="Remove">
                         <input type="hidden" name="etag" value="@Model.Stored.ETag.Value" />
@@ -80,6 +80,8 @@
         <aside class="review-workspace__panel">
         @if (review.State == "Draft")
         {
+            <p>@(review.CollectionClosedAt is null ? "Sammlung offen" : "Sammlung abgeschlossen")</p>
+            <form method="post" asp-page-handler="Decide"><input type="hidden" name="etag" value="@Model.Stored.ETag.Value" /><button class="button button--secondary" name="action" value="@(review.CollectionClosedAt is null ? "close-collection" : "open-collection")">@(review.CollectionClosedAt is null ? "Sammlung abschließen" : "Sammlung wieder öffnen")</button></form>
             <h2>Wer soll mitlesen?</h2>
             <p>Wähle, was die Person lesen darf. Rückmeldungen sind nur an den zugewiesenen Passagen möglich.</p>
             <form method="post" asp-page-handler="Issue">

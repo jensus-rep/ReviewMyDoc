@@ -12,9 +12,9 @@
     @if (Model.Reviews.Any(r => r.State == "Draft"))
     {
         <section class="review-pipeline__drafts" aria-label="Gesammelte Passagen">
-            <h2>Bereit zum Zuweisen</h2>
+            <h2>Review-Sets vorbereiten</h2>
             @foreach (var draft in Model.Reviews.Where(r => r.State == "Draft"))
-            { <a href="/dokumente/@draft.DocumentId/reviews/@draft.Id">@draft.Title · @draft.Passages.Count gesammelte Passagen →</a> }
+            { <a href="/dokumente/@draft.DocumentId/reviews/@draft.Id">@draft.SetName · @draft.Title · @draft.Passages.Count Passagen · @(draft.CollectionClosedAt is null ? "Sammlung offen" : "Sammlung abgeschlossen") →</a> }
         </section>
     }
     <div class="review-pipeline__columns">
@@ -27,7 +27,8 @@
             {
                 <article class="review-pipeline__card">
                     <p class="document-view__eyebrow">@review.ReviewerName</p>
-                    <h3><a href="/dokumente/@review.DocumentId/reviews/@review.Id">@review.Title</a></h3>
+                    <h3><a href="/dokumente/@review.DocumentId/reviews/@review.Id">@review.SetName</a></h3>
+                    <p>@review.Title</p>
                     <p>@review.Passages.Count Passagen · @review.DueAt?.ToString("dd.MM.yyyy")</p>
                     @if (review.State == "Sent") { <p class="@(Model.IsOverdue(review) ? "review-pipeline__overdue" : "")">@Model.Remaining(review)</p> }
                     @if (stage == "Bei dir") { <p>@(review.Passages.Any(ReviewMyDoc.Core.Reviews.ReviewService.IsOpen) ? "Rückfrage wartet auf deine Antwort" : "Bereit zum Abschließen")</p> }

@@ -1,0 +1,105 @@
+/* The message above the outline, on a conflict or a validation error. Same
+   shape as .anmeldung__message; its own class because it belongs to a
+   different page and the two are free to drift apart. */
+.gliederung__meldung {
+  margin: 0 0 var(--space-5);
+  color: var(--ink);
+  font-size: var(--font-size-label-app);
+}
+
+/* The list of sections: no bullet of its own, a hairline between entries
+   instead of the outer border a card would draw around each one - the same
+   idea components/rows uses, but this list needs more than one action per
+   entry, which is why it is not that building block. */
+.gliederung__abschnitte {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gliederung__abschnitt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  border-block-start: var(--hairline-width) solid var(--hairline);
+}
+
+.gliederung__abschnitte > .gliederung__abschnitt:first-child {
+  padding-block-start: 0;
+  border-block-start: none;
+}
+
+.gliederung__abschnitte > .gliederung__abschnitt:last-child {
+  padding-block-end: 0;
+}
+
+.gliederung__nummer {
+  flex: 0 0 auto;
+  min-width: 1.5em;
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The form that renames one section: the field grows, the button sits beside
+   it at the same baseline. */
+.gliederung__umbenennen {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 16em;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.gliederung__umbenennen .field {
+  flex: 1 1 12em;
+  margin: 0;
+}
+
+/* Move up, move down and the link that asks before deleting, kept apart from
+   the renaming form so a narrow screen wraps them onto their own line. */
+.gliederung__aktionen {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.gliederung__aktionen form {
+  margin: 0;
+}
+
+/* The confirmation a delete link opens in place of the row's usual actions.
+   It replaces them rather than adding to them, so there is exactly one way
+   forward once the visitor is here: finish the delete or back out of it. */
+.gliederung__bestaetigung {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.gliederung__bestaetigung p {
+  margin: 0;
+  max-width: var(--measure-text);
+}
+
+.gliederung__bestaetigung-formular {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.gliederung__bestaetigung-formular form {
+  margin: 0;
+}
+
+/* The card that appends a section sits below the outline, with the same
+   distance .karte gives every other gap of its own content. */
+.gliederung__neu {
+  margin-block-start: var(--space-7);
+}

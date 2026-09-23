@@ -1,0 +1,66 @@
+﻿@* Review sets stay compact; passages, completed collections and assignment history are disclosed on demand. *@
+@using System.Text.Json
+@using ReviewMyDoc.Core.Documents
+@model ReviewMyDoc.Web.Pages.Dokumente.BearbeitenModel
+<section class="document-editor__review" id="review-collection" data-review-panel>
+    <h2>Review-Sets</h2>
+    <p class="writing-workspace__hint">Anlegen, Passagen zuordnen, später zuweisen.</p>
+    @if (Model.Document.Document.State != DocumentState.Approved)
+    {
+        <details class="document-editor__create" data-create-set-panel>
+            <summary>+ Review-Set anlegen</summary>
+            <form method="post" asp-page-handler="CreateSet" data-create-set>
+                <label for="set-name">Name des Review-Sets</label>
+                <input id="set-name" name="setName" required maxlength="80" placeholder="Zum Beispiel: Verständlichkeit" autocomplete="off" />
+                <button class="button button--primary" type="submit">Set anlegen</button>
+            </form>
+        </details>
+    }
+    <div data-review-badges class="document-editor__review-badges" aria-label="Offene Review-Sets">
+        @foreach (var draft in Model.Collections)
+        {
+            var state = JsonSerializer.Serialize(Model.CollectionData(draft));
+            <a class="document-editor__review-badge" data-review-draft="@state" hidden="@(draft.Review.CollectionClosedAt is not null)" href="/dokumente/@Model.Document.Document.Id/reviews/@draft.Review.Id">@draft.Review.SetName · @draft.Review.Passages.Count</a>
+        }
+    </div>
+    <p data-sets-empty hidden="@(Model.Collection is not null)" class="writing-workspace__hint">Noch kein offenes Set. Lege eines an, bevor du Passagen zuordnest.</p>
+    <div data-active-set hidden="@(Model.Collection is null)">
+        <div class="document-editor__dropzone" data-review-dropzone>
+            <strong data-collection-destination>@Model.Collection?.Review.SetName</strong>
+            <span class="document-editor__set-count"><span data-collection-count>@(Model.Collection?.Review.Passages.Count ?? 0)</span> <span data-collection-label>Passagen</span></span>
+            <p class="writing-workspace__hint">Markierung hierher ziehen oder direkt im Text zuordnen.</p>
+        </div>
+        <details data-set-details class="document-editor__secondary-details">
+            <summary>Passagen und Aktionen</summary>
+            <ol data-collection-list class="writing-workspace__collection">
+                @foreach (var passage in Model.Collection?.Review.Passages ?? [])
+                { <li>@Model.Preview(passage.Markdown)</li> }
+            </ol>
+            <a class="button button--primary" data-collection-link href="@(Model.Collection is null ? null : $"/dokumente/{Model.Document.Document.Id.Value}/reviews/{Model.Collection.Review.Id}")" hidden="@(Model.Collection is null || Model.Collection.Review.Passages.Count == 0)">Person zuweisen →</a>
+            <form method="post" asp-page-handler="CloseSet" data-close-set>
+                <input type="hidden" name="reviewId" value="@Model.Collection?.Review.Id" />
+                <input type="hidden" name="etag" value="@Model.Collection?.ETag.Value" />
+                <input type="hidden" name="closed" value="true" />
+                <button class="button button--secondary" type="submit">Sammlung abschließen</button>
+            </form>
+            <p class="writing-workspace__hint">Abgeschlossene Sammlungen verschwinden aus der Textauswahl und bleiben zuweisbar.</p>
+        </details>
+    </div>
+    <p class="document-editor__collection-status" role="status" aria-live="polite" data-collection-status></p>
+    <details class="document-editor__secondary-details" data-closed-sets-panel>
+        <summary>Abgeschlossene Sammlungen <span data-closed-count>@Model.Collections.Count(r => r.Review.CollectionClosedAt is not null)</span></summary>
+        <div data-closed-sets>
+        @foreach (var draft in Model.Collections.Where(r => r.Review.CollectionClosedAt is not null))
+        {
+            <p><a href="/dokumente/@Model.Document.Document.Id/reviews/@draft.Review.Id">@draft.Review.SetName · @draft.Review.Passages.Count Passagen</a></p>
+        }
+        </div>
+    </details>
+    @if (Model.ReviewHistory.Count > 0)
+    {
+        <details class="document-editor__secondary-details"><summary>Zugewiesen und erledigt (@Model.ReviewHistory.Count)</summary>
+        @foreach (var entry in Model.ReviewHistory)
+        { <p><a href="/dokumente/@Model.Document.Document.Id/reviews/@entry.Review.Id">@entry.Review.SetName</a><br />@entry.Review.ReviewerName · @(entry.Review.State switch { "Sent" => "Zugewiesen", "Returned" => "Rückmeldung da", "Accepted" => "Erledigt", _ => "Verworfen" })</p> }
+        </details>
+    }
+</section>

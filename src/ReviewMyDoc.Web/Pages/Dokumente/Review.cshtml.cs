@@ -69,6 +69,7 @@ public sealed class ReviewModel(ReviewService reviews, IMarkdownRenderer rendere
         var id = new DocumentIdentifier(documentId);
         var result = action switch
         {
+            "close-collection" or "open-collection" => await reviews.SetCollectionClosedAsync(id, reviewId, etag, action == "close-collection", ct),
             "apply" => await reviews.ApplySuggestionAsync(id, reviewId, etag, passageId ?? "", textETag ?? "", ct),
             "answer" or "reject" => await reviews.RespondAsync(id, reviewId, etag, passageId ?? "", action, Answer, ct),
             _ => await reviews.DecideAsync(id, reviewId, etag, action, passageId, ct)

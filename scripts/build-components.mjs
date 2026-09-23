@@ -48,7 +48,9 @@ async function buildSource(source) {
     format: 'esm',
     target: 'es2022',
     platform: 'browser',
-    bundle: false,
+    // Bundle the editor's private modules so the versioned entry URL invalidates
+    // all of them together. Copied Atelier components keep their original build.
+    bundle: source.endsWith(join('document-editor', 'document-editor.ts')),
     minify: false,
     sourcemap: false,
     logLevel: 'warning'
@@ -56,9 +58,13 @@ async function buildSource(source) {
 }
 
 const sources = await collectSources();
-for (const source of sources) {
+// Explicit .js imports resolve to the generated helpers when those files exist.
+// Emit helpers first so the editor bundle always contains this build's code.
+const editor = sources.find(source => source.endsWith(join('document-editor', 'document-editor.ts')));
+for (const source of sources.filter(source => source !== editor)) {
   await buildSource(source);
 }
+if (editor) await buildSource(editor);
 
 // No output when there is nothing to do: today no component has a .ts file, and
 // a silent run keeps the pipeline log readable.

@@ -25,6 +25,14 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
     /// <summary>Lists assignments for an owner's document.</summary>
     public Task<IReadOnlyList<StoredReview>> ListAsync(DocumentIdentifier documentId, CancellationToken ct) => reviews.ListAsync(documentId, ct);
 
+    /// <summary>Creates a named empty review set.</summary>
+    public Task<ReviewResult> CreateSetAsync(DocumentIdentifier documentId, string? name, CancellationToken ct) =>
+        new ReviewCollectionService(reviews, documents, clock).CreateAsync(documentId, name, ct);
+
+    /// <summary>Ends or resumes passage collection while preserving later assignment.</summary>
+    public Task<ReviewResult> SetCollectionClosedAsync(DocumentIdentifier documentId, string reviewId, string etag, bool closed, CancellationToken ct) =>
+        new ReviewCollectionService(reviews, documents, clock).SetClosedAsync(documentId, reviewId, etag, closed, ct);
+
     /// <summary>Persists a selection against the source version shown in the editor.</summary>
     public async Task<ReviewResult> CollectAsync(DocumentIdentifier documentId, SectionIdentifier sectionId,
         string markdown, string textETag, string? draftId, string? draftETag, CancellationToken ct)
@@ -36,7 +44,7 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
         if (document is null || document.Document.State == DocumentState.Approved || section is null || text is null || text.ETag.Value != textETag) { return new(Error: Conflict); }
 
         var existing = draftId is null ? null : await reviews.ReadAsync(documentId, draftId, ct);
-        if (draftId is not null && (existing is null || existing.ETag.Value != draftETag || existing.Review.State != "Draft"))
+        if (draftId is not null && (existing is null || existing.ETag.Value != draftETag || existing.Review.State != "Draft" || existing.Review.CollectionClosedAt is not null))
         {
             return new(Error: Conflict);
         }
@@ -53,7 +61,7 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
     public async Task<ReviewResult> RemoveAsync(DocumentIdentifier documentId, string reviewId, string passageId, string etag, CancellationToken ct)
     {
         var stored = await reviews.ReadAsync(documentId, reviewId, ct);
-        if (stored is null || stored.ETag.Value != etag || stored.Review.State != "Draft") { return new(Error: Conflict); }
+        if (stored is null || stored.ETag.Value != etag || stored.Review.State != "Draft" || stored.Review.CollectionClosedAt is not null) { return new(Error: Conflict); }
         return await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Where(p => p.Id != passageId)] }, stored, ct);
     }
 

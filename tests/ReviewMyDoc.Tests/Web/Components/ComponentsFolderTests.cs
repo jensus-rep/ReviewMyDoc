@@ -63,8 +63,9 @@ public sealed class ComponentsFolderTests
     [Fact]
     public void The_styles_of_the_application_use_no_raw_values()
     {
-        var css = WithoutComments(File.ReadAllText(
-            Path.Combine(RepositoryRoot(), "src", "ReviewMyDoc.Web", "wwwroot", "css", "site.css")));
+        var directory = Path.Combine(RepositoryRoot(), "src", "ReviewMyDoc.Web", "wwwroot", "css");
+        var css = WithoutComments(string.Join("\n",
+            Directory.EnumerateFiles(directory, "*.css", SearchOption.AllDirectories).Select(File.ReadAllText)));
 
         Assert.DoesNotContain("#", css, StringComparison.Ordinal);
         Assert.DoesNotContain("rgb(", css, StringComparison.Ordinal);

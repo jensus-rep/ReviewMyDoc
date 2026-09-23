@@ -1,7 +1,7 @@
 // Semantic conversion tests guard the stored format independently of the DOM.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeMarkdown, toMarkdown } from './document-editor.ts';
+import { escapeMarkdown, toMarkdown } from './markdown.ts';
 
 test('literal Markdown punctuation stays literal after rich editing', () => {
   assert.equal(escapeMarkdown('*Preis* [EUR]'), '\\*Preis\\* \\[EUR\\]');

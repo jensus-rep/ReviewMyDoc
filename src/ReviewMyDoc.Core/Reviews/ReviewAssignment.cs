@@ -16,7 +16,8 @@ public sealed record ReviewAssignment(string Id, string DocumentId, string Title
     IReadOnlyList<ReviewPassage> Passages, DateTimeOffset CreatedAt,
     string ReviewerName = "", string ReviewerEmail = "", int DocumentVersion = 0,
     DateTimeOffset? DueAt = null, string? TokenHash = null, DateTimeOffset? TokenExpiresAt = null,
-    DateTimeOffset? ReturnedAt = null, string Visibility = "AssignedSectionsOnly", DateTimeOffset? AcceptedAt = null);
+    DateTimeOffset? ReturnedAt = null, string Visibility = "AssignedSectionsOnly", DateTimeOffset? AcceptedAt = null,
+    string SetName = "Review-Set", DateTimeOffset? CollectionClosedAt = null);
 
 /// <summary>A recipient's input, never a source of assignment membership.</summary>
 public sealed record ReviewFeedback(string Text, string Kind = "Comment", string? ProposedMarkdown = null);

@@ -22,7 +22,7 @@ public sealed class ReviewWorkflowTests
         var (id, section, text) = await CreateAsync(app);
         var page = await owner.GetStringAsync($"/dokumente/{id}", Ct);
         Assert.Contains("data-editor-surface", page);
-        Assert.Contains("Für das Review", page);
+        Assert.Contains("Review-Sets", page);
         var fields = new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = Token(page),
@@ -144,6 +144,51 @@ public sealed class ReviewWorkflowTests
         var accepted = await owner.PostAsync($"/dokumente/{id}?handler=Collect", new FormUrlEncodedContent(fields), Ct);
         Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
         Assert.Contains("passages", await accepted.Content.ReadAsStringAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Separate_draft_collections_reappear_as_badges_and_only_the_chosen_draft_is_issued()
+    {
+        using var app = new OwnerApplication();
+        using var owner = await app.CreateOwnerClientAsync();
+        var (id, section, text) = await CreateAsync(app);
+        var service = app.Services.GetRequiredService<ReviewService>();
+        var first = (await service.CollectAsync(id, section, "Öffentliche Passage", text.ETag.Value, null, null, Ct)).Stored!;
+        var second = (await service.CollectAsync(id, section, "VERTRAULICHER REST", text.ETag.Value, null, null, Ct)).Stored!;
+        Assert.NotEqual(first.Review.Id, second.Review.Id);
+        var html = await owner.GetStringAsync($"/dokumente/{id}", Ct);
+        Assert.Equal(2, Regex.Matches(html, "data-review-draft=").Count);
+        Assert.Contains($"/reviews/{first.Review.Id}", html);
+        Assert.Contains($"/reviews/{second.Review.Id}", html);
+        Assert.DoesNotContain("data-assign", html);
+        var issued = await service.IssueAsync(id, second.Review.Id, second.ETag.Value, "Anna", null, DateTimeOffset.UtcNow.AddDays(7), Ct);
+        Assert.Null(issued.Error);
+        Assert.Equal("Draft", (await service.LoadAsync(id, first.Review.Id, Ct))!.Review.State);
+        html = await owner.GetStringAsync($"/dokumente/{id}", Ct);
+        Assert.Single(Regex.Matches(html, "data-review-draft="));
+        Assert.Contains($"/reviews/{first.Review.Id}", html);
+        Assert.Contains("Zugewiesen und erledigt", html);
+    }
+
+    [Fact]
+    public async Task Collecting_without_javascript_returns_to_the_document_collection()
+    {
+        using var app = new OwnerApplication();
+        using var owner = await app.CreateOwnerClientAsync();
+        var (id, section, text) = await CreateAsync(app);
+        var html = await owner.GetStringAsync($"/dokumente/{id}", Ct);
+        var response = await owner.PostAsync($"/dokumente/{id}?handler=CollectSection", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["sectionId"] = section.Value,
+            ["etag"] = text.ETag.Value,
+            ["__RequestVerificationToken"] = Token(html),
+        }), Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal($"/dokumente/{id}", response.RequestMessage?.RequestUri?.AbsolutePath);
+        Assert.Contains("data-review-draft=", await response.Content.ReadAsStringAsync(Ct));
+        var draft = Assert.Single(await app.Services.GetRequiredService<ReviewService>().ListAsync(id, Ct));
+        Assert.Equal("Draft", draft.Review.State);
+        Assert.Single(draft.Review.Passages);
     }
 
     private static async Task<(DocumentIdentifier Id, SectionIdentifier Section, StoredSectionText Text)> CreateAsync(OwnerApplication app)

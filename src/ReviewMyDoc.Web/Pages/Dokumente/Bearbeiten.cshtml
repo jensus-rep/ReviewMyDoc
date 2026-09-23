@@ -16,6 +16,7 @@
         <span role="status" aria-live="polite" data-save-status>@(Model.Message is null ? "Alle Änderungen gespeichert" : "Eingabe bitte prüfen")</span>
         <nav aria-label="Dokumentaktionen">
             <button class="button button--secondary" type="button" data-save-all hidden>Speichern</button>
+            <button class="button button--secondary" type="button" data-open-reviews hidden>Review-Sets</button>
             <a href="/dokumente/@document.Id.Value/gliederung">Gliederung</a>
             <a href="/">Pipeline</a>
         </nav>
@@ -30,8 +31,8 @@
                 <button type="button" data-format="italic" aria-label="Kursiv (Strg+I)"><em>I</em></button>
                 <button type="button" data-format="h2">Überschrift</button>
                 <button type="button" data-format="insertUnorderedList">Liste</button>
-                <button type="button" data-collect>+ Sammeln</button>
-                <button type="button" data-assign>Zum Review →</button>
+                <select data-review-select aria-label="Review-Set für Markierung"></select>
+                <button type="button" data-collect>Zum Set hinzufügen</button>
             </div>
             @foreach (var entry in sections)
             {
@@ -51,24 +52,22 @@
                     }
                 </form>
                 @if (document.State != DocumentState.Approved && entry.Id.Length > 0)
-                { <noscript><form method="post" asp-page-handler="CollectSection"><input type="hidden" name="sectionId" value="@entry.Id" /><input type="hidden" name="etag" value="@entry.ETag" /><button class="button button--secondary">Diesen Abschnitt zum Review sammeln</button></form></noscript> }
+                { <noscript><form method="post" asp-page-handler="CollectSection"><input type="hidden" name="sectionId" value="@entry.Id" /><input type="hidden" name="etag" value="@entry.ETag" />
+                    <label for="set-@entry.Id">Review-Set für diesen Abschnitt</label><select id="set-@entry.Id" name="draftId" required>
+                    @foreach (var set in Model.Collections.Where(r => r.Review.CollectionClosedAt is null)) { <option value="@set.Review.Id">@set.Review.SetName</option> }
+                    </select><button class="button button--secondary" disabled="@(Model.Collection is null)">Diesen Abschnitt zum Review sammeln</button>
+                    @if (Model.Collection is null) { <p>Lege zuerst ein Review-Set in der Seitenleiste an.</p> }
+                </form></noscript> }
             }
         </article>
         <aside class="writing-workspace__review" aria-label="Review vorbereiten">
             <p class="writing-workspace__eyebrow">Zusammen weiterdenken</p>
-            <h2>Für das Review</h2>
-            <p>Markiere Text im Dokument. Weise ihn direkt zu oder sammle mehrere Passagen für einen gemeinsamen Auftrag.</p>
-            <p class="writing-workspace__count"><span data-collection-count>@(Model.Collection?.Review.Passages.Count ?? 0)</span> <span data-collection-label>@(Model.Collection?.Review.Passages.Count == 1 ? "Passage gesammelt" : "Passagen gesammelt")</span></p>
-            <ol data-collection-list class="writing-workspace__collection">
-                @foreach (var passage in Model.Collection?.Review.Passages ?? [])
-                { <li>@Model.Preview(passage.Markdown)</li> }
-            </ol>
-            <a class="button button--primary" data-collection-link href="@(Model.Collection is null ? null : $"/dokumente/{document.Id.Value}/reviews/{Model.Collection.Review.Id}")" hidden="@(Model.Collection is null)">Sammlung zuweisen →</a>
+            <partial name="_ReviewCollection" model="Model" />
             <p><a href="/">Aufträge &amp; Rückmeldungen ansehen</a></p>
-            <p class="writing-workspace__hint">Beim Zuweisen bestimmst du, ob nur Passagen oder das ganze Dokument lesbar sind.</p>
-            <h2>Dokumentfreigabe</h2>
+            <details class="document-editor__secondary-details"><summary>Dokumentfreigabe</summary>
             <p>@(document.State == DocumentState.Approved ? "Freigegeben. Vor weiteren Änderungen bitte wieder öffnen." : "Nach Abnahme aller Aufträge kannst du das Dokument ausdrücklich freigeben.")</p>
             <form method="post" asp-page-handler="Approval"><input type="hidden" name="etag" value="@Model.Document.ETag.Value" /><input type="hidden" name="approve" value="@(document.State != DocumentState.Approved ? "true" : "false")" /><button class="button button--secondary">@(document.State == DocumentState.Approved ? "Zur Bearbeitung öffnen" : "Dokument freigeben")</button></form>
+            </details>
         </aside>
     </div>
 </div>

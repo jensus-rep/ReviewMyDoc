@@ -1,0 +1,96 @@
+/* Application styles for the review view. */
+.review-workspace > a {
+  display: inline-block;
+  margin-block-end: var(--space-6);
+}
+
+.review-workspace__passage {
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  padding: var(--space-7);
+  margin-block-end: var(--space-5);
+  background: var(--surface);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-m);
+  overflow-wrap: anywhere;
+}
+
+.review-prose {
+  font-size: var(--font-size-text-web);
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.review-prose table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.review-prose td, .review-prose th {
+  border: var(--hairline-width) solid var(--hairline);
+  padding: var(--space-3);
+}
+
+.review-prose blockquote {
+  border-inline-start: var(--space-1) solid var(--hairline);
+  padding-inline-start: var(--space-4);
+  margin-inline: 0;
+}
+
+.review-workspace__feedback, .review-workspace__notice {
+  padding: var(--space-5);
+  margin-block: var(--space-5);
+  border-radius: var(--radius-s);
+  background: var(--art-chrome-quiet);
+}
+
+.review-workspace__feedback p {
+  white-space: pre-wrap;
+}
+
+.review-workspace label, .review-reader label {
+  display: block;
+  margin-block: var(--space-5) var(--space-2);
+}
+
+.review-workspace input:not([type="hidden"]), .review-reader input:not([type="hidden"]), .review-reader textarea,
+.review-workspace textarea, .review-workspace select, .review-reader select {
+  box-sizing: border-box;
+  width: 100%;
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-s);
+  padding: var(--space-3);
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  margin-block-end: var(--space-4);
+}
+
+.review-reader {
+  max-width: 52em;
+  margin-inline: auto;
+}
+
+.review-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.review-comparison > section {
+  padding: var(--space-4);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+@media (max-width: 48em) {
+  .review-comparison { grid-template-columns: minmax(0, 1fr); }
+}
+
+.review-workspace__panel details {
+  margin-block-start: var(--space-5);
+}
+
+.review-workspace__panel summary {
+  cursor: pointer;
+}

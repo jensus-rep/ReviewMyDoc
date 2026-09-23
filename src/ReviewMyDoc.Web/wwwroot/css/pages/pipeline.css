@@ -1,0 +1,85 @@
+/* Application styles for the pipeline view. */
+.review-pipeline__columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin-block: var(--space-7);
+}
+
+.review-pipeline__column {
+  border: var(--hairline-width) solid var(--hairline);
+  box-shadow: var(--well-shadow);
+  min-height: 22em;
+  background: var(--bg-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-5);
+}
+
+.app__main .review-pipeline__column > h2 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-text-web);
+}
+
+.review-pipeline__column h2 span {
+  color: var(--ink-2);
+}
+
+.review-pipeline__card {
+  border: var(--hairline-width) solid var(--hairline);
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  padding: var(--space-5);
+  margin-block-end: var(--space-4);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.review-pipeline__card h3 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-text-web);
+}
+
+.review-pipeline__card p {
+  font-size: var(--font-size-label-app);
+  color: var(--ink-2);
+}
+
+.review-pipeline__empty {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-web);
+}
+
+.review-pipeline__drafts {
+  padding: var(--space-5);
+  border: var(--hairline-width) solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+
+.app__main .review-pipeline__drafts h2 {
+  margin-block-start: 0;
+}
+
+.review-pipeline__drafts a {
+  display: block;
+  padding-block: var(--space-2);
+}
+
+.review-pipeline__overdue {
+  font-weight: var(--font-weight-title);
+  text-decoration: underline;
+}
+
+
+@media (max-width: 64em) {
+  .review-pipeline__columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48em) {
+  .review-pipeline__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

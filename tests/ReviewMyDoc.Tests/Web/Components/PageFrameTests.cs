@@ -36,7 +36,7 @@ public sealed class PageFrameTests : IClassFixture<OwnerApplication>
     // and only wins at equal specificity because it stands after them, and
     // site.css sets the values of a building block.
     [Fact]
-    public async Task The_tokens_stand_first_the_theme_after_them_and_site_css_last()
+    public async Task The_tokens_stand_first_the_theme_after_them_and_application_styles_after_components()
     {
         var html = await GetHtmlAsync("/");
 
@@ -48,6 +48,31 @@ public sealed class PageFrameTests : IClassFixture<OwnerApplication>
         Assert.True(tokens < theme, "The theme has to be loaded after the tokens.");
         Assert.True(theme < button, "The theme has to be loaded before the building blocks.");
         Assert.True(button < site, "site.css has to be loaded after the building blocks.");
+    }
+
+    // Missing feature styles would leave either the owner or recipient view unstyled.
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/review/example/example")]
+    public async Task Both_layouts_load_versioned_application_styles_that_are_delivered_as_css(string path)
+    {
+        var token = TestContext.Current.CancellationToken;
+        var client = await _factory.OwnerClientAsync();
+        var html = await client.GetStringAsync(path, token);
+        var previous = html.IndexOf("/components/button/button.css", StringComparison.Ordinal);
+        Assert.True(previous >= 0);
+
+        foreach (var stylesheet in new[] { "site", "pages/outline", "pages/documents", "pages/workspace", "pages/review", "pages/pipeline" })
+        {
+            var url = $"/css/{stylesheet}.css";
+            var position = html.IndexOf($"href=\"{url}?v=", StringComparison.Ordinal);
+            Assert.True(position > previous, $"Missing or out-of-order stylesheet: {url}");
+            previous = position;
+            using var response = await client.GetAsync(url, token);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("text/css", response.Content.Headers.ContentType?.MediaType);
+            Assert.False(string.IsNullOrWhiteSpace(await response.Content.ReadAsStringAsync(token)));
+        }
     }
 
     // The frame belongs to every page, not only to the start page.

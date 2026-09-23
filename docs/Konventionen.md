@@ -54,32 +54,47 @@ Directory.Build.props          Nullable, TreatWarningsAsErrors, LangVersion, gem
 src/ReviewMyDoc.Web/           ASP.NET Core Razor Pages
   Program.cs                   Komposition: Dienste, Middleware, Security-Header, /components/
   Pages/                       Übersicht (Startseite nach Anmeldung), Anmeldung, Dokumentliste
-  Pages/Documents/             Dokument bearbeiten, gliedern, Reviewauftrag erteilen, Rücklauf
+  Pages/Dokumente/             Dokument bearbeiten, gliedern, Reviewauftrag erteilen, Rücklauf
   Pages/Review/                Reviewansicht unter /review/{token}, eigener Rahmen ohne Navigation
   Pages/Shared/                _Layout.cshtml, _ReviewLayout.cshtml
   Pages/Shared/Ui/             Razor-Partials der Bausteine, Modell je Partial als record daneben
   Security/                    Passwortanmeldung, Link-Session, Ratenbegrenzung, Header, Data Protection
-  Ai/                          Endpunkte der Textunterstützung, Streaming über Server-Sent Events
-  wwwroot/                     site.css, Bilder; keine Kopien aus components/
+  wwwroot/css/site.css         Gemeinsamer Anwendungsrahmen und Formulare
+  wwwroot/css/pages/           Stile je Ansicht, einschließlich ihrer Breakpoints
+  wwwroot/images/              Bilder; keine Kopien aus components/
   appsettings.json             alle Schlüssel mit Entwicklungswerten, keine Secrets
 src/ReviewMyDoc.Core/          Fachlichkeit; kennt weder ASP.NET noch Azure noch einen AI-Anbieter
-  Documents/                   Document, Section, DocumentService, IDocumentStore
-  Reviews/                     ReviewAssignment, ReviewService, IReviewStore, Tokenerzeugung
-  Feedback/                    FeedbackItem, FeedbackService, IFeedbackStore
-  Pipeline/                    Projektion der Übersicht aus Dokumenten und Aufträgen
-  Ai/                          IAiTextService, Aufgabenarten, Prompts
+  Documents/                   Fassade DocumentService, Ergebnis und Speichervertrag
+    Models/                    Aggregat, Abschnitte, Kennungen und Zustände
+    Operations/                Text, Gliederung, Teilung und gemeinsame Schreibregeln
+    Versions/                  Unveränderliche Fassungen, Vergleich und Versionsdienst
+    Persistence/               Store, Pfade und JSON-Abbildung
+  Reviews/                     Auftrag und Rückmeldungen, Fassade und Store
+    Operations/                Entscheidungen, Dokumentfreigabe und Pipelineprojektion
   Storage/                     IObjectStore: lesen, schreiben mit ETag, auflisten, anhängen
 src/ReviewMyDoc.Infrastructure/
   Storage/                     BlobObjectStore (Azure), DirectoryObjectStore (lokal)
-  Ai/                          AnthropicTextService, OpenAiTextService
-  Mail/                        SmtpMailer, ConsoleMailer
 tests/ReviewMyDoc.Tests/       xUnit: Unit-Tests für Core, Integrationstests mit WebApplicationFactory
+  Documents/Operations/        Testklassen je Dokumentoperation
+  Documents/Support/           Gemeinsamer Aufbau mit echtem Verzeichnisspeicher
+  Web/                         Documents, Reviews, Security, Components und Support
 components/                    framework-freie Bausteine, Regeln in components/README.md
 docs/                          Konzept.md, Datenmodell.md, Konventionen.md, Betrieb.md
 ```
 
 `ReviewMyDoc.Web` liefert den Repo-Ordner `components/` unter `/components/` aus, wie in Atelier,
 damit Tokens und Bausteine genau einmal existieren.
+
+Unterordner ordnen die Pflegebereiche innerhalb eines Features. Die öffentlichen Namespaces
+bleiben auf Feature-Ebene (`ReviewMyDoc.Core.Documents`, `ReviewMyDoc.Core.Reviews`), damit
+eine Änderung der Ablage keine Änderung aller Aufrufer erfordert. Webtests verwenden weiterhin
+`ReviewMyDoc.Tests.Web`. Razor-Pages bleiben wegen ihrer Routen an ihren bestehenden Orten.
+AI- und Mailordner werden erst mit einer tatsächlichen Implementierung angelegt.
+
+Dateien ab etwa 400 Zeilen werden auf mehrere Zuständigkeiten geprüft. Die Zeilenzahl ist ein
+Prüfanlass, kein starres Limit: zusammenhängende Invarianten und Speicherverträge bleiben
+zusammen. Aufteilungen folgen Fachoperationen und werden durch bestehende Tests abgesichert.
+Aktuelle Entscheidungen und Pflegegrenzen stehen in [Architektur.md](Architektur.md).
 
 ## Bausteine und ihre Herkunft
 

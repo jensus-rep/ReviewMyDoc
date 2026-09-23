@@ -1,4 +1,4 @@
-/* Document editor 1.0.0. Prose remains the visual centre; the native editing
+/* Document editor 1.2.0. Prose remains the visual centre; the native editing
    host brings selection, spelling and undo, with no textbox frame. */
 :where(.document-editor) {
   --document-editor-font-size: var(--font-size-text-web);
@@ -28,5 +28,28 @@
 .document-editor__tools button { border: 0; border-radius: var(--radius-s); padding: var(--space-3); background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
 .document-editor__tools button:hover { background: var(--bg-2); }
 .document-editor__tools button:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); }
-.document-editor__tools button[data-assign] { background: var(--blue); color: var(--bg); }
+.document-editor__tools button[data-collect] { background: var(--blue); color: var(--bg); }
 .document-editor textarea { box-sizing: border-box; width: 100%; font: inherit; padding: var(--space-4); }
+.document-editor__review-toggle { cursor: pointer; font-weight: var(--font-weight-title); padding-block: var(--space-3); }
+.document-editor__review-toggle > span { display: block; margin-block-start: var(--space-2); font-size: var(--font-size-label-app); font-weight: normal; color: var(--ink-2); }
+.document-editor__review-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-4); }
+.document-editor__review-badge { display: inline-flex; align-items: center; border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-m); background: var(--surface); padding: var(--space-2) var(--space-3); font: inherit; font-size: var(--font-size-label-app); color: var(--ink); cursor: pointer; text-decoration: none; }
+.document-editor__review-badge[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: var(--bg); box-shadow: var(--shadow-float); }
+.document-editor__review-badge:focus-visible, .document-editor__new-review:focus-visible, .document-editor__review-toggle:focus-visible { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+.document-editor__new-review { border: 0; background: transparent; color: var(--blue); padding: var(--space-2) 0; font: inherit; cursor: pointer; }
+.document-editor__dropzone { margin-block: var(--space-4); padding: var(--space-4); border: var(--hairline-width) dashed var(--hairline); border-radius: var(--radius-m); background: var(--bg-2); overflow-wrap: anywhere; }
+.document-editor__review [data-drop-active] { outline: calc(var(--hairline-width) * 2) solid var(--blue); outline-offset: var(--space-1); }
+.document-editor__review[aria-busy="true"], .document-editor__review button:disabled { cursor: progress; }
+.document-editor__collection-status:empty { display: none; }
+.document-editor__tools select { max-width: min(18em, 70vw); min-width: 0; border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); background: var(--surface); color: var(--ink); padding: var(--space-2); font: inherit; }
+.document-editor__review-badge { max-width: 100%; overflow-wrap: anywhere; text-align: start; }
+.document-editor__review-badges { flex-direction: column; align-items: stretch; }
+.document-editor__set-count { display: block; font-size: var(--font-size-label-app); color: var(--ink-2); margin-block-start: var(--space-2); }
+.document-editor__create { margin-block: var(--space-4); }
+.document-editor__create summary, .document-editor__secondary-details summary { cursor: pointer; padding-block: var(--space-3); }
+.document-editor__create form { display: grid; gap: var(--space-3); margin-block: var(--space-3); }
+.document-editor__create input { box-sizing: border-box; width: 100%; min-width: 0; background: var(--surface); color: var(--ink); border: var(--hairline-width) solid var(--hairline); border-radius: var(--radius-s); padding: var(--space-3); font: inherit; }
+.document-editor__secondary-details { border-block-start: var(--hairline-width) solid var(--hairline); margin-block-start: var(--space-4); }
+.document-editor__secondary-details form { margin-block: var(--space-3); }
+.document-editor__closed-set { display: grid; gap: var(--space-2); padding-block: var(--space-3); overflow-wrap: anywhere; }
+.document-editor__closed-set button { text-align: start; }

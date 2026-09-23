@@ -1,0 +1,166 @@
+/* The writing workspace presents one paper surface with review work beside it. */
+.app:has(.writing-workspace, .review-workspace, .review-pipeline) {
+  --app-width: 92em;
+}
+
+.writing-workspace [hidden] {
+  display: none;
+}
+
+.writing-workspace__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-block-end: var(--space-7);
+}
+
+.writing-workspace__header nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.writing-workspace__header [role="status"] {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+  max-width: 38em;
+}
+
+.writing-workspace__layout, .review-workspace__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(16em, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.writing-workspace__paper {
+  min-height: 65em;
+  min-width: 0;
+  padding: var(--space-10) var(--space-11);
+  border: var(--hairline-width) solid var(--hairline);
+  background: var(--surface);
+  border-radius: var(--radius-s);
+  box-shadow: var(--surface-edge), var(--paper-shadow);
+}
+
+.app__main .writing-workspace__paper > h1 {
+  font-size: var(--font-size-page-title-web);
+  letter-spacing: var(--letter-spacing-page-title-web);
+  margin-block-end: var(--space-8);
+  overflow-wrap: anywhere;
+}
+
+.writing-workspace__eyebrow {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-app);
+}
+
+.app__main .document-editor__surface h1 {
+  font-size: var(--font-size-page-title-web);
+}
+
+.app__main .document-editor__surface h2, .app__main .document-editor__section-heading {
+  font-size: var(--font-size-section-title-web);
+  margin-block: var(--space-6) var(--space-4);
+}
+
+.app__main .document-editor__surface p {
+  max-width: none;
+  margin-block: 0 var(--space-5);
+}
+
+.writing-workspace__review, .review-workspace__panel {
+  border: var(--hairline-width) solid var(--hairline);
+  box-shadow: var(--surface-edge), var(--surface-shadow);
+  position: sticky;
+  top: var(--space-7);
+  padding: var(--space-6);
+  background: var(--surface-sheen);
+  border-radius: var(--radius-m);
+}
+
+.app__main .writing-workspace__review h2, .app__main .review-workspace__panel h2 {
+  margin-block-start: 0;
+  font-size: var(--font-size-text-web);
+}
+
+.writing-workspace__review > p, .review-workspace__panel > p {
+  color: var(--ink-2);
+}
+
+.writing-workspace__count {
+  border-block-start: var(--hairline-width) solid var(--hairline);
+  padding-block-start: var(--space-5);
+}
+
+.writing-workspace__collection {
+  padding-inline-start: var(--space-5);
+  max-height: 24em;
+  overflow-y: auto;
+}
+
+.writing-workspace__collection li {
+  padding-block: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.writing-workspace__review .button {
+  margin-block-end: var(--space-5);
+}
+
+.writing-workspace__hint {
+  font-size: var(--font-size-label-app);
+}
+
+
+@media (max-width: 64em) {
+  .writing-workspace__paper {
+    padding: var(--space-8);
+  }
+
+
+}
+
+@media (max-width: 48em) {
+  .writing-workspace__layout, .review-workspace__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .writing-workspace__review, .review-workspace__panel {
+    position: static;
+  }
+
+  .writing-workspace__paper {
+    padding: var(--space-6);
+    min-height: 35em;
+  }
+
+  .app__main .writing-workspace__paper > h1 {
+    font-size: var(--font-size-section-title-web);
+  }
+
+
+}
+
+@media print {
+  .app {
+    background: var(--surface);
+  }
+  .app__header, .app__footer, .writing-workspace__header, .writing-workspace__review, .document-editor__tools {
+    display: none;
+  }
+
+  .writing-workspace__layout {
+    display: block;
+  }
+
+  .writing-workspace__paper {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+}

@@ -24,6 +24,10 @@ public sealed class BearbeitenModel(IDocumentStore store, DocumentService docume
     public IReadOnlyList<EditorSection> Sections { get; private set; } = [];
     /// <summary>The collection resumed when this document is reopened.</summary>
     public StoredReview? Collection { get; private set; }
+    /// <summary>Separate draft collections that can later be assigned to different people.</summary>
+    public IReadOnlyList<StoredReview> Collections { get; private set; } = [];
+    /// <summary>Assigned and completed sets, available on demand outside the selection menu.</summary>
+    public IReadOnlyList<StoredReview> ReviewHistory { get; private set; } = [];
     /// <summary>A form validation or conflict message.</summary>
     public string? Message { get; private set; }
 
@@ -49,7 +53,10 @@ public sealed class BearbeitenModel(IDocumentStore store, DocumentService docume
             sections.Add(new(entry.Id.Value, entry.Heading, text?.Content ?? "", renderer.Render(text?.Content ?? ""), text?.ETag.Value ?? ""));
         }
         Sections = sections;
-        Collection = (await reviews.ListAsync(id!, ct)).FirstOrDefault(r => r.Review.State == "Draft");
+        var sets = (await reviews.ListAsync(id!, ct)).OrderBy(r => r.Review.CreatedAt).ThenBy(r => r.Review.Id).ToArray();
+        Collections = sets.Where(r => r.Review.State == "Draft").ToArray();
+        Collection = Collections.FirstOrDefault(r => r.Review.CollectionClosedAt is null);
+        ReviewHistory = sets.Where(r => r.Review.State != "Draft").ToArray();
         return Page();
     }
 
@@ -89,17 +96,19 @@ public sealed class BearbeitenModel(IDocumentStore store, DocumentService docume
     }
 
     /// <summary>Collects a complete section using ordinary HTML forms without JavaScript.</summary>
-    public async Task<IActionResult> OnPostCollectSectionAsync(string documentId, string sectionId, string etag, CancellationToken ct)
+    public async Task<IActionResult> OnPostCollectSectionAsync(string documentId, string sectionId, string etag, CancellationToken ct, string? draftId = null)
     {
         if (!TryId(documentId, out var id) || !TryId(sectionId, out _)) { return NotFound(); }
         var text = await store.ReadSectionTextAsync(id!, new SectionIdentifier(sectionId), ct);
         if (text is null) { return NotFound(); }
         var page = await OnGetAsync(documentId, ct);
         if (page is not PageResult) { return page; }
+        var target = draftId is null ? Collection : Collections.FirstOrDefault(r => r.Review.Id == draftId && r.Review.CollectionClosedAt is null);
+        if (draftId is not null && target is null) { Message = ReviewService.Conflict; Response.StatusCode = 409; return Page(); }
         var result = await reviews.CollectAsync(id!, new SectionIdentifier(sectionId), text.Content, etag,
-            Collection?.Review.Id, Collection?.ETag.Value, ct);
+            target?.Review.Id, target?.ETag.Value, ct);
         if (result.Error is not null) { Message = result.Error; Response.StatusCode = 409; return Page(); }
-        return Redirect($"/dokumente/{documentId}/reviews/{result.Stored!.Review.Id}");
+        return Redirect($"/dokumente/{documentId}#review-collection");
     }
 
     private async Task<IActionResult> SaveConflictAsync(string documentId, string? sectionId, string? markdown, string? etag, CancellationToken ct)
@@ -123,12 +132,45 @@ public sealed class BearbeitenModel(IDocumentStore store, DocumentService docume
         if (!TryId(documentId, out var id) || !TryId(sectionId, out _)) { return BadRequest(); }
         var result = await reviews.CollectAsync(id!, new SectionIdentifier(sectionId), markdown, etag, draftId, draftETag, ct);
         return result.Error is not null ? new JsonResult(new { error = result.Error }) { StatusCode = 409 }
-            : new JsonResult(new
-            {
-                id = result.Stored!.Review.Id,
-                etag = result.Stored.ETag.Value,
-                passages = result.Stored.Review.Passages.Select(p => new { p.Id, p.Heading, preview = Preview(p.Markdown) })
-            });
+            : new JsonResult(CollectionData(result.Stored!));
+    }
+
+    /// <summary>Only presentation data crosses into the collection controls.</summary>
+    public object CollectionData(StoredReview stored) => new
+    {
+        id = stored.Review.Id,
+        etag = stored.ETag.Value,
+        name = stored.Review.SetName,
+        closed = stored.Review.CollectionClosedAt is not null,
+        passages = stored.Review.Passages.Select(p => new { id = p.Id, heading = p.Heading, preview = Preview(p.Markdown) })
+    };
+
+    /// <summary>Creates a named set without requiring a text selection.</summary>
+    public async Task<IActionResult> OnPostCreateSetAsync(string documentId, string? setName, CancellationToken ct)
+    {
+        if (!TryId(documentId, out var id)) { return BadRequest(); }
+        return await SetResultAsync(documentId, await reviews.CreateSetAsync(id!, setName, ct), ct);
+    }
+
+    /// <summary>Closes or reopens collecting while keeping the set assignable.</summary>
+    public async Task<IActionResult> OnPostCloseSetAsync(string documentId, string reviewId, string etag, bool closed, CancellationToken ct)
+    {
+        if (!TryId(documentId, out var id) || !TryId(reviewId, out _)) { return BadRequest(); }
+        return await SetResultAsync(documentId, await reviews.SetCollectionClosedAsync(id!, reviewId, etag, closed, ct), ct);
+    }
+
+    private async Task<IActionResult> SetResultAsync(string documentId, ReviewResult result, CancellationToken ct)
+    {
+        if (Request.Headers["X-Requested-With"] == "fetch")
+        {
+            return result.Error is null ? new JsonResult(CollectionData(result.Stored!))
+                : new JsonResult(new { error = result.Error }) { StatusCode = 409 };
+        }
+        if (result.Error is null) { return Redirect($"/dokumente/{documentId}#review-collection"); }
+        var page = await OnGetAsync(documentId, ct);
+        Message = result.Error;
+        Response.StatusCode = 409;
+        return page;
     }
 
     private JsonResult ConflictResult() => new(new { error = ReviewService.Conflict }) { StatusCode = 409 };
