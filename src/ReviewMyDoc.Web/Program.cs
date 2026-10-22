@@ -7,12 +7,14 @@ using System.Text.Unicode;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
-using ReviewMyDoc.Web;
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Reviews;
+using ReviewMyDoc.Infrastructure.Audit;
 using ReviewMyDoc.Infrastructure.Markdown;
 using ReviewMyDoc.Infrastructure.Security;
 using ReviewMyDoc.Infrastructure.Storage;
+using ReviewMyDoc.Web;
 using ReviewMyDoc.Web.Security;
 
 // Before anything else: the application can be called to print a password hash
@@ -59,6 +61,9 @@ builder.Services.AddObjectStore(builder.Configuration);
 // over the one object store, and the clock is the real one everywhere but in a
 // test, which hands the service a fixed one instead.
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IAuditFailureReporter, AuditFailureReporter>();
+builder.Services.AddSingleton<AuditLog>();
+builder.Services.AddSingleton<DocumentHistoryService>();
 builder.Services.AddSingleton<IDocumentStore, DocumentStore>();
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentEditingService>();

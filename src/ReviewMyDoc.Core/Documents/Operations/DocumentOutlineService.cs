@@ -1,10 +1,11 @@
 // Owns additions, ordering, renaming and removal of outline entries.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Documents;
 
 /// <summary>Owns additions, ordering, renaming and removal of outline entries.</summary>
-internal sealed class DocumentOutlineService(IDocumentStore store, TimeProvider clock) : DocumentOperations(store, clock)
+internal sealed class DocumentOutlineService(IDocumentStore store, TimeProvider clock, AuditLog audit) : DocumentOperations(store, clock, audit)
 {
     /// <summary>Appends a section with a heading and an empty text.</summary>
     /// <param name="documentId">Which document.</param>
@@ -71,6 +72,7 @@ internal sealed class DocumentOutlineService(IDocumentStore store, TimeProvider 
 
         if (written is ObjectWriteResult.Written created)
         {
+            await _audit.RecordAsync(documentId, AuditEventKind.SectionAdded, cancellationToken, sectionId: sectionId.Value);
             return new DocumentResult.Success(changed, created.ETag);
         }
 
@@ -123,7 +125,7 @@ internal sealed class DocumentOutlineService(IDocumentStore store, TimeProvider 
 
         var changed = stored.Document.RenameSection(sectionId, heading, Now());
 
-        return await WriteChangeAsync(changed, expectedETag, cancellationToken);
+        return await WriteChangeAsync(changed, expectedETag, cancellationToken, AuditEventKind.SectionRenamed, sectionId.Value);
     }
 
     /// <summary>Puts the sections of a document in another order.</summary>
@@ -179,7 +181,7 @@ internal sealed class DocumentOutlineService(IDocumentStore store, TimeProvider 
 
         var changed = document.Reorder(orderedSectionIds, Now());
 
-        return await WriteChangeAsync(changed, expectedETag, cancellationToken);
+        return await WriteChangeAsync(changed, expectedETag, cancellationToken, AuditEventKind.SectionsReordered);
     }
 
     /// <summary>Removes one section with its text.</summary>
@@ -263,6 +265,7 @@ internal sealed class DocumentOutlineService(IDocumentStore store, TimeProvider 
             return new DocumentResult.Conflict();
         }
 
+        await _audit.RecordAsync(documentId, AuditEventKind.SectionDeleted, cancellationToken, sectionId: sectionId.Value);
         await _store.DeleteSectionTextAsync(documentId, sectionId, cancellationToken);
 
         return new DocumentResult.Success(changed, removed.ETag);

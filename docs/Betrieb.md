@@ -471,3 +471,18 @@ Im Testprozess `REVIEWMYDOC_TEST_BLOB_CONNECTIONSTRING=UseDevelopmentStorage=tru
 Der Emulator verwendet Port 10000; die Anwendung bleibt auf 5071. Jeder Test legt einen eigenen
 Container an und räumt ihn auf. Dies prüft das Blob-Protokoll, ersetzt aber keinen Nachweis der
 Managed Identity und Rollenvergabe im späteren Azure-Betrieb.
+
+### Dokumenthistorie
+
+Über „Historie“ am Dokument und am Reviewauftrag öffnet der Eigentümer die Ereignisse
+unter `/dokumente/{documentId}/historie`, neueste zuerst. Die Ansicht benötigt keine zusätzlichen
+Einstellungen. Sie verwendet `audit.log` in der bestehenden Dokumentablage und zeigt Kennungen
+als aktuelle Abschnittsüberschriften beziehungsweise Empfängernamen. Bei gelöschten Einträgen
+bleibt die Kennung sichtbar. Reviewerzugänge gewähren keinen Zugriff auf die Historie.
+
+Aufgezeichnet werden bestätigte Dokument-, Text-, Versions-, Sammlungs- und Reviewänderungen.
+Dokumentinhalte, Namen, Mailadressen, Tokens und Hashes stehen nicht im Log; Namen werden erst
+beim Lesen aufgelöst. Ältere Dokumente beginnen ohne rückwirkend erfundene Ereignisse.
+Scheitert ein Loganhang, bleibt die Fachänderung gespeichert. Im Anwendungsprotokoll erscheint
+eine Warnung mit Ereignisart, Dokumentkennung und Fehlertyp; die Historie kann dann eine Lücke
+enthalten. Fachänderung und Anhang sind keine gemeinsame Transaktion.

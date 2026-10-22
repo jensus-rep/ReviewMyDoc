@@ -1,4 +1,5 @@
 // Stable document API; cohesive operation classes own outline, split and version workflows.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Documents;
@@ -8,7 +9,7 @@ public sealed class DocumentService : DocumentOperations
 {
     private readonly TimeProvider _clock;
     /// <summary>Builds the document facade with the shared store and clock.</summary>
-    public DocumentService(IDocumentStore store, TimeProvider clock) : base(store, clock)
+    public DocumentService(IDocumentStore store, TimeProvider clock, AuditLog audit) : base(store, clock, audit)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(clock);
@@ -40,9 +41,9 @@ public sealed class DocumentService : DocumentOperations
 
         var written = await _store.WriteAsync(document, WriteCondition.MustNotExist, cancellationToken);
 
-        return written is ObjectWriteResult.Written created
-            ? new DocumentResult.Success(document, created.ETag)
-            : new DocumentResult.Conflict();
+        if (written is not ObjectWriteResult.Written created) { return new DocumentResult.Conflict(); }
+        await _audit.RecordAsync(document.Id, AuditEventKind.DocumentCreated, cancellationToken);
+        return new DocumentResult.Success(document, created.ETag);
     }
 
     /// <summary>Lists every document, newest change first.</summary>
@@ -100,7 +101,7 @@ public sealed class DocumentService : DocumentOperations
 
         var changed = stored!.Document.Rename(title, Now());
 
-        return await WriteChangeAsync(changed, expectedETag, cancellationToken);
+        return await WriteChangeAsync(changed, expectedETag, cancellationToken, AuditEventKind.DocumentRenamed);
     }
 
     /// <summary>Delegates to the operation that owns this change.</summary>
@@ -109,7 +110,7 @@ public sealed class DocumentService : DocumentOperations
         string heading,
         ETag expectedETag,
         CancellationToken cancellationToken) =>
-        new DocumentOutlineService(_store, _clock).AddSectionAsync(documentId, heading, expectedETag, cancellationToken);
+        new DocumentOutlineService(_store, _clock, _audit).AddSectionAsync(documentId, heading, expectedETag, cancellationToken);
 
     /// <summary>Delegates to the operation that owns this change.</summary>
     public Task<DocumentResult> RenameSectionAsync(
@@ -118,7 +119,7 @@ public sealed class DocumentService : DocumentOperations
         string heading,
         ETag expectedETag,
         CancellationToken cancellationToken) =>
-        new DocumentOutlineService(_store, _clock).RenameSectionAsync(documentId, sectionId, heading, expectedETag, cancellationToken);
+        new DocumentOutlineService(_store, _clock, _audit).RenameSectionAsync(documentId, sectionId, heading, expectedETag, cancellationToken);
 
     /// <summary>Delegates to the operation that owns this change.</summary>
     public Task<DocumentResult> ReorderSectionsAsync(
@@ -126,7 +127,7 @@ public sealed class DocumentService : DocumentOperations
         IReadOnlyList<SectionIdentifier> orderedSectionIds,
         ETag expectedETag,
         CancellationToken cancellationToken) =>
-        new DocumentOutlineService(_store, _clock).ReorderSectionsAsync(documentId, orderedSectionIds, expectedETag, cancellationToken);
+        new DocumentOutlineService(_store, _clock, _audit).ReorderSectionsAsync(documentId, orderedSectionIds, expectedETag, cancellationToken);
 
     /// <summary>Delegates to the operation that owns this change.</summary>
     public Task<DocumentResult> DeleteSectionAsync(
@@ -134,7 +135,7 @@ public sealed class DocumentService : DocumentOperations
         SectionIdentifier sectionId,
         ETag expectedETag,
         CancellationToken cancellationToken) =>
-        new DocumentOutlineService(_store, _clock).DeleteSectionAsync(documentId, sectionId, expectedETag, cancellationToken);
+        new DocumentOutlineService(_store, _clock, _audit).DeleteSectionAsync(documentId, sectionId, expectedETag, cancellationToken);
 
     /// <summary>Delegates to the operation that owns this change.</summary>
     public Task<DocumentResult> SplitSectionAsync(
@@ -145,20 +146,20 @@ public sealed class DocumentService : DocumentOperations
         string heading,
         ETag expectedETag,
         CancellationToken cancellationToken) =>
-        new DocumentSplitService(_store, _clock).SplitSectionAsync(documentId, sectionId, markStart, markEnd, heading, expectedETag, cancellationToken);
+        new DocumentSplitService(_store, _clock, _audit).SplitSectionAsync(documentId, sectionId, markStart, markEnd, heading, expectedETag, cancellationToken);
 
     /// <summary>Delegates to the operation that owns this change.</summary>
     public Task<DocumentResult> FreezeVersionAsync(
         DocumentIdentifier documentId,
         ETag expectedETag,
         CancellationToken cancellationToken) =>
-        new DocumentVersionService(_store, _clock).FreezeVersionAsync(documentId, expectedETag, cancellationToken);
+        new DocumentVersionService(_store, _clock, _audit).FreezeVersionAsync(documentId, expectedETag, cancellationToken);
 
     /// <summary>Delegates to the operation that owns this change.</summary>
     public Task<VersionComparisonResult> FindChangedSectionsAsync(
         DocumentIdentifier documentId,
         int version,
         CancellationToken cancellationToken) =>
-        new DocumentVersionService(_store, _clock).FindChangedSectionsAsync(documentId, version, cancellationToken);
+        new DocumentVersionService(_store, _clock, _audit).FindChangedSectionsAsync(documentId, version, cancellationToken);
 
 }

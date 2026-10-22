@@ -3,6 +3,7 @@
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Storage;
 
@@ -10,7 +11,7 @@ namespace ReviewMyDoc.Core.Reviews;
 
 /// <summary>The complete collected-passage review lifecycle.</summary>
 public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents, DocumentService documentService, TimeProvider clock,
-    DocumentEditingService editing)
+    DocumentEditingService editing, AuditLog audit)
 {
     /// <summary>The same conflict message is used for every stale write.</summary>
     public const string Conflict = "Inzwischen geändert. Bitte neu laden; deine Eingabe wurde nicht überschrieben.";
@@ -27,11 +28,11 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
 
     /// <summary>Creates a named empty review set.</summary>
     public Task<ReviewResult> CreateSetAsync(DocumentIdentifier documentId, string? name, CancellationToken ct) =>
-        new ReviewCollectionService(reviews, documents, clock).CreateAsync(documentId, name, ct);
+        new ReviewCollectionService(reviews, documents, clock, audit).CreateAsync(documentId, name, ct);
 
     /// <summary>Ends or resumes passage collection while preserving later assignment.</summary>
     public Task<ReviewResult> SetCollectionClosedAsync(DocumentIdentifier documentId, string reviewId, string etag, bool closed, CancellationToken ct) =>
-        new ReviewCollectionService(reviews, documents, clock).SetClosedAsync(documentId, reviewId, etag, closed, ct);
+        new ReviewCollectionService(reviews, documents, clock, audit).SetClosedAsync(documentId, reviewId, etag, closed, ct);
 
     /// <summary>Persists a selection against the source version shown in the editor.</summary>
     public async Task<ReviewResult> CollectAsync(DocumentIdentifier documentId, SectionIdentifier sectionId,
@@ -54,7 +55,13 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
         if (draft.Passages.Count >= 100) { return new(Error: "Ein Auftrag kann höchstens 100 Passagen enthalten."); }
         var passage = new ReviewPassage(DocumentIdentifier.Draw().Value, sectionId.Value, section.Heading, markdown.Trim(), Hash(text.Content));
         var changed = draft with { Passages = [.. draft.Passages, passage] };
-        return await WriteAsync(changed, existing, ct);
+        var result = await WriteAsync(changed, existing, ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, AuditEventKind.PassageCollected, ct,
+                sectionId: sectionId.Value, reviewId: draft.Id, passageId: passage.Id);
+        }
+        return result;
     }
 
     /// <summary>Removes a collected passage without changing the document text.</summary>
@@ -62,7 +69,15 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
     {
         var stored = await reviews.ReadAsync(documentId, reviewId, ct);
         if (stored is null || stored.ETag.Value != etag || stored.Review.State != "Draft" || stored.Review.CollectionClosedAt is not null) { return new(Error: Conflict); }
-        return await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Where(p => p.Id != passageId)] }, stored, ct);
+        var passage = stored.Review.Passages.FirstOrDefault(p => p.Id == passageId);
+        if (passage is null) { return new(Error: Conflict); }
+        var result = await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Where(p => p.Id != passageId)] }, stored, ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, AuditEventKind.PassageRemoved, ct,
+                sectionId: passage.SectionId, reviewId: reviewId, passageId: passageId);
+        }
+        return result;
     }
 
     /// <summary>Freezes a version and issues a review link for the collected excerpts.</summary>
@@ -114,6 +129,10 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
             await documents.WriteAsync(frozenDocument.Document.WithState(DocumentState.InReview, clock.GetUtcNow()),
                 WriteCondition.MustMatch(frozenDocument.ETag), ct) is not ObjectWriteResult.Written) { return new(Error: Conflict); }
         var result = await WriteAsync(changed, stored, ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, AuditEventKind.ReviewIssued, ct, reviewId: reviewId, version: version.Version);
+        }
         return result.Error is null ? result with { Token = token } : result;
     }
 
@@ -186,7 +205,12 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
                 Resolved = false
             };
         }).ToArray();
-        return await WriteAsync(stored.Review with { Passages = passages, State = "Returned", ReturnedAt = clock.GetUtcNow() }, stored, ct);
+        var result = await WriteAsync(stored.Review with { Passages = passages, State = "Returned", ReturnedAt = clock.GetUtcNow() }, stored, ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, AuditEventKind.ReviewReturned, ct, reviewId: reviewId, actor: AuditActor.Reviewer);
+        }
+        return result;
     }
 
     /// <summary>Whether feedback still needs an explicit owner decision.</summary>
@@ -195,16 +219,16 @@ public sealed class ReviewService(ReviewStore reviews, IDocumentStore documents,
 
     /// <summary>Resolves a comment, closes an assignment or revokes access.</summary>
     public Task<ReviewResult> DecideAsync(DocumentIdentifier documentId, string reviewId, string etag, string action, string? passageId, CancellationToken ct) =>
-        new ReviewDecisionService(reviews, documents, editing, clock).DecideAsync(documentId, reviewId, etag, action, passageId, ct);
+        new ReviewDecisionService(reviews, documents, editing, clock, audit).DecideAsync(documentId, reviewId, etag, action, passageId, ct);
     /// <summary>Answers a question or rejects a suggestion.</summary>
     public Task<ReviewResult> RespondAsync(DocumentIdentifier documentId, string reviewId, string etag, string passageId, string action, string? answer, CancellationToken ct) =>
-        new ReviewDecisionService(reviews, documents, editing, clock).RespondAsync(documentId, reviewId, etag, passageId, action, answer, ct);
+        new ReviewDecisionService(reviews, documents, editing, clock, audit).RespondAsync(documentId, reviewId, etag, passageId, action, answer, ct);
     /// <summary>Applies a suggestion using the text version reviewed by the owner.</summary>
     public Task<ReviewResult> ApplySuggestionAsync(DocumentIdentifier documentId, string reviewId, string etag, string passageId, string textETag, CancellationToken ct) =>
-        new ReviewDecisionService(reviews, documents, editing, clock).ApplySuggestionAsync(documentId, reviewId, etag, passageId, textETag, ct);
+        new ReviewDecisionService(reviews, documents, editing, clock, audit).ApplySuggestionAsync(documentId, reviewId, etag, passageId, textETag, ct);
     /// <summary>Releases or explicitly reopens the document.</summary>
     public Task<string?> SetDocumentApprovalAsync(DocumentIdentifier documentId, string etag, bool approve, CancellationToken ct) =>
-        new DocumentApprovalService(reviews, documents, clock).SetDocumentApprovalAsync(documentId, etag, approve, ct);
+        new DocumentApprovalService(reviews, documents, clock, audit).SetDocumentApprovalAsync(documentId, etag, approve, ct);
     private async Task<ReviewResult> WriteAsync(ReviewAssignment review, StoredReview? before, CancellationToken ct)
     {
         var written = await reviews.WriteAsync(review, before is null ? WriteCondition.MustNotExist : WriteCondition.MustMatch(before.ETag), ct);

@@ -1,8 +1,10 @@
 // Provides a fresh directory store and shared assertions for each document operation test.
 
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Storage;
 using ReviewMyDoc.Infrastructure.Storage;
+using ReviewMyDoc.Tests.Audit;
 
 namespace ReviewMyDoc.Tests.Documents;
 
@@ -28,7 +30,7 @@ public abstract class DocumentServiceTestBase : IDisposable
     protected DocumentServiceTestBase()
     {
         _objects = new DirectoryObjectStore(_root);
-        _service = new DocumentService(new DocumentStore(_objects), _clock);
+        _service = new DocumentService(new DocumentStore(_objects), _clock, new AuditLog(_objects, _clock, new RecordingAuditFailures()));
     }
 
     protected static CancellationToken Token => CancellationToken.None;

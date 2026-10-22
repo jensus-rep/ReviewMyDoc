@@ -1,10 +1,11 @@
 // Owns splitting a section and compensating intermediate text writes.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Documents;
 
 /// <summary>Owns splitting a section and compensating intermediate text writes.</summary>
-internal sealed class DocumentSplitService(IDocumentStore store, TimeProvider clock) : DocumentOperations(store, clock)
+internal sealed class DocumentSplitService(IDocumentStore store, TimeProvider clock, AuditLog audit) : DocumentOperations(store, clock, audit)
 {
     /// <summary>Splits one section into up to three at the edges of a marked stretch of its text.</summary>
     /// <param name="documentId">Which document.</param>
@@ -151,7 +152,7 @@ internal sealed class DocumentSplitService(IDocumentStore store, TimeProvider cl
             // go but stay exactly where it is - see the remarks above.
             var renamed = document.RenameSection(sectionId, trimmedHeading, now);
 
-            return await WriteChangeAsync(renamed, expectedETag, cancellationToken);
+            return await WriteChangeAsync(renamed, expectedETag, cancellationToken, AuditEventKind.SectionRenamed, sectionId.Value);
         }
 
         // The part that keeps sectionId is the one holding the first character
@@ -224,6 +225,7 @@ internal sealed class DocumentSplitService(IDocumentStore store, TimeProvider cl
             return new DocumentResult.Conflict();
         }
 
+        await _audit.RecordAsync(documentId, AuditEventKind.SectionSplit, cancellationToken, sectionId: sectionId.Value);
         {
             // See the remarks above: only now, with document.json already
             // committed to the split, is it safe to shorten the text that stayed

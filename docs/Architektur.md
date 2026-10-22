@@ -16,6 +16,7 @@ einen klaren Pflegebereich, keine zusätzliche Benutzerrolle. AI gehört nicht z
 | Rückmeldungsentscheidung | `ReviewDecisionService` | Bearbeiten, Antworten, Übernehmen, Ablehnen, Abnehmen, Widerrufen |
 | Dokumentfreigabe | `DocumentApprovalService` | Alle Aufträge prüfen, freigeben, ausdrücklich wieder öffnen |
 | Übersicht | `ReviewPipeline` | Vier Spalten, Fristen über `TimeProvider`, 30 Tage für Erledigt |
+| Historie | `AuditLog`, `DocumentHistoryService` | Bestätigte Fachereignisse anhängen, Kennungen nur beim Lesen auflösen |
 | Speicherung | `DocumentStore`, `ReviewStore` | Pfade und JSON, keine Darstellung |
 | Darstellung | Razor PageModels und Bausteine | Eingaben, Validierung, sichere Ausgabe |
 
@@ -28,6 +29,12 @@ Neue Funktionen werden dem zuständigen Dienst zugeordnet, nicht der Fassade hin
 Reviewentscheidungen verwenden dasselbe Auftrags-ETag. Eine Textübernahme betrifft zwei
 Einträge; ihr Zwischenzustand `Applying` macht die Operation nach einem abgebrochenen Aufruf
 wiederaufnehmbar. Solche internen Arbeitsdaten verlassen die Eigentümergrenze nicht.
+
+Fachdienste rufen `AuditLog` nach dem jeweiligen bestätigten Schreibvorgang auf. Das Log besitzt
+seinen Pfad und seine JSON-Abbildung selbst; es hält weder Dokumenttexte noch Zugangsdaten.
+`IAuditFailureReporter` trennt die Fehlerbeobachtung vom Fachcode. Die Implementierung in
+Infrastructure schreibt eine Warnung ohne Ausnahmeinhalt. Die Historie wird nur auf der
+Eigentümerseite aufgerufen und löst Kennungen anhand aktueller Abschnitte und Aufträge auf.
 
 Für spätere AI-Unterstützung bleibt die Grenze vorgesehen: anbieterunabhängige Schnittstelle
 in Core, Anbieterimplementierungen in Infrastructure, ausdrückliche Übernahme in der Webschicht.

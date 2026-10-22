@@ -3,6 +3,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Reviews;
 using ReviewMyDoc.Core.Storage;
@@ -190,11 +191,18 @@ public sealed class MvpReviewTests
         Assert.NotNull((await service.DecideAsync(id, issued.Review.Id, reserved.ETag.Value, "accept", null, Ct)).Error);
         Assert.NotNull((await service.RespondAsync(id, issued.Review.Id, reserved.ETag.Value, p.Id, "reject", null, Ct)).Error);
         await app.Services.GetRequiredService<DocumentEditingService>().SaveAsync(id, section, target, current.ETag, Ct);
+        var audit = app.Services.GetRequiredService<AuditLog>();
+        var textEvents = (await audit.ReadAsync(id, Ct)).Count(e => e.Kind == AuditEventKind.TextSaved);
         var written = (await store.ReadSectionTextAsync(id, section, Ct))!;
         var resumed = await service.ApplySuggestionAsync(id, issued.Review.Id, reserved.ETag.Value, p.Id, current.ETag.Value, Ct);
         Assert.Null(resumed.Error);
         Assert.Equal("Applied", resumed.Stored!.Review.Passages[0].Decision);
         Assert.Equal(written, await store.ReadSectionTextAsync(id, section, Ct));
+        var entries = await audit.ReadAsync(id, Ct);
+        Assert.Equal(textEvents, entries.Count(e => e.Kind == AuditEventKind.TextSaved));
+        Assert.Single(entries, e => e.Kind == AuditEventKind.SuggestionApplied);
+        Assert.NotNull((await service.ApplySuggestionAsync(id, issued.Review.Id, resumed.Stored.ETag.Value, p.Id, current.ETag.Value, Ct)).Error);
+        Assert.Equal(entries.Count, (await audit.ReadAsync(id, Ct)).Count);
     }
 
     [Fact]

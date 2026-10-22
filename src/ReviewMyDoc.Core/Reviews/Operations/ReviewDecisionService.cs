@@ -1,4 +1,5 @@
 // Owns final feedback decisions and recoverable suggestion application.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Storage;
 using static ReviewMyDoc.Core.Reviews.ReviewService;
@@ -6,7 +7,7 @@ using static ReviewMyDoc.Core.Reviews.ReviewService;
 namespace ReviewMyDoc.Core.Reviews;
 
 /// <summary>Owner decisions, separated from reviewer capability access.</summary>
-public sealed class ReviewDecisionService(ReviewStore reviews, IDocumentStore documents, DocumentEditingService editing, TimeProvider clock)
+public sealed class ReviewDecisionService(ReviewStore reviews, IDocumentStore documents, DocumentEditingService editing, TimeProvider clock, AuditLog audit)
 {
     /// <summary>Resolves feedback, accepts a completed review, or revokes its capability.</summary>
     public async Task<ReviewResult> DecideAsync(DocumentIdentifier documentId, string reviewId, string etag,
@@ -24,7 +25,21 @@ public sealed class ReviewDecisionService(ReviewStore reviews, IDocumentStore do
             "revoke" when review.State is "Draft" or "Sent" or "Returned" && review.Passages.All(p => p.Decision != "Applying") => review with { State = "Revoked", TokenHash = null },
             _ => null,
         };
-        return changed is null ? new(Error: "Bitte zuerst alle Rückmeldungen bearbeiten.") : await WriteAsync(changed, stored, ct);
+        if (changed is null) { return new(Error: "Bitte zuerst alle Rückmeldungen bearbeiten."); }
+        var result = await WriteAsync(changed, stored, ct);
+        if (result.Error is null)
+        {
+            var kind = action switch
+            {
+                "accept" => AuditEventKind.ReviewAccepted,
+                "revoke" => AuditEventKind.ReviewRevoked,
+                _ => AuditEventKind.FeedbackResolved
+            };
+            var passage = action == "resolve" ? review.Passages.First(p => p.Id == passageId) : null;
+            await audit.RecordAsync(documentId, kind, ct, sectionId: passage?.SectionId,
+                reviewId: reviewId, passageId: passage?.Id);
+        }
+        return result;
     }
 
     /// <summary>Answers questions or rejects suggestions exactly once.</summary>
@@ -45,7 +60,13 @@ public sealed class ReviewDecisionService(ReviewStore reviews, IDocumentStore do
             Answer = action == "answer" ? answer!.Trim() : null,
             DecidedAt = clock.GetUtcNow()
         };
-        return await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Select(p => p.Id == passageId ? changed : p)] }, stored, ct);
+        var result = await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Select(p => p.Id == passageId ? changed : p)] }, stored, ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, action == "answer" ? AuditEventKind.QuestionAnswered : AuditEventKind.SuggestionRejected,
+                ct, sectionId: passage.SectionId, reviewId: reviewId, passageId: passageId);
+        }
+        return result;
     }
 
     /// <summary>Applies an unambiguous quotation replacement with recoverable two-entry persistence.</summary>
@@ -98,7 +119,13 @@ public sealed class ReviewDecisionService(ReviewStore reviews, IDocumentStore do
             ApplicationETag = null,
             ApplicationHash = null
         };
-        return await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Select(p => p.Id == passageId ? complete : p)] }, stored, ct);
+        var result = await WriteAsync(stored.Review with { Passages = [.. stored.Review.Passages.Select(p => p.Id == passageId ? complete : p)] }, stored, ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, AuditEventKind.SuggestionApplied, ct,
+                sectionId: passage.SectionId, reviewId: reviewId, passageId: passageId);
+        }
+        return result;
     }
 
     private async Task<ReviewResult> WriteAsync(ReviewAssignment review, StoredReview? before, CancellationToken ct)
