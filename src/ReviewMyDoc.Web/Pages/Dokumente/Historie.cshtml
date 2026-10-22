@@ -1,0 +1,31 @@
+@page "/dokumente/{documentId}/historie"
+@* Readable owner history; Razor encodes every resolved name and identifier. *@
+@using System.Globalization
+@model HistorieModel
+@{
+    ViewData["Title"] = "Dokumenthistorie";
+    var document = Model.History.Document;
+    var german = CultureInfo.GetCultureInfo("de-DE");
+}
+<div class="document-view">
+    <a class="document-view__back" href="/dokumente/@document.Id.Value">← Zurück zum Dokument</a>
+    <header class="document-view__header">
+        <div><p class="document-view__eyebrow">@document.Title</p><h1>Dokumenthistorie</h1></div>
+    </header>
+    @if (Model.History.Entries.Count == 0)
+    {
+        <p>Für dieses Dokument sind noch keine Ereignisse aufgezeichnet.</p>
+    }
+    else
+    {
+        <ol class="document-history" aria-label="Änderungen, neueste zuerst">
+            @foreach (var entry in Model.History.Entries)
+            {
+                <li>
+                    <time datetime="@entry.OccurredAt.ToString("O", CultureInfo.InvariantCulture)">@entry.OccurredAt.UtcDateTime.ToString("dd.MM.yyyy HH:mm:ss", german) UTC</time>
+                    <p>@entry.Description</p>
+                </li>
+            }
+        </ol>
+    }
+</div>

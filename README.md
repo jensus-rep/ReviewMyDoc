@@ -39,6 +39,8 @@ Rückfragen. Vorschläge werden ausdrücklich übernommen oder abgelehnt; Antwor
 erscheinen über denselben Link. Nach der Abnahme endet jeder Reviewerzugriff. Sind alle Aufträge
 geschlossen, kann das Dokument freigegeben und bei Bedarf ausdrücklich wieder geöffnet werden.
 Die Pipeline zeigt Fristen, offene Entscheidungen und Abschlüsse der letzten 30 Tage.
+Die Dokumenthistorie zeigt dem Eigentümer, wer wann welche Änderung ausgelöst hat. Sie wird
+ab jetzt aus bestätigten Änderungen aufgebaut; bestehende Dokumente erhalten keine rückwirkenden Einträge.
 Ohne JavaScript bleiben formatierter Text, Bearbeitungsformulare und das Sammeln ganzer Abschnitte
 verfügbar. AI-Unterstützung und Word-Dateiimport gehören nicht zum MVP.
 Die Aufteilung der Dienste und ihre Pflegebereiche stehen in [docs/Architektur.md](docs/Architektur.md).

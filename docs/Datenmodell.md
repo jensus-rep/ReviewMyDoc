@@ -163,6 +163,8 @@ schreibt bereits bestätigte Schritte nicht erneut. Das Log wird ausschließlich
 Scheitert das Anhängen, bleibt die Änderung bestehen; eine Warnung im Anwendungsprotokoll
 nennt nur Ereignisart, Dokumentkennung und Fehlertyp. Zwischen Fachänderung und Log besteht
 keine Transaktion: Ein Prozessabbruch oder Speicherfehler kann deshalb eine Lücke hinterlassen.
+Die Historie ist ausschließlich für den Eigentümer zugänglich und löst Kennungen anhand der
+aktuellen Dokumente und Aufträge auf; gelöschte Kennungen bleiben lesbar erhalten.
 
 ## Zusicherungen
 

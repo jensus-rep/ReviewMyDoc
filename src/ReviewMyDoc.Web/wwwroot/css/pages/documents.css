@@ -1,5 +1,19 @@
 /* Document pages use a reading surface with quiet, opt-in editing controls.
 All colours follow the shared theme, including the system dark preference. */
+.document-history {
+  padding-inline-start: var(--space-6);
+}
+
+.document-history li {
+  padding-block: var(--space-4);
+  overflow-wrap: anywhere;
+}
+
+.document-history time {
+  color: var(--ink-2);
+  font-size: var(--font-size-label-web);
+}
+
 .app:has(.document-view, .document-library) {
   --app-width: 80em;
 }

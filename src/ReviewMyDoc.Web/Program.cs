@@ -63,6 +63,7 @@ builder.Services.AddObjectStore(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAuditFailureReporter, AuditFailureReporter>();
 builder.Services.AddSingleton<AuditLog>();
+builder.Services.AddSingleton<DocumentHistoryService>();
 builder.Services.AddSingleton<IDocumentStore, DocumentStore>();
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentEditingService>();
