@@ -1,11 +1,12 @@
 // Reads and conditionally saves the text behind the writing surface. Section
 // membership is checked here so pages cannot write arbitrary text blobs.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Documents;
 
 /// <summary>Text operations for the document editor.</summary>
-public sealed class DocumentEditingService(IDocumentStore store, TimeProvider clock)
+public sealed class DocumentEditingService(IDocumentStore store, TimeProvider clock, AuditLog audit)
 {
     /// <summary>Saves a section only against the text version the writer saw.</summary>
     public async Task<ObjectWriteResult> SaveAsync(DocumentIdentifier documentId, SectionIdentifier sectionId,
@@ -21,6 +22,7 @@ public sealed class DocumentEditingService(IDocumentStore store, TimeProvider cl
             WriteCondition.MustMatch(expectedText), cancellationToken);
         if (result is ObjectWriteResult.Written)
         {
+            await audit.RecordAsync(documentId, AuditEventKind.TextSaved, cancellationToken, sectionId: sectionId.Value);
             // Text is authoritative. A simultaneous outline edit may win this
             // metadata update without turning an already saved text into a failure.
             var current = await store.ReadAsync(documentId, cancellationToken);

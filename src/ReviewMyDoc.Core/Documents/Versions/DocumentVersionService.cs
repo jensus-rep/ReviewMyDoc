@@ -1,10 +1,11 @@
 // Owns immutable snapshots and comparison with the current document.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Documents;
 
 /// <summary>Owns immutable snapshots and comparison with the current document.</summary>
-internal sealed class DocumentVersionService(IDocumentStore store, TimeProvider clock) : DocumentOperations(store, clock)
+internal sealed class DocumentVersionService(IDocumentStore store, TimeProvider clock, AuditLog audit) : DocumentOperations(store, clock, audit)
 {
     /// <summary>Freezes the current state of a document as its next version.</summary>
     /// <param name="documentId">Which document.</param>
@@ -107,6 +108,7 @@ internal sealed class DocumentVersionService(IDocumentStore store, TimeProvider 
 
         if (documentWritten is ObjectWriteResult.Written updated)
         {
+            await _audit.RecordAsync(documentId, AuditEventKind.VersionFrozen, cancellationToken, version: nextVersionNumber);
             return new DocumentResult.Success(changed, updated.ETag);
         }
 

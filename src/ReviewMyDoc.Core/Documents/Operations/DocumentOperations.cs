@@ -1,4 +1,5 @@
 // Shared optimistic-write boundary for document operations.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Documents;
@@ -8,9 +9,11 @@ public abstract class DocumentOperations
 {
     /// <summary>The aggregate store.</summary>
     protected readonly IDocumentStore _store;
+    /// <summary>The append-only history of successful changes.</summary>
+    protected readonly AuditLog _audit;
     private readonly TimeProvider _timeProvider;
     /// <summary>Connects operations to their persistence and clock.</summary>
-    protected DocumentOperations(IDocumentStore store, TimeProvider clock) { _store = store; _timeProvider = clock; }
+    protected DocumentOperations(IDocumentStore store, TimeProvider clock, AuditLog audit) { _store = store; _timeProvider = clock; _audit = audit; }
     /// <summary>
     /// Reads the document for a change and refuses it if there is nothing to
     /// change or the caller is working from an older state.
@@ -50,16 +53,18 @@ public abstract class DocumentOperations
     protected async Task<DocumentResult> WriteChangeAsync(
         Document changed,
         ETag expectedETag,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        AuditEventKind kind,
+        string? sectionId = null)
     {
         var written = await _store.WriteAsync(
             changed,
             WriteCondition.MustMatch(expectedETag),
             cancellationToken);
 
-        return written is ObjectWriteResult.Written updated
-            ? new DocumentResult.Success(changed, updated.ETag)
-            : new DocumentResult.Conflict();
+        if (written is not ObjectWriteResult.Written updated) { return new DocumentResult.Conflict(); }
+        await _audit.RecordAsync(changed.Id, kind, cancellationToken, sectionId: sectionId);
+        return new DocumentResult.Success(changed, updated.ETag);
     }
 
     /// <summary>

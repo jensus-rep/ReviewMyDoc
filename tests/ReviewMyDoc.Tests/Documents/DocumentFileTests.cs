@@ -4,9 +4,11 @@
 // entry in the store, because that is the path a real file takes.
 
 using System.Text.Json;
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Storage;
 using ReviewMyDoc.Infrastructure.Storage;
+using ReviewMyDoc.Tests.Audit;
 
 namespace ReviewMyDoc.Tests.Documents;
 
@@ -29,7 +31,8 @@ public sealed class DocumentFileTests : IDisposable
         _objects = new DirectoryObjectStore(_root);
         _service = new DocumentService(
             new DocumentStore(_objects),
-            new FixedTimeProvider(new DateTimeOffset(2026, 9, 22, 8, 14, 0, TimeSpan.Zero)));
+            new FixedTimeProvider(new DateTimeOffset(2026, 9, 22, 8, 14, 0, TimeSpan.Zero)),
+            new AuditLog(_objects, TimeProvider.System, new RecordingAuditFailures()));
     }
 
     private static CancellationToken Token => CancellationToken.None;

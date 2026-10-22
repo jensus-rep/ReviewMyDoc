@@ -1,4 +1,5 @@
 // Owns document release independently of invitation or feedback presentation.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Storage;
 using static ReviewMyDoc.Core.Reviews.ReviewService;
@@ -6,7 +7,7 @@ using static ReviewMyDoc.Core.Reviews.ReviewService;
 namespace ReviewMyDoc.Core.Reviews;
 
 /// <summary>Validates all assignments before releasing a document.</summary>
-public sealed class DocumentApprovalService(ReviewStore reviews, IDocumentStore documents, TimeProvider clock)
+public sealed class DocumentApprovalService(ReviewStore reviews, IDocumentStore documents, TimeProvider clock, AuditLog audit)
 {
     /// <summary>Releases a document only when every persisted assignment is closed.</summary>
     public async Task<string?> SetDocumentApprovalAsync(DocumentIdentifier documentId, string etag, bool approve, CancellationToken ct)
@@ -15,6 +16,7 @@ public sealed class DocumentApprovalService(ReviewStore reviews, IDocumentStore 
         if (stored is null || stored.ETag.Value != etag) { return Conflict; }
         if (approve)
         {
+            if (stored.Document.State == DocumentState.Approved) { return Conflict; }
             var assignments = await reviews.ListAsync(documentId, ct);
             if (!assignments.Any(r => r.Review.State == "Accepted")) { return "Vor der Freigabe muss mindestens ein Review abgenommen sein."; }
             if (assignments.Any(r => r.Review.State is not ("Accepted" or "Revoked")))
@@ -23,6 +25,8 @@ public sealed class DocumentApprovalService(ReviewStore reviews, IDocumentStore 
         else if (stored.Document.State != DocumentState.Approved) { return Conflict; }
         var result = await documents.WriteAsync(stored.Document.WithState(approve ? DocumentState.Approved : DocumentState.Draft, clock.GetUtcNow()),
             WriteCondition.MustMatch(stored.ETag), ct);
-        return result is ObjectWriteResult.Written ? null : Conflict;
+        if (result is not ObjectWriteResult.Written) { return Conflict; }
+        await audit.RecordAsync(documentId, approve ? AuditEventKind.DocumentApproved : AuditEventKind.DocumentReopened, ct);
+        return null;
     }
 }

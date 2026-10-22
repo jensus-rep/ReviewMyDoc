@@ -190,7 +190,8 @@ public sealed class DocumentOutlineServiceTests : DocumentServiceTestBase
         var document = await WithThreeSectionsAsync();
         var removed = document.Document.Sections[1].Id;
         var failing = new FailingObjectStore(_objects) { FailsToDelete = true };
-        var service = new DocumentService(new DocumentStore(failing), _clock);
+        var service = new DocumentService(new DocumentStore(failing), _clock,
+            new ReviewMyDoc.Core.Audit.AuditLog(failing, _clock, new ReviewMyDoc.Tests.Audit.RecordingAuditFailures()));
 
         await Assert.ThrowsAsync<ObjectStoreException>(
             () => service.DeleteSectionAsync(document.Document.Id, removed, document.ETag, Token));

@@ -1,12 +1,13 @@
 // Owns named collection creation and completion independently of invitation and feedback.
 // Closing a collection preserves its passages and its ability to be assigned later.
+using ReviewMyDoc.Core.Audit;
 using ReviewMyDoc.Core.Documents;
 using ReviewMyDoc.Core.Storage;
 
 namespace ReviewMyDoc.Core.Reviews;
 
 /// <summary>Creates and closes the owner's named review sets.</summary>
-public sealed class ReviewCollectionService(ReviewStore reviews, IDocumentStore documents, TimeProvider clock)
+public sealed class ReviewCollectionService(ReviewStore reviews, IDocumentStore documents, TimeProvider clock, AuditLog audit)
 {
     /// <summary>Persists an empty named set before the first passage is selected.</summary>
     public async Task<ReviewResult> CreateAsync(DocumentIdentifier documentId, string? name, CancellationToken ct)
@@ -17,7 +18,9 @@ public sealed class ReviewCollectionService(ReviewStore reviews, IDocumentStore 
         if (document is null || document.Document.State == DocumentState.Approved) { return new(Error: ReviewService.Conflict); }
         var review = new ReviewAssignment(DocumentIdentifier.Draw().Value, documentId.Value, document.Document.Title,
             "Draft", [], clock.GetUtcNow(), SetName: name.Trim());
-        return await WriteAsync(review, WriteCondition.MustNotExist, ct);
+        var result = await WriteAsync(review, WriteCondition.MustNotExist, ct);
+        if (result.Error is null) { await audit.RecordAsync(documentId, AuditEventKind.ReviewSetCreated, ct, reviewId: review.Id); }
+        return result;
     }
 
     /// <summary>Closes or reopens collection without issuing or accepting the review.</summary>
@@ -27,8 +30,14 @@ public sealed class ReviewCollectionService(ReviewStore reviews, IDocumentStore 
         var stored = await reviews.ReadAsync(documentId, reviewId, ct);
         if (document is null || document.Document.State == DocumentState.Approved || stored is null ||
             stored.ETag.Value != etag || stored.Review.State != "Draft") { return new(Error: ReviewService.Conflict); }
-        return await WriteAsync(stored.Review with { CollectionClosedAt = closed ? clock.GetUtcNow() : null },
+        if ((stored.Review.CollectionClosedAt is not null) == closed) { return new(stored); }
+        var result = await WriteAsync(stored.Review with { CollectionClosedAt = closed ? clock.GetUtcNow() : null },
             WriteCondition.MustMatch(stored.ETag), ct);
+        if (result.Error is null)
+        {
+            await audit.RecordAsync(documentId, closed ? AuditEventKind.CollectionClosed : AuditEventKind.CollectionReopened, ct, reviewId: reviewId);
+        }
+        return result;
     }
 
     private async Task<ReviewResult> WriteAsync(ReviewAssignment review, WriteCondition condition, CancellationToken ct)

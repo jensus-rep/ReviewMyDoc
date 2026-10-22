@@ -146,6 +146,24 @@ Er beantwortet „wer hat wann was ausgelöst“, ohne dass die Aggregate eine H
 Keine personenbezogenen Daten außer der ohnehin gespeicherten Reviewerkennung, Clientadressen nur
 gehasht.
 
+Eine Zeile enthält `occurredAt` (UTC), `kind`, `actor` (`Owner` oder `Reviewer`),
+`actorId` (`owner` oder die Auftragskennung), `documentId` und bei Bedarf `sectionId`,
+`reviewId`, `passageId` sowie `version`. Die Ereignisarten sind `DocumentCreated`,
+`DocumentRenamed`, `SectionAdded`, `SectionRenamed`, `SectionsReordered`, `SectionDeleted`,
+`SectionSplit`, `TextSaved`, `VersionFrozen`, `ReviewSetCreated`, `CollectionClosed`,
+`CollectionReopened`, `PassageCollected`, `PassageRemoved`, `ReviewIssued`, `ReviewReturned`,
+`FeedbackResolved`, `QuestionAnswered`, `SuggestionRejected`, `SuggestionApplied`,
+`ReviewAccepted`, `ReviewRevoked`, `DocumentApproved` und `DocumentReopened`.
+Namen, Mailadressen, Text, Antworten, Tokens und Hashes werden nicht ins Log kopiert.
+
+Fachliche Änderungen protokollieren erst nach ihrem bestätigten Schreibvorgang. Abgelehnte
+oder kompensierte Versuche und interne Übernahmezustände erzeugen kein Ereignis. Eine
+Vorschlagsübernahme erzeugt ein Text- und ein Entscheidungsereignis; eine Wiederaufnahme
+schreibt bereits bestätigte Schritte nicht erneut. Das Log wird ausschließlich angehängt.
+Scheitert das Anhängen, bleibt die Änderung bestehen; eine Warnung im Anwendungsprotokoll
+nennt nur Ereignisart, Dokumentkennung und Fehlertyp. Zwischen Fachänderung und Log besteht
+keine Transaktion: Ein Prozessabbruch oder Speicherfehler kann deshalb eine Lücke hinterlassen.
+
 ## Zusicherungen
 
 1. **Optimistisches Schreiben.** Jeder Schreibvorgang auf einen bestehenden Blob läuft mit
